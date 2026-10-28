@@ -1,4 +1,5 @@
 /* Utilidades generales: fechas, formato, ids y DOM. */
+import {t, tn, lang, locale} from "./i18n.js";
 
 export const DAY = 864e5;
 
@@ -49,42 +50,45 @@ export function age(birth){
   if(t.getMonth() < b.getMonth() || (t.getMonth() === b.getMonth() && t.getDate() < b.getDate())) a--;
   return a;
 }
-const MES = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
-export const MESES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+const EN = lang() === "en";
+const MES = EN ? ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"] : ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+/* el idioma no cambia sin recargar la página, así que MESES ya queda en el idioma actual */
+export const MESES = EN ? ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"] : ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 export function fmtDate(iso, long){
   const d = parseISO(iso); if(!d) return "—";
+  if(EN) return `${(long ? MESES : MES)[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
   return long ? `${d.getDate()} de ${MESES[d.getMonth()]} de ${d.getFullYear()}` : `${d.getDate()} ${MES[d.getMonth()]} ${d.getFullYear()}`;
 }
-export const fmtMonth = ym => { const [y, m] = ym.split("-"); return `${MES[+m - 1]} ${y.slice(2)}`; };
+export const fmtMonth = ym => { const [y, m] = ym.split("-"); return EN ? `${MES[+m - 1]} '${y.slice(2)}` : `${MES[+m - 1]} ${y.slice(2)}`; };
+const fmtY = n => tn(n, "1 año", "{n} años"), fmtMo = n => tn(n, "1 mes", "{n} meses");
 /* "1 año y 3 meses", "5 meses", "12 días" */
 export function fmtDuration(fromISO, toISOd = today()){
   const days = daysBetween(fromISO, toISOd);
-  if(days < 0) return "en el futuro";
-  if(days < 31) return days === 1 ? "1 día" : `${days} días`;
+  if(days < 0) return t("en el futuro");
+  if(days < 31) return tn(days, "1 día", "{n} días");
   const m = Math.floor(monthsBetween(fromISO, toISOd));
   const y = Math.floor(m / 12), r = m % 12;
-  const ys = y ? (y === 1 ? "1 año" : `${y} años`) : "";
-  const ms = r ? (r === 1 ? "1 mes" : `${r} meses`) : "";
-  return [ys, ms].filter(Boolean).join(" y ") || "0 meses";
+  if(y && r) return t("{a} y {b}", {a: fmtY(y), b: fmtMo(r)});
+  return y ? fmtY(y) : fmtMo(r);
 }
 export function fmtMonths(m){
-  if(!m) return "sin mínimo";
-  if(m < 12) return m === 1 ? "1 mes" : `${m} meses`;
+  if(!m) return t("sin mínimo");
+  if(m < 12) return fmtMo(m);
   const y = Math.floor(m / 12), r = m % 12;
-  return (y === 1 ? "1 año" : `${y} años`) + (r ? ` y ${r === 1 ? "1 mes" : r + " meses"}` : "");
+  return r ? t("{a} y {b}", {a: fmtY(y), b: fmtMo(r)}) : fmtY(y);
 }
 export function relDays(n){
-  if(n === 0) return "hoy";
-  if(n === 1) return "mañana";
-  if(n === -1) return "ayer";
-  return n > 0 ? `en ${n} días` : `hace ${-n} días`;
+  if(n === 0) return t("hoy");
+  if(n === 1) return t("mañana");
+  if(n === -1) return t("ayer");
+  return n > 0 ? t("en {n} días", {n}) : t("hace {n} días", {n: -n});
 }
 
 /* ---------- formato ---------- */
 export function money(v, cur = "COP"){
   const n = Number(v) || 0;
-  try{ return new Intl.NumberFormat("es-CO", {style: "currency", currency: cur, maximumFractionDigits: cur === "COP" || cur === "CLP" ? 0 : 2}).format(n); }
-  catch(e){ return "$" + Math.round(n).toLocaleString("es"); }
+  try{ return new Intl.NumberFormat(locale(), {style: "currency", currency: cur, currencyDisplay: EN ? "narrowSymbol" : "symbol", maximumFractionDigits: cur === "COP" || cur === "CLP" ? 0 : 2}).format(n); }
+  catch(e){ return "$" + Math.round(n).toLocaleString(locale()); }
 }
 export const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
 export const initials = name => String(name || "?").trim().split(/\s+/).slice(0, 2).map(w => w[0] || "").join("").toUpperCase() || "?";

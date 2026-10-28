@@ -4,6 +4,7 @@
    copias gana, registro a registro, el _u más reciente. */
 import {uid, now, isObj, today, addMonths, addDays, daysBetween, monthsBetween, parseISO} from "./util.js";
 import {planById} from "./catalog.js";
+import {t, tn, lang} from "./i18n.js";
 
 const KEY = "mma:data", PREFS = "mma:prefs";
 export const COLS = ["academias", "sedes", "disciplinas", "alumnos", "pagos", "grados", "asistencias", "productos"];
@@ -138,29 +139,30 @@ export function avisosPromocion(disc, prevHist, nuevo){
   if(!prev || !disc) return out;
   const pr = rankDef(disc, prev.rank), nr = rankDef(disc, nuevo.rank);
   const fecha = nuevo.fecha || today();
-  if(daysBetween(prev.fecha, fecha) < 0) out.push({nivel: "error", txt: `La fecha es anterior a la última promoción (${prev.fecha}).`});
+  if(daysBetween(prev.fecha, fecha) < 0) out.push({nivel: "error", txt: t("La fecha es anterior a la última promoción ({fecha}).", {fecha: prev.fecha})});
   if(nuevo.rank < prev.rank || (nuevo.rank === prev.rank && (nuevo.grado || 0) <= (prev.grado || 0)))
-    out.push({nivel: "warn", txt: `No es un ascenso: ya tenía ${pr.n}${prev.grado ? " " + prev.grado + "°" : ""}.`});
+    out.push({nivel: "warn", txt: prev.grado ? t("No es un ascenso: ya tenía {rango} {g}°.", {rango: t(pr.n), g: prev.grado}) : t("No es un ascenso: ya tenía {rango}.", {rango: t(pr.n)})});
   if(nuevo.rank > prev.rank){
     const ini = inicioCinturon(prevHist);
     const meses = monthsBetween(ini.fecha, fecha);
-    if(pr.m && meses < pr.m) out.push({nivel: "warn", txt: `Solo lleva ${fmtM(meses)} en ${pr.n}. El mínimo recomendado es ${fmtM(pr.m)}.`, faltan: pr.m - meses});
-    if(nuevo.rank > prev.rank + 1) out.push({nivel: "warn", txt: `Salta ${nuevo.rank - prev.rank - 1} cinturón(es): de ${pr.n} a ${nr.n}.`});
-    if(pr.g && (prev.grado || 0) < pr.g) out.push({nivel: "info", txt: `Pasa de cinturón con ${prev.grado || 0} de ${pr.g} grados.`});
+    if(pr.m && meses < pr.m) out.push({nivel: "warn", txt: t("Solo lleva {tiempo} en {rango}. El mínimo recomendado es {min}.", {tiempo: fmtM(meses), rango: t(pr.n), min: fmtM(pr.m)}), faltan: pr.m - meses});
+    if(nuevo.rank > prev.rank + 1) out.push({nivel: "warn", txt: tn(nuevo.rank - prev.rank - 1, "Salta 1 cinturón: de {de} a {a}.", "Salta {n} cinturones: de {de} a {a}.", {de: t(pr.n), a: t(nr.n)})});
+    if(pr.g && (prev.grado || 0) < pr.g) out.push({nivel: "info", txt: t("Pasa de cinturón con {g} de {max} grados.", {g: prev.grado || 0, max: pr.g})});
   }else if(nuevo.rank === prev.rank && (nuevo.grado || 0) > (prev.grado || 0)){
     const meses = monthsBetween(prev.fecha, fecha);
     const min = (pr.mg || 0) * ((nuevo.grado || 0) - (prev.grado || 0));
-    if(min && meses < min) out.push({nivel: "warn", txt: `Solo han pasado ${fmtM(meses)} desde el último grado. Lo recomendado es ${fmtM(min)}.`, faltan: min - meses});
-    if(pr.g && nuevo.grado > pr.g) out.push({nivel: "error", txt: `${pr.n} tiene máximo ${pr.g} grados.`});
+    if(min && meses < min) out.push({nivel: "warn", txt: t("Solo han pasado {tiempo} desde el último grado. Lo recomendado es {min}.", {tiempo: fmtM(meses), min: fmtM(min)}), faltan: min - meses});
+    if(pr.g && nuevo.grado > pr.g) out.push({nivel: "error", txt: t("{rango} tiene máximo {max} grados.", {rango: t(pr.n), max: pr.g})});
   }
   return out;
 }
 function fmtM(m){
-  if(m < 1){ const d = Math.round(m * 30.4); return d === 1 ? "1 día" : `${d} días`; }
+  if(m < 1){ const d = Math.round(m * 30.4); return tn(d, "1 día", "{n} días"); }
+  const dec = x => (lang() === "en" ? String(x) : String(x).replace(".", ","));
   const r = Math.round(m * 10) / 10;
-  if(r < 12) return `${String(r).replace(".", ",")} ${r === 1 ? "mes" : "meses"}`;
+  if(r < 12) return tn(r, "1 mes", "{n} meses", {n: dec(r)});
   const y = Math.round(r / 12 * 10) / 10;
-  return `${String(y).replace(".", ",")} ${y === 1 ? "año" : "años"}`;
+  return tn(y, "1 año", "{n} años", {n: dec(y)});
 }
 export const fmtMeses = fmtM;
 
@@ -181,12 +183,12 @@ export function siguiente(alumnoId, disc){
   const last = disc.ranks.length - 1;
   if(rd.g && (cur.grado || 0) < rd.g){
     const meses = monthsBetween(cur.fecha, today());
-    return {tipo: "grado", txt: `${cur.grado + 1}° grado de ${rd.n}`, listo: !rd.mg || meses >= rd.mg, meses, min: rd.mg, fecha: addDays(cur.fecha, Math.round((rd.mg || 0) * 30.44))};
+    return {tipo: "grado", txt: tn(cur.grado + 1, "1° grado de {rango}", "{n}° grado de {rango}", {rango: t(rd.n)}), listo: !rd.mg || meses >= rd.mg, meses, min: rd.mg, fecha: addDays(cur.fecha, Math.round((rd.mg || 0) * 30.44))};
   }
   if(cur.rank < last && rd.m !== undefined){
     const ini = inicioCinturon(h);
     const meses = monthsBetween(ini.fecha, today());
-    return {tipo: "cinturon", txt: rankDef(disc, cur.rank + 1).n, listo: !rd.m || meses >= rd.m, meses, min: rd.m, fecha: addDays(ini.fecha, Math.round((rd.m || 0) * 30.44))};
+    return {tipo: "cinturon", txt: t(rankDef(disc, cur.rank + 1).n), listo: !rd.m || meses >= rd.m, meses, min: rd.m, fecha: addDays(ini.fecha, Math.round((rd.m || 0) * 30.44))};
   }
   return null;
 }
@@ -200,17 +202,17 @@ export function vence(al){
 }
 /* estado de pago: {k: "aldia"|"pronto"|"vencido"|"beca"|"clase"|"inactivo", dias, vence} */
 export function estadoPago(al, aviso = 5){
-  if(al.estado === "inactivo") return {k: "inactivo", txt: "Inactivo"};
-  if(al.estado === "congelado") return {k: "congelado", txt: "Congelado"};
+  if(al.estado === "inactivo") return {k: "inactivo", txt: t("Inactivo")};
+  if(al.estado === "congelado") return {k: "congelado", txt: t("Congelado")};
   const plan = planById(al.plan);
-  if(plan.id === "beca") return {k: "beca", txt: "Becado"};
+  if(plan.id === "beca") return {k: "beca", txt: t("Becado")};
   const v = vence(al);
-  if(plan.id === "clase") return {k: "clase", txt: "Por clase", vence: v};
-  if(!v) return {k: "vencido", txt: "Sin pagos", dias: 0};
+  if(plan.id === "clase") return {k: "clase", txt: t("Por clase"), vence: v};
+  if(!v) return {k: "vencido", txt: t("Sin pagos"), dias: 0};
   const d = daysBetween(today(), v);
-  if(d < 0) return {k: "vencido", txt: `Vencido hace ${-d} ${-d === 1 ? "día" : "días"}`, dias: d, vence: v};
-  if(d <= aviso) return {k: "pronto", txt: d === 0 ? "Vence hoy" : `Vence en ${d} ${d === 1 ? "día" : "días"}`, dias: d, vence: v};
-  return {k: "aldia", txt: "Al día", dias: d, vence: v};
+  if(d < 0) return {k: "vencido", txt: tn(-d, "Vencido hace 1 día", "Vencido hace {n} días"), dias: d, vence: v};
+  if(d <= aviso) return {k: "pronto", txt: d === 0 ? t("Vence hoy") : tn(d, "Vence en 1 día", "Vence en {n} días"), dias: d, vence: v};
+  return {k: "aldia", txt: t("Al día"), dias: d, vence: v};
 }
 /* período por defecto de un pago nuevo */
 export function periodoNuevo(al){

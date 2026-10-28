@@ -1,6 +1,6 @@
 # AcademiaPro — gestión de academias de MMA y artes marciales
 
-App web gratuita (sin servidor) para llevar una academia de MMA, BJJ, Muay Thai, Judo, etc.:
+App web gratuita (sin servidor), en español e inglés, para llevar una academia de MMA, BJJ, Muay Thai, Judo, etc.:
 
 - **Academias, sedes y disciplinas**: cada sede enseña sus disciplinas; cada disciplina tiene su sistema de cinturones/niveles, grados y tiempos mínimos (plantillas IBJJF adultos e infantil, Judo, Muay Thai, Kickboxing, Karate, Taekwondo y niveles para MMA/Boxeo/Lucha), todo editable.
 - **Alumnos**: foto, documento, nacimiento, contacto, acudiente, tipo de sangre, EPS, alergias, lesiones, contacto de emergencia, plan y valor, equipo (gi, bucal, guantes, vendas…) con tallas.
@@ -44,3 +44,7 @@ En Ajustes hay un botón «Cargar alumnos de ejemplo» para ver la app con datos
 - `js/forms.js` formularios, `js/ui.js` componentes (cinturones SVG, modales), `js/views/*` pantallas
 
 Al cambiar archivos, sube `VERSION` en `sw.js` para que los celulares reciban la versión nueva.
+
+## Idiomas
+
+Español (base) e inglés. Los textos se escriben en español dentro de `t("…")` (`js/i18n.js`) y la traducción va en `js/i18n/en-<archivo>.js`, con el texto en español como clave. Los nombres que escribe el usuario no se traducen; los nombres por defecto del catálogo (cinturones, planes, equipo, disciplinas) sí.

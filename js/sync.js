@@ -9,6 +9,7 @@
 import * as S from "./store.js";
 import {GOOGLE_CLIENT_ID} from "./config.js";
 import {isObj, now} from "./util.js";
+import {t} from "./i18n.js";
 
 const SCOPE = "https://www.googleapis.com/auth/drive.appdata";
 const GSI = "https://accounts.google.com/gsi/client";
@@ -185,21 +186,21 @@ async function syncOnce(){
   setPhase("ok");
 }
 const MSG = {
-  offline: "Sin conexión. Los cambios quedan guardados en este aparato y se suben al volver la red.",
-  reconnect: "El permiso de Google caducó. Toca «Reconectar».",
-  denied: "No se dio permiso a la app en Google.",
-  scope: "Hace falta marcar la casilla de Google Drive al dar permiso.",
-  closed: "Se cerró la ventana de Google antes de terminar.",
-  blocked: "El navegador bloqueó la ventana de Google. Permite ventanas emergentes para este sitio.",
-  gis: "No se pudo cargar el inicio de sesión de Google.",
-  full: "Tu Google Drive está lleno.",
-  rate: "Google pidió esperar un poco. Se reintenta solo.",
-  net: "Fallo de red. Se reintenta solo.",
-  server: "Google respondió con un error. Se reintenta solo.",
-  bad: "La copia de Google está dañada.",
-  auth: "Google rechazó el inicio de sesión.",
+  offline: t("Sin conexión. Los cambios quedan guardados en este aparato y se suben al volver la red."),
+  reconnect: t("El permiso de Google caducó. Toca «Reconectar»."),
+  denied: t("No se dio permiso a la app en Google."),
+  scope: t("Hace falta marcar la casilla de Google Drive al dar permiso."),
+  closed: t("Se cerró la ventana de Google antes de terminar."),
+  blocked: t("El navegador bloqueó la ventana de Google. Permite ventanas emergentes para este sitio."),
+  gis: t("No se pudo cargar el inicio de sesión de Google."),
+  full: t("Tu Google Drive está lleno."),
+  rate: t("Google pidió esperar un poco. Se reintenta solo."),
+  net: t("Fallo de red. Se reintenta solo."),
+  server: t("Google respondió con un error. Se reintenta solo."),
+  bad: t("La copia de Google está dañada."),
+  auth: t("Google rechazó el inicio de sesión."),
 };
-export const errText = code => MSG[code] || "Error inesperado al sincronizar.";
+export const errText = code => MSG[code] || t("Error inesperado al sincronizar.");
 let retryT = 0;
 function handleErr(e){
   const c = e && e.code || "server";

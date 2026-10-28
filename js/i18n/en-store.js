@@ -1,0 +1,23 @@
+/* Traducciones al inglés: store. Clave = texto en español tal como aparece en t("…"). */
+export default {
+  "La fecha es anterior a la última promoción ({fecha}).": "The date is before the last promotion ({fecha}).",
+  "No es un ascenso: ya tenía {rango} {g}°.": "Not a promotion: already at {rango} {g}°.",
+  "No es un ascenso: ya tenía {rango}.": "Not a promotion: already at {rango}.",
+  "Solo lleva {tiempo} en {rango}. El mínimo recomendado es {min}.": "Only {tiempo} at {rango} so far. The recommended minimum is {min}.",
+  "Salta 1 cinturón: de {de} a {a}.": "Skips 1 belt: from {de} to {a}.",
+  "Salta {n} cinturones: de {de} a {a}.": "Skips {n} belts: from {de} to {a}.",
+  "Pasa de cinturón con {g} de {max} grados.": "Moves up a belt with {g} of {max} stripes.",
+  "Solo han pasado {tiempo} desde el último grado. Lo recomendado es {min}.": "Only {tiempo} since the last stripe. The recommended time is {min}.",
+  "{rango} tiene máximo {max} grados.": "{rango} allows at most {max} stripes.",
+  "1° grado de {rango}": "{rango}, stripe 1",
+  "{n}° grado de {rango}": "{rango}, stripe {n}",
+  "Becado": "Scholarship",
+  "Por clase": "Pay per class",
+  "Sin pagos": "No payments",
+  "Vencido hace 1 día": "Overdue by 1 day",
+  "Vencido hace {n} días": "Overdue by {n} days",
+  "Vence hoy": "Due today",
+  "Vence en 1 día": "Due in 1 day",
+  "Vence en {n} días": "Due in {n} days",
+  "Al día": "Paid up",
+};

@@ -484,3 +484,10 @@ a.kpi:hover{border-color:var(--line2);transform:translateY(-1px)}
 @media (max-width:400px){
   .att-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+/* ---------- i18n: selector de idioma (app.js) ---------- */
+.lang-sw{margin-top:10px}
+.lang-sw button{border:0;background:none;padding:5px 10px;border-radius:8px;font:inherit;font-weight:700;font-size:12px;letter-spacing:.04em;color:var(--muted);cursor:pointer}
+.lang-sw button.on{background:var(--surface2);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.w-lang{display:flex;justify-content:flex-end;margin-top:6px}
+.w-lang .lang-sw{margin-top:0}

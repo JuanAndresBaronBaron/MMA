@@ -1,8 +1,21 @@
 <!doctype html>
 <html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Privacidad · AcademiaPro</title>
-<style>body{font:16px/1.6 system-ui,sans-serif;max-width:720px;margin:0 auto;padding:32px 20px;background:#0b0d12;color:#e9ecf2}a{color:#ff5a5f}h1{font-size:26px}h2{font-size:18px;margin-top:28px}</style></head>
+<style>body{font:16px/1.6 system-ui,sans-serif;max-width:720px;margin:0 auto;padding:32px 20px;background:#0b0d12;color:#e9ecf2}a{color:#ff5a5f}h1{font-size:26px}h2{font-size:18px;margin-top:28px}.lang{float:right;font-size:14px;font-weight:600}.lang a{text-decoration:none}.lang a.on{color:#e9ecf2;pointer-events:none}[hidden]{display:none}</style>
+<script>
+  /* idioma: ?lang=, luego localStorage "mma:lang" (el mismo de la app), luego el navegador */
+  var L = (function(){
+    var q = (location.search.match(/[?&]lang=(es|en)\b/) || [])[1]; if(q) return q;
+    try{ var s = localStorage.getItem("mma:lang"); if(s === "es" || s === "en") return s; }catch(e){}
+    return /^es\b/i.test(navigator.language || "es") ? "es" : "en";
+  })();
+  document.documentElement.lang = L;
+  function setLang(l){ try{ localStorage.setItem("mma:lang", l); }catch(e){} location.replace(location.pathname); return false; }
+</script></head>
 <body>
+<p class="lang"><a href="?lang=es" data-l="es" onclick="return setLang('es')">ES</a> · <a href="?lang=en" data-l="en" onclick="return setLang('en')">EN</a></p>
+
+<div lang="es" data-lang="es">
 <h1>Política de privacidad de AcademiaPro</h1>
 <p>AcademiaPro es una aplicación web gratuita para gestionar academias de artes marciales. No tiene servidor propio ni base de datos central.</p>
 <h2>Dónde se guardan los datos</h2>
@@ -14,4 +27,25 @@
 <h2>Cómo borrarlos</h2>
 <p>En Ajustes › «Borrar datos de este aparato». Para borrar la copia de Google: en Google Drive › Configuración › Administrar aplicaciones › AcademiaPro › «Borrar datos ocultos de la aplicación».</p>
 <p><a href="./">Volver a la app</a></p>
+</div>
+
+<div lang="en" data-lang="en" hidden>
+<h1>AcademiaPro Privacy Policy</h1>
+<p>AcademiaPro is a free web app for managing martial arts academies. It has no server of its own and no central database.</p>
+<h2>Where your data is stored</h2>
+<p>Everything you enter (academies, locations, students, photos, payments, ranks and attendance) is stored in your browser. If you sign in with Google, a copy is also saved in the <b>app's private folder</b> inside your own Google Drive (appDataFolder). That folder doesn't appear among your files and only this app can read it.</p>
+<h2>Google permissions</h2>
+<p>The app only requests the <code>drive.appdata</code> permission: it cannot see, modify or delete any other file in your Drive. It also reads your email address and name to show which account you're signed in with.</p>
+<h2>Who it's shared with</h2>
+<p>No one. Your data only travels between your browser and your Google account. WhatsApp links open the WhatsApp app with a message that you choose whether to send.</p>
+<h2>How to delete it</h2>
+<p>Go to Settings › “Delete data from this device”. To delete the Google copy: in Google Drive › Settings › Manage apps › AcademiaPro › “Delete hidden app data”.</p>
+<p><a href="./">Back to the app</a></p>
+</div>
+
+<script>
+  document.title = L === "en" ? "Privacy · AcademiaPro" : "Privacidad · AcademiaPro";
+  for(var d of document.querySelectorAll("div[data-lang]")) d.hidden = d.dataset.lang !== L;
+  for(var a of document.querySelectorAll(".lang a")) a.className = a.dataset.l === L ? "on" : "";
+</script>
 </body></html>

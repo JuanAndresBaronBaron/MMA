@@ -1,6 +1,7 @@
 /* Piezas de interfaz: iconos, modales, avisos, cinturones, avatares y formularios. */
 import {esc, initials, h, $, $$} from "./util.js";
 import * as S from "./store.js";
+import {t, tn} from "./i18n.js";
 
 /* ---------- iconos (trazo 2, 24×24) ---------- */
 const P = {
@@ -70,7 +71,7 @@ export function belt(disc, rankIdx, grado = 0, opts = {}){
   }else if(r.c2) mid = `<rect x="0" y="${hh * 0.36}" width="${w}" height="${hh * 0.28}" fill="${r.c2}"/>`;
   const light = ["#f4f4f4", "#ffffff"].includes(r.c);
   const hasTip = r.g > 0 || grado > 0 || opts.tip;
-  return `<svg class="belt" viewBox="0 0 ${w} ${hh}" width="${w}" height="${hh}" role="img" aria-label="${esc(r.n)}${grado ? " " + grado + " grados" : ""}">
+  return `<svg class="belt" viewBox="0 0 ${w} ${hh}" width="${w}" height="${hh}" role="img" aria-label="${esc(t(r.n))}${grado ? " " + esc(tn(grado, "1 grado", "{n} grados")) : ""}">
     <rect x="0" y="0" width="${w}" height="${hh}" rx="3" fill="${r.c}" ${light ? 'stroke="#cfcfcf" stroke-width="1"' : ""}/>
     ${mid}
     ${hasTip ? `<rect x="${tipX}" y="0" width="${tipW}" height="${hh}" fill="${tip}"/>${stripes}` : ""}
@@ -79,9 +80,9 @@ export function belt(disc, rankIdx, grado = 0, opts = {}){
 }
 export const beltDefs = `<svg width="0" height="0" style="position:absolute"><defs><linearGradient id="beltShade" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset=".5" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".22"/></linearGradient></defs></svg>`;
 export function rankLabel(disc, g){
-  if(!g) return "Sin grado";
+  if(!g) return t("Sin grado");
   const r = S.rankDef(disc, g.rank);
-  return r.n + (g.grado ? ` · ${g.grado}° ${disc.ranks[g.rank]?.g ? "grado" : "dan"}` : "");
+  return t(r.n) + (g.grado ? " · " + (disc.ranks[g.rank]?.g ? tn(g.grado, "1° grado", "{n}° grado") : t("{n}° dan", {n: g.grado})) : "");
 }
 
 /* ---------- avatar ---------- */
@@ -105,7 +106,7 @@ export function pickPhoto(){
   return new Promise(res => {
     const inp = document.createElement("input");
     inp.type = "file"; inp.accept = "image/*";
-    inp.onchange = () => { const f = inp.files && inp.files[0]; if(!f) return res(null); compress(f).then(res, () => { toast("No se pudo leer la imagen", "error"); res(null); }); };
+    inp.onchange = () => { const f = inp.files && inp.files[0]; if(!f) return res(null); compress(f).then(res, () => { toast(t("No se pudo leer la imagen"), "error"); res(null); }); };
     inp.click();
   });
 }
@@ -140,7 +141,7 @@ export function toast(msg, kind = "ok", action){
 let modalStack = [];
 export function modal({title, body, foot, wide, onClose, cls = ""}){
   const el = h(`<div class="modal-back"><div class="modal ${wide ? "wide" : ""} ${cls}" role="dialog" aria-modal="true" aria-label="${esc(title)}">
-    <header class="modal-h"><h2>${esc(title)}</h2><button class="icon-btn" data-close aria-label="Cerrar">${icon("x")}</button></header>
+    <header class="modal-h"><h2>${esc(title)}</h2><button class="icon-btn" data-close aria-label="${t("Cerrar")}">${icon("x")}</button></header>
     <div class="modal-b"></div>${foot !== false ? `<footer class="modal-f"></footer>` : ""}</div></div>`);
   const b = el.querySelector(".modal-b");
   if(typeof body === "string") b.innerHTML = body; else if(body) b.appendChild(body);
@@ -155,11 +156,11 @@ export function modal({title, body, foot, wide, onClose, cls = ""}){
   return api;
 }
 document.addEventListener("keydown", e => { if(e.key === "Escape" && modalStack.length) modalStack[modalStack.length - 1].close(); });
-export function confirmDlg(msg, {ok = "Eliminar", danger = true, title = "¿Seguro?"} = {}){
+export function confirmDlg(msg, {ok = t("Eliminar"), danger = true, title = t("¿Seguro?")} = {}){
   return new Promise(res => {
     let done = false;
     const m = modal({title, body: `<p class="muted">${esc(msg)}</p>`,
-      foot: `<button class="btn ghost" data-close>Cancelar</button><button class="btn ${danger ? "danger" : "primary"}" data-ok>${esc(ok)}</button>`,
+      foot: `<button class="btn ghost" data-close>${t("Cancelar")}</button><button class="btn ${danger ? "danger" : "primary"}" data-ok>${esc(ok)}</button>`,
       onClose: () => { if(!done) res(false); }});
     m.foot.querySelector("[data-ok]").onclick = () => { done = true; res(true); m.close(); };
   });
@@ -175,7 +176,7 @@ export function field(f, v){
   if(f.type === "select") input = `<select ${attrs}>${(f.opts || []).map(o => { const [ov, ol] = Array.isArray(o) ? o : [o, o]; return `<option value="${esc(ov)}" ${String(ov) === String(val) ? "selected" : ""}>${esc(ol)}</option>`; }).join("")}</select>`;
   else if(f.type === "textarea") input = `<textarea ${attrs} rows="${f.rows || 3}">${esc(val)}</textarea>`;
   else if(f.type === "check") return `<label class="check ${f.half ? "half" : ""}"><input type="checkbox" name="${esc(f.k)}" ${val === true || val === "true" ? "checked" : ""}><span>${esc(f.label)}</span></label>`;
-  else if(f.type === "chips") return `<div class="field ${f.half ? "half" : ""}"><span class="lbl">${esc(f.label)}</span><div class="chips">${(f.opts || []).map(o => { const [ov, ol] = Array.isArray(o) ? o : [o, o]; return `<label class="chip"><input type="checkbox" name="${esc(f.k)}" value="${esc(ov)}" ${(val || []).includes(ov) ? "checked" : ""}><span>${esc(ol)}</span></label>`; }).join("") || `<span class="muted small">${esc(f.empty || "Nada para elegir")}</span>`}</div>${f.hint ? `<small class="hint">${esc(f.hint)}</small>` : ""}</div>`;
+  else if(f.type === "chips") return `<div class="field ${f.half ? "half" : ""}"><span class="lbl">${esc(f.label)}</span><div class="chips">${(f.opts || []).map(o => { const [ov, ol] = Array.isArray(o) ? o : [o, o]; return `<label class="chip"><input type="checkbox" name="${esc(f.k)}" value="${esc(ov)}" ${(val || []).includes(ov) ? "checked" : ""}><span>${esc(ol)}</span></label>`; }).join("") || `<span class="muted small">${esc(f.empty || t("Nada para elegir"))}</span>`}</div>${f.hint ? `<small class="hint">${esc(f.hint)}</small>` : ""}</div>`;
   else if(f.type === "seg") return `<div class="field ${f.half ? "half" : ""}"><span class="lbl">${esc(f.label)}</span><div class="seg">${(f.opts || []).map(o => { const [ov, ol] = Array.isArray(o) ? o : [o, o]; return `<label><input type="radio" name="${esc(f.k)}" value="${esc(ov)}" ${String(ov) === String(val) ? "checked" : ""}><span>${esc(ol)}</span></label>`; }).join("")}</div></div>`;
   else input = `<input type="${f.type || "text"}" ${attrs} value="${esc(val)}" ${f.list ? `list="${id}_l"` : ""}>${f.list ? `<datalist id="${id}_l">${f.list.map(o => `<option value="${esc(o)}">`).join("")}</datalist>` : ""}`;
   return `<div class="field ${f.half ? "half" : ""} ${f.third ? "third" : ""}"><label for="${id}" class="lbl">${esc(f.label)}${f.req ? ' <b class="req">*</b>' : ""}</label>${input}${f.hint ? `<small class="hint">${esc(f.hint)}</small>` : ""}</div>`;
@@ -195,12 +196,12 @@ export function formValues(form){
   return o;
 }
 /* abre un formulario en un modal; onSave(valores) devuelve false para no cerrar */
-export function formModal({title, fields, values = {}, save = "Guardar", onSave, extra = "", wide, danger}){
+export function formModal({title, fields, values = {}, save = t("Guardar"), onSave, extra = "", wide, danger}){
   const body = h(`<form class="form" novalidate>${fields.map(f => typeof f === "string" ? f : field(f, values[f.k])).join("")}${extra}</form>`);
   const m = modal({title, body, wide,
-    foot: `${danger ? `<button class="btn danger ghost left" data-del>${icon("trash")} ${esc(danger.label || "Eliminar")}</button>` : ""}<button class="btn ghost" data-close>Cancelar</button><button class="btn primary" data-save>${esc(save)}</button>`});
+    foot: `${danger ? `<button class="btn danger ghost left" data-del>${icon("trash")} ${esc(danger.label || t("Eliminar"))}</button>` : ""}<button class="btn ghost" data-close>${t("Cancelar")}</button><button class="btn primary" data-save>${esc(save)}</button>`});
   const submit = async () => {
-    for(const el of body.querySelectorAll("[required]")) if(!el.value.trim()){ el.focus(); el.classList.add("bad"); toast("Completa los campos obligatorios", "warn"); return; }
+    for(const el of body.querySelectorAll("[required]")) if(!el.value.trim()){ el.focus(); el.classList.add("bad"); toast(t("Completa los campos obligatorios"), "warn"); return; }
     const r = await onSave(formValues(body), m);
     if(r !== false) m.close();
   };

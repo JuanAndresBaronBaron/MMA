@@ -1,0 +1,16 @@
+export default {
+  "Falta configurar": "Setup needed",
+  "Necesitas al menos una sede con una disciplina.": "You need at least one location with a discipline.",
+  "Ir a Academia": "Go to Academy",
+  "Día anterior": "Previous day",
+  "Día siguiente": "Next day",
+  "presente": "present",
+  "presentes": "present",
+  "{n} presente": "{n} present",
+  "{n} presentes": "{n} present",
+  "Buscar": "Search",
+  "Marcar todos": "Mark all",
+  "Sin alumnos": "No students",
+  "No hay alumnos activos de esta disciplina en la sede.": "There are no active students in this discipline at this location.",
+  "Últimas clases": "Recent classes",
+};
