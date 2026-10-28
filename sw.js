@@ -1,7 +1,7 @@
 /* Funciona sin internet: la app se guarda en caché. Primero la red (siempre la última versión) y, sin conexión, la
    caché. Los datos del usuario no pasan por aquí (están en localStorage/IndexedDB y en su Google Drive).
    Al cambiar archivos, subir VERSION. */
-const VERSION = 1;
+const VERSION = 2;
 const CACHE = "mma-v" + VERSION;
 const SHELL = ["./", "index.html", "privacy.html", "manifest.webmanifest", "css/app.css", "icons/icon.svg", "icons/icon-192.png",
   "js/app.js", "js/util.js", "js/catalog.js", "js/store.js", "js/sync.js", "js/config.js", "js/ui.js", "js/forms.js", "js/demo.js",

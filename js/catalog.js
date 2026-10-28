@@ -127,7 +127,7 @@ export const DISCIPLINE_PRESETS = [
   {nombre: "Muay Thai", sistema: "muaythai", icono: "muaythai"},
   {nombre: "Kickboxing", sistema: "kickboxing", icono: "muaythai"},
   {nombre: "Boxeo", sistema: "niveles", icono: "boxeo"},
-  {nombre: "Lucha", sistema: "niveles", icono: "mma"},
+  {nombre: "Lucha (Wrestling)", sistema: "niveles", icono: "mma"},
   {nombre: "Grappling / No-Gi", sistema: "niveles", icono: "bjj"},
   {nombre: "Judo", sistema: "judo", icono: "bjj"},
   {nombre: "Karate", sistema: "karate", icono: "muaythai"},
