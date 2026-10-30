@@ -22,8 +22,9 @@ import asistencia from "./i18n/en-asistencia.js";
 import tienda from "./i18n/en-tienda.js";
 import academia from "./i18n/en-academia.js";
 import ajustes from "./i18n/en-ajustes.js";
+import entreno from "./i18n/en-entreno.js";
 
-export const EN = Object.assign({}, catalog, util, store, sync, ui, forms, app, dashboard, alumnos, alumno, pagos, grados, ranking, asistencia, tienda, academia, ajustes);
+export const EN = Object.assign({}, catalog, util, store, sync, ui, forms, app, dashboard, alumnos, alumno, pagos, grados, ranking, asistencia, tienda, academia, ajustes, entreno);
 export const LANGS = [["es", "Español"], ["en", "English"]];
 const KEY = "mma:lang";
 

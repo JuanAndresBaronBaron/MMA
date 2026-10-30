@@ -1,13 +1,13 @@
 /* Funciona sin internet: la app se guarda en caché. Primero la red (siempre la última versión) y, sin conexión, la
    caché. Los datos del usuario no pasan por aquí (están en localStorage/IndexedDB y en su Google Drive).
    Al cambiar archivos, subir VERSION. */
-const VERSION = 3;
+const VERSION = 4;
 const CACHE = "mma-v" + VERSION;
-const SHELL = ["./", "index.html", "privacy.html", "manifest.webmanifest", "css/app.css", "icons/icon.svg", "icons/icon-192.png",
+const SHELL = ["./", "index.html", "privacy.html", "manifest.webmanifest", "css/app.css", "css/entreno.css", "icons/icon.svg", "icons/icon-192.png",
   "js/app.js", "js/util.js", "js/catalog.js", "js/store.js", "js/sync.js", "js/config.js", "js/ui.js", "js/forms.js", "js/demo.js",
   "js/views/dashboard.js", "js/views/alumnos.js", "js/views/alumno.js", "js/views/pagos.js", "js/views/grados.js", "js/views/ranking.js",
-  "js/views/asistencia.js", "js/views/tienda.js", "js/views/academia.js", "js/views/ajustes.js",
-  "js/i18n.js", "js/i18n/en-academia.js", "js/i18n/en-ajustes.js", "js/i18n/en-alumno.js", "js/i18n/en-alumnos.js", "js/i18n/en-app.js", "js/i18n/en-asistencia.js", "js/i18n/en-catalog.js", "js/i18n/en-dashboard.js", "js/i18n/en-forms.js", "js/i18n/en-grados.js", "js/i18n/en-pagos.js", "js/i18n/en-ranking.js", "js/i18n/en-store.js", "js/i18n/en-sync.js", "js/i18n/en-tienda.js", "js/i18n/en-ui.js", "js/i18n/en-util.js"];
+  "js/views/asistencia.js", "js/views/tienda.js", "js/views/academia.js", "js/views/ajustes.js", "js/views/entreno.js", "js/entreno/index.js",
+  "js/i18n.js", "js/i18n/en-academia.js", "js/i18n/en-ajustes.js", "js/i18n/en-alumno.js", "js/i18n/en-alumnos.js", "js/i18n/en-app.js", "js/i18n/en-asistencia.js", "js/i18n/en-catalog.js", "js/i18n/en-dashboard.js", "js/i18n/en-forms.js", "js/i18n/en-grados.js", "js/i18n/en-pagos.js", "js/i18n/en-ranking.js", "js/i18n/en-store.js", "js/i18n/en-sync.js", "js/i18n/en-tienda.js", "js/i18n/en-ui.js", "js/i18n/en-util.js", "js/i18n/en-entreno.js"];
 
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => Promise.all(SHELL.map(u => c.add(new Request(u, {cache: "reload"})).catch(() => {})))).then(() => self.skipWaiting()));

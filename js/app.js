@@ -16,6 +16,7 @@ import * as Asistencia from "./views/asistencia.js";
 import * as Tienda from "./views/tienda.js";
 import * as Academia from "./views/academia.js";
 import * as Ajustes from "./views/ajustes.js";
+import * as Entreno from "./views/entreno.js";
 
 /* t: título en español; se traduce con t() al pintar */
 const ROUTES = {
@@ -25,6 +26,7 @@ const ROUTES = {
   pagos: {v: Pagos, t: "Pagos", ic: "cash"},
   grados: {v: Grados, t: "Grados", ic: "belt"},
   ranking: {v: Ranking, t: "Ranking", ic: "trophy"},
+  entreno: {v: Entreno, t: "Entrenamiento", ic: "fist"},
   asistencia: {v: Asistencia, t: "Asistencia", ic: "calendar"},
   tienda: {v: Tienda, t: "Tienda", ic: "bag"},
   academia: {v: Academia, t: "Academia", ic: "building"},

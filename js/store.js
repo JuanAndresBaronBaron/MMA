@@ -7,7 +7,7 @@ import {planById} from "./catalog.js";
 import {t, tn, lang} from "./i18n.js";
 
 const KEY = "mma:data", PREFS = "mma:prefs";
-export const COLS = ["academias", "sedes", "disciplinas", "alumnos", "pagos", "grados", "asistencias", "productos"];
+export const COLS = ["academias", "sedes", "disciplinas", "alumnos", "pagos", "grados", "asistencias", "productos", "progreso", "rutinas", "sesiones"];
 export const APP = "mma-academia", VER = 1;
 
 const empty = () => ({app: APP, v: VER, col: Object.fromEntries(COLS.map(c => [c, {}]))});
