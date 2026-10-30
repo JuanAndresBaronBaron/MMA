@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="theme-color" content="#0a0a0b">
+<title>Camino Philly Shell</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="philly.css?v=1">
+</head>
+<body>
+<div id="gate" class="gate">
+  <form class="gate-box" id="gateForm" autocomplete="off">
+    <div class="gate-mark">50<span>–</span>0</div>
+    <h1>Acceso privado</h1>
+    <p>Esta sección es personal. Escribe tu código para entrar.</p>
+    <input id="code" type="password" inputmode="text" placeholder="Código de acceso" aria-label="Código de acceso" autofocus>
+    <button class="btn gold" type="submit">Entrar</button>
+    <p class="gate-err" id="gateErr" hidden>Código incorrecto.</p>
+  </form>
+</div>
+<div id="app" hidden></div>
+<script type="module" src="philly.js?v=1"></script>
+</body>
+</html>
