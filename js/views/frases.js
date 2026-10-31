@@ -20,9 +20,11 @@ const CAT = {
   humildad: {n: "Humildad", ic: "book", g: ["#1c1917", "#78716c"]},
   victoria: {n: "Victoria", ic: "trophy", g: ["#451a03", "#d97706"]},
 };
-/* en inglés se muestra la cita original cuando está en inglés; si no, la versión en español */
-const EN_RE = /\b(the|you|and|is|to|of|it|your|be|not|are|i|we|we.re|he|she|can|like|no|why|before|work|equals)\b/i;
-const txt = q => (lang() === "en" && q.original && /^[\x00-\x7F‘’“”—–…]+$/.test(q.original) && EN_RE.test(q.original) ? q.original : q.texto);
+/* en inglés se muestran el texto, el autor y la descripción en inglés (campos en, autorEn, quienEn) */
+const en = () => lang() === "en";
+const txt = q => (en() && q.en ? q.en : q.texto);
+const aut = q => (en() && q.autorEn ? q.autorEn : q.autor);
+const quien = q => (en() && q.quienEn ? q.quienEn : q.quien);
 const catOf = q => CAT[q.categoria] || CAT.disciplina;
 const byId = new Map(FRASES.map(q => [q.id, q]));
 
@@ -87,7 +89,7 @@ function markSeen(id){
 }
 
 /* ---------- textos ---------- */
-const plain = q => `“${txt(q)}”\n${q.autor}`;
+const plain = q => `“${txt(q)}”\n${aut(q)}`;
 const shareText = q => `${plain(q)}\n\n${t("Frases de guerreros")} · AcademiaPro`;
 function fmtToday(){
   try{ return new Intl.DateTimeFormat(lang() === "en" ? "en-US" : "es-CO", {weekday: "long", day: "numeric", month: "long"}).format(new Date()); }
@@ -100,16 +102,16 @@ function cardInner(q, {meta = true} = {}){
   const c = catOf(q);
   return `<div class="fr-card-top"><span class="fr-cat">${icon(c.ic)}<span>${esc(t(c.n))}</span></span>${isFav(q.id) ? `<span class="fr-fav-dot" role="img" aria-label="${t("En favoritas")}">${icon("heart")}</span>` : ""}</div>
     <blockquote class="fr-quote ${sizeCls(q)}"><p>${esc(txt(q))}</p></blockquote>
-    ${meta ? `<footer class="fr-by"><b>${esc(q.autor)}</b>${q.quien ? `<span>${esc(q.quien)}</span>` : ""}</footer>` : ""}`;
+    ${meta ? `<footer class="fr-by"><b>${esc(aut(q))}</b>${quien(q) ? `<span>${esc(quien(q))}</span>` : ""}</footer>` : ""}`;
 }
 
 /* ---------- tarjeta compacta para el tablero ---------- */
 export function dailyCard(){
   const q = dailyQuote();
-  return `<a class="fr-mini" href="#/frases" style="${gradVars(q)}" aria-label="${t("Frase del día")}: ${esc(txt(q))} (${esc(q.autor)})">
+  return `<a class="fr-mini" href="#/frases" style="${gradVars(q)}" aria-label="${t("Frase del día")}: ${esc(txt(q))} (${esc(aut(q))})">
     <span class="fr-mini-k">${icon("flame")}<span>${t("Frase del día")}</span></span>
     <span class="fr-mini-q">“${esc(txt(q))}”</span>
-    <span class="fr-mini-a">${esc(q.autor)}</span>
+    <span class="fr-mini-a">${esc(aut(q))}</span>
     <span class="fr-mini-go">${t("Más frases")} ${icon("chevron")}</span>
   </a>`;
 }
@@ -160,8 +162,8 @@ export async function quoteImage(q){
   /* autor */
   let y = H - 250;
   c.fillStyle = "rgba(255,255,255,.9)"; c.fillRect(P, y - 34, 64, 6);
-  c.font = `800 44px ${FONT}`; c.fillStyle = "#fff"; c.fillText(q.autor, P, y + 30);
-  if(q.quien){ c.font = `500 30px ${FONT}`; c.fillStyle = "rgba(255,255,255,.78)"; wrap(c, q.quien, maxW).slice(0, 2).forEach((l, i) => c.fillText(l, P, y + 80 + i * 40)); }
+  c.font = `800 44px ${FONT}`; c.fillStyle = "#fff"; c.fillText(aut(q), P, y + 30);
+  if(quien(q)){ c.font = `500 30px ${FONT}`; c.fillStyle = "rgba(255,255,255,.78)"; wrap(c, quien(q), maxW).slice(0, 2).forEach((l, i) => c.fillText(l, P, y + 80 + i * 40)); }
   /* marca */
   c.font = `700 28px ${FONT}`; c.fillStyle = "rgba(255,255,255,.7)";
   let acad = ""; try{ acad = S.academy()?.nombre || ""; }catch(e){}
@@ -194,7 +196,7 @@ function openShare(q){
   const canNative = !!navigator.share;
   const canFiles = (() => { try{ return !!(navigator.canShare && navigator.canShare({files: [new File([""], "x.png", {type: "image/png"})]})); }catch(e){ return false; } })();
   const sh = sheet({title: t("Compartir frase"), cls: "fr-share-sheet", body: `
-    <div class="fr-share-prev" style="${gradVars(q)}"><p>“${esc(txt(q))}”</p><b>${esc(q.autor)}</b></div>
+    <div class="fr-share-prev" style="${gradVars(q)}"><p>“${esc(txt(q))}”</p><b>${esc(aut(q))}</b></div>
     <div class="fr-share-grid">
       ${canNative ? `<button type="button" class="fr-share-op" data-op="native">${icon("share")}<span>${t("Compartir…")}</span></button>` : ""}
       <a class="fr-share-op wa" data-op="wa" href="https://wa.me/?text=${encodeURIComponent(shareText(q))}" target="_blank" rel="noopener">${icon("whatsapp")}<span>WhatsApp</span></a>
@@ -235,7 +237,7 @@ export function render(el){
       <div class="fr-day-glow" aria-hidden="true"></div>
       <header class="fr-day-h"><span class="fr-day-k" id="frDayH">${icon("flame")}${t("Frase del día")}</span><span class="fr-day-date">${esc(fmtToday())}</span></header>
       <blockquote class="fr-quote fr-day-q ${sizeCls(dq)}"><p>${esc(txt(dq))}</p></blockquote>
-      <footer class="fr-by"><b>${esc(dq.autor)}</b>${dq.quien ? `<span>${esc(dq.quien)}</span>` : ""}</footer>
+      <footer class="fr-by"><b>${esc(aut(dq))}</b>${quien(dq) ? `<span>${esc(quien(dq))}</span>` : ""}</footer>
       <div class="fr-day-act">
         <button type="button" class="fr-pill ${isFav(dq.id) ? "on" : ""}" data-dayfav aria-pressed="${isFav(dq.id)}">${icon("heart")}<span>${isFav(dq.id) ? t("Guardada") : t("Guardar")}</span></button>
         <button type="button" class="fr-pill" data-dayshare>${icon("share")}<span>${t("Compartir")}</span></button>
@@ -283,7 +285,7 @@ export function render(el){
     list.innerHTML = `<ul class="fr-fav-list">${ids.slice().reverse().map(id => byId.get(id)).filter(Boolean).map(q => `
       <li class="fr-fav" style="${gradVars(q)}">
         <span class="fr-fav-bar" aria-hidden="true"></span>
-        <div class="fr-fav-main"><p>“${esc(txt(q))}”</p><span>${esc(q.autor)}</span></div>
+        <div class="fr-fav-main"><p>“${esc(txt(q))}”</p><span>${esc(aut(q))}</span></div>
         <div class="fr-fav-act">
           <button type="button" class="icon-btn" data-fshare="${q.id}" aria-label="${t("Compartir")}">${icon("share")}</button>
           <button type="button" class="icon-btn" data-fdel="${q.id}" aria-label="${t("Quitar de favoritas")}">${icon("trash")}</button>
@@ -303,7 +305,7 @@ export function render(el){
     const ids = st.deck.slice(st.i, st.i + 3);
     deckEl.innerHTML = ids.map((id, k) => {
       const q = byId.get(id);
-      return `<article class="fr-card ${k === 0 ? "is-top" : ""}" data-id="${id}" data-depth="${k}" style="${gradVars(q)};z-index:${3 - k}" ${k ? `aria-hidden="true"` : `aria-label="${esc(txt(q))} (${esc(q.autor)})"`}>
+      return `<article class="fr-card ${k === 0 ? "is-top" : ""}" data-id="${id}" data-depth="${k}" style="${gradVars(q)};z-index:${3 - k}" ${k ? `aria-hidden="true"` : `aria-label="${esc(txt(q))} (${esc(aut(q))})"`}>
         <div class="fr-card-in">${cardInner(q)}</div>
         ${k === 0 ? `<span class="fr-stamp like" aria-hidden="true">${icon("heart")}${t("Guardar")}</span><span class="fr-stamp nope" aria-hidden="true">${icon("x")}${t("Siguiente")}</span><span class="fr-stamp up" aria-hidden="true">${icon("share")}${t("Compartir")}</span>` : ""}
       </article>`;
