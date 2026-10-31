@@ -3,6 +3,7 @@ import {icon, avatar, belt, emptyState, toast, haptic} from "../ui.js";
 import {esc, today, fmtDate, addDays, norm, parseISO, waLink} from "../util.js";
 import {t, tn, locale} from "../i18n.js";
 import {estadoPago, estadoEf} from "../cobros.js";
+import {veDinero} from "../roles.js";
 import {clasesHoy, claseActual, proximaClase, nombreClase, saldoTiquetera, msgRenovar, durDe} from "../clases.js";
 
 /* fecha "" = hoy, resuelta al pintar (la app puede quedar abierta pasada la medianoche). dia/pint = el día y la hora del último pintado.
@@ -69,7 +70,7 @@ export function render(el, params, ctx, query){
   const hist = S.all("asistencias").filter(a => a.sedeId === st.sede && a.fecha <= today() && (a.presentes || []).length).sort((x, y) => y.fecha.localeCompare(x.fecha) || (y._u || 0) - (x._u || 0)).slice(0, 8);
   const badges = a => {
     const out = [];
-    if(estadoPago(a, acad.avisoDias ?? 5).k === "vencido") out.push(`<span class="att-bd err" title="${t("Pago vencido")}" aria-label="${t("Pago vencido")}">$</span>`);
+    if(veDinero() && estadoPago(a, acad.avisoDias ?? 5).k === "vencido") out.push(`<span class="att-bd err" title="${t("Pago vencido")}" aria-label="${t("Pago vencido")}">$</span>`);
     const s = tiq.get(a.id);
     if(s && (s.saldo <= 2 || s.vencida)) out.push(`<span class="att-bd ${s.saldo === 0 || s.vencida ? "err" : "warn"}" title="${esc(s.vencida ? t("Tiquetera vencida") : tn(s.saldo, "Le queda 1 clase", "Le quedan {n} clases"))}">${icon("receipt")}${s.vencida ? "!" : s.saldo}</span>`);
     if(lesion.has(a.id)) out.push(`<span class="att-bd info" title="${t("Lesión activa")}" aria-label="${t("Lesión activa")}">${icon("alert")}</span>`);

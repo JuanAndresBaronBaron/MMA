@@ -27,7 +27,7 @@
 .dh-leg{list-style:none;margin:0;padding:0;flex:1;min-width:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px 20px}
 .dh-leg li{display:flex;flex-direction:column;min-width:0}
 .dh-l{font-size:var(--fs-subhead);font-weight:600;letter-spacing:var(--tr-subhead)}
-.dh-leg .accent .dh-l{color:var(--accent2)} .dh-leg .ok .dh-l{color:var(--ok)} .dh-leg .info .dh-l{color:var(--info)}
+.dh-leg .accent .dh-l{color:var(--accent2)} .dh-leg .gold .dh-l{color:var(--gold)} .dh-leg .ok .dh-l{color:var(--ok)} .dh-leg .info .dh-l{color:var(--info)}
 .dh-v{font:700 28px/1.15 var(--font-display);letter-spacing:-.02em;font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .dh-v small{font-size:17px;font-weight:600;color:var(--muted);letter-spacing:-.01em;margin-left:1px}
 .dh-p{font-size:var(--fs-footnote);color:var(--muted);font-variant-numeric:tabular-nums}
@@ -73,6 +73,9 @@ button.dash-note:active{background:var(--fill-3)}
 
 /* ---------- baldosas de estadística ---------- */
 .dash-kpis{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-bottom:var(--sp-5)}
+.dash-kpis.k4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.dh-mode{display:inline-flex;align-items:center;gap:6px;font-weight:600;color:var(--warn)}
+.dh-mode .ic{width:15px;height:15px}
 .dstat{display:flex;flex-direction:column;align-items:stretch;gap:6px;min-width:0;padding:14px 16px 15px;border:0;border-radius:var(--r);background:var(--surface);box-shadow:var(--shadow-sm);
   font:inherit;color:inherit;text-align:left;cursor:pointer;-webkit-user-select:none;user-select:none;
   transition:transform var(--dur-spring) var(--spring),background-color var(--dur-fast) var(--ease-std)}
@@ -202,7 +205,7 @@ button.dash-more{display:inline-flex;align-items:center;gap:6px;padding:10px 0 0
   .dh-l{font-size:var(--fs-footnote)}
   .dh-p{display:none}
   .dash-notes,.dash-hero,.dash-kpis{margin-bottom:var(--sp-4)}
-  .dash-kpis{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .dash-kpis,.dash-kpis.k4{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
   .dstat{padding:12px 14px 13px}
   .dstat-l{font-size:var(--fs-footnote);white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2}
   .dstat-h{align-items:flex-start}

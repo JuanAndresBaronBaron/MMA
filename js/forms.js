@@ -5,6 +5,7 @@ import {BLOOD, METHODS, PLANS, GEAR, SIZES, STATUS, planById, SYSTEMS, cloneRank
 import {esc, today, h, money, fmtDate, fmtDuration, now, addDays} from "./util.js";
 import {queueFoto} from "./sync.js";
 import {t, tn} from "./i18n.js";
+import {veDinero} from "./roles.js";
 import {deuda, finPeriodo, txtCuotas, periodoNuevo, siguienteNumRecibo, estadoEf} from "./cobros.js";
 
 /* borra con aviso «Deshacer» en vez de pedir confirmación: guarda una copia y la vuelve a poner */
@@ -17,6 +18,8 @@ function delUndo(col, rec, msg){
 /* ---------- alumno ---------- */
 export function studentForm(al, opts = {}){
   const isNew = !al;
+  /* modo profesor: sin plan ni valor, sin registrar pago y sin eliminar (borraría pagos y grados) */
+  const dinero = veDinero();
   const vm = Number(S.academy()?.valorMensual) || 0;
   /* prefill: {nombre, telefono, email, sedeId, discs} (p. ej. al convertir un prospecto) */
   const pf = opts.prefill || {};
@@ -51,9 +54,9 @@ export function studentForm(al, opts = {}){
       <div data-ranks class="ranks-init"></div>
     </div>
     <div class="sf-group">
-      ${field({k: "plan", label: t("Plan"), type: "select", opts: PLANS.map(p => [p.id, t(p.nombre)]), half: true}, al.plan)}
+      ${dinero ? `${field({k: "plan", label: t("Plan"), type: "select", opts: PLANS.map(p => [p.id, t(p.nombre)]), half: true}, al.plan)}
       ${field({k: "valor", label: t("Valor del plan ({moneda})", {moneda: S.academy()?.moneda || "COP"}), type: "number", half: true, ph: vm ? "" : t("Ej: 150000")}, al.valor)}
-      ${!vm ? `<label class="check toggle sf-row" data-vdef hidden><input type="checkbox" class="switch" name="valorDef" checked><span>${t("Usar como precio por defecto")}</span></label>` : ""}
+      ${!vm ? `<label class="check toggle sf-row" data-vdef hidden><input type="checkbox" class="switch" name="valorDef" checked><span>${t("Usar como precio por defecto")}</span></label>` : ""}` : ""}
       ${field({k: "fechaInicio", label: t("Fecha de ingreso"), type: "date", hint: t("Si no tiene pagos, el primer cobro vence este día.")}, al.fechaInicio)}
     </div>
     ${fold(t("Datos personales"), "users", has(["documento", "nacimiento", "genero", "talla"]), `
@@ -126,9 +129,9 @@ export function studentForm(al, opts = {}){
   nop.onclick = () => { photo = null; photoChanged = true; pbtn.innerHTML = `${icon("camera", "big")}<span class="photo-badge">${icon("camera")}</span>`; nop.hidden = true; };
 
   const m = modal({title: isNew ? t("Nuevo alumno") : t("Editar alumno"), body, wide: true,
-    foot: isNew ? `<div class="sf-foot"><label class="check toggle sf-pay"><input type="checkbox" class="switch" data-paynow ${S.pref("sfPagar", false) ? "checked" : ""}><span>${t("Registrar primer pago")}</span></label>
+    foot: isNew ? `<div class="sf-foot">${dinero ? `<label class="check toggle sf-pay"><input type="checkbox" class="switch" data-paynow ${S.pref("sfPagar", false) ? "checked" : ""}><span>${t("Registrar primer pago")}</span></label>` : ""}
       <button type="button" class="btn ghost" data-close>${t("Cancelar")}</button><button class="btn primary" data-save>${icon("check")} ${t("Agregar")}</button></div>`
-      : `<button class="btn danger ghost left" data-del>${icon("trash")} ${t("Eliminar")}</button><button class="btn ghost" data-close>${t("Cancelar")}</button><button class="btn primary" data-save>${t("Guardar")}</button>`});
+      : `${dinero ? `<button class="btn danger ghost left" data-del>${icon("trash")} ${t("Eliminar")}</button>` : ""}<button class="btn ghost" data-close>${t("Cancelar")}</button><button class="btn primary" data-save>${t("Guardar")}</button>`});
   const save = async pay => {
     const v = formValues(body);
     if(!v.nombre){ const n = body.querySelector("[name=nombre]"); n.focus(); n.classList.add("bad"); toast(t("Escribe el nombre del alumno"), "warn"); return; }
@@ -144,14 +147,14 @@ export function studentForm(al, opts = {}){
       sangre: v.sangre, eps: v.eps, peso: v.peso, estatura: v.estatura, alergias: v.alergias, lesiones: v.lesiones,
       emergencia: v.emergencia, emergenciaTel: v.emergenciaTel,
       sedeId: v.sedeId, estado: v.estado || "activo", disciplinaIds: v.disc || [], fechaInicio: v.fechaInicio || today(),
-      plan: v.plan, valor: v.valor, talla: v.talla, equipo, notas: v.notas,
+      plan: dinero ? v.plan : al.plan, valor: dinero ? v.valor : al.valor, talla: v.talla, equipo, notas: v.notas,
       congelado: congelar ? {desde: v.frzDesde || today(), hasta: v.frzHasta || null, base: baseCongelado(al)} : finCongelado(al),
     };
     if(rec.estado === "inactivo" && al.estado !== "inactivo") rec.inactivoDesde = today();
     /* vuelve de inactivo: se anota el periodo de baja para que esos meses no cuenten en lo esperado */
     if(!isNew && al.estado === "inactivo" && rec.estado !== "inactivo" && al.inactivoDesde && al.inactivoDesde < today())
       rec.bajas = [...(Array.isArray(al.bajas) ? al.bajas : []), {desde: al.inactivoDesde, hasta: today()}].slice(-20);
-    if(v.valorDef && Number(v.valor) > 0 && !vm) S.put("academias", {id: S.academy().id, valorMensual: Number(v.valor)});
+    if(dinero && v.valorDef && Number(v.valor) > 0 && !vm) S.put("academias", {id: S.academy().id, valorMensual: Number(v.valor)});
     if(photoChanged){ rec.fotoU = now(); rec.foto = !!photo; }
     /* vuelve a cobrarse (de congelado/inactivo, o de beca/clase a un plan pago): la deuda cuenta desde hoy */
     /* un congelamiento con fechas ya corre el vencimiento: no hace falta activoDesde */
@@ -167,12 +170,12 @@ export function studentForm(al, opts = {}){
     toast(isNew ? t("Alumno agregado") : t("Cambios guardados"));
     m.close();
     opts.onSaved && opts.onSaved(saved);
-    if(pay) paymentModal(saved);
+    if(pay && dinero) paymentModal(saved);
   };
   const payNow = () => { const c = m.foot.querySelector("[data-paynow]"); if(c) S.setPref("sfPagar", c.checked); return !!c?.checked; };
   m.foot.querySelector("[data-save]").onclick = () => save(payNow());
   body.addEventListener("submit", e => { e.preventDefault(); save(payNow()); });
-  if(!isNew) m.foot.querySelector("[data-del]").onclick = () => deleteStudent(al, m, opts);
+  if(!isNew && dinero) m.foot.querySelector("[data-del]").onclick = () => deleteStudent(al, m, opts);
   return m;
 }
 /* sale del congelamiento a mano: se guarda lo que de verdad estuvo congelado (hasta ayer) para correr el vencimiento */
@@ -212,6 +215,8 @@ function deleteStudent(al, form, opts){
 
 /* ---------- pagos ---------- */
 export function paymentModal(al, pago){
+  /* el modo profesor no registra ni edita pagos, llegue de donde llegue */
+  if(!veDinero()) return null;
   const acad = S.academy(), cur = acad?.moneda || "COP";
   const isNew = !pago;
   const per = periodoNuevo(al);
@@ -265,6 +270,7 @@ export function paymentModal(al, pago){
    Si debe varias cuotas, primero pregunta qué hacer con el atraso (cobrar todo, solo una o perdonar). */
 const QUICK_METHODS = ["Efectivo", "Nequi", "Transferencia"];
 export function quickPay(al){
+  if(!veDinero()) return null;
   const d = deuda(al);
   if(d.cuotas > 1) return deudaSheet(al, d);
   /* periodoNuevo de cobros: con 1 cuota vencida usa esa cuota (el de store arrancaría hoy y perdería el atraso en planes largos) */

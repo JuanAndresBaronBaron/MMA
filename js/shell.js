@@ -4,6 +4,7 @@ import {modal, field, formValues, toast} from "./ui.js";
 import {h} from "./util.js";
 import {DISCIPLINE_PRESETS, cloneRanks, DISC_COLORS, CURRENCIES} from "./catalog.js";
 import {t} from "./i18n.js";
+import {setRol} from "./roles.js";
 
 /* ---------- tema: "system" (por defecto), "light" o "dark" ---------- */
 const mq = () => window.matchMedia ? matchMedia("(prefers-color-scheme: light)") : null;
@@ -53,6 +54,8 @@ export function createAcademy(onDone){
       const p = DISCIPLINE_PRESETS.find(x => x.nombre === n);
       S.put("disciplinas", {academiaId: a.id, nombre: p.nombre, sistema: p.sistema, ranks: cloneRanks(p.sistema), sedeIds: [s.id], color: DISC_COLORS[i % DISC_COLORS.length], orden: i});
     });
+    /* quien crea la academia la maneja: modo dueño (el progreso de entrenamiento de antes se queda igual) */
+    setRol("dueno");
     m.close();
     location.hash = "#/inicio";
     document.body.innerHTML = "";

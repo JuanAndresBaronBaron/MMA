@@ -148,4 +148,6 @@ export default {
   "Hola {nombre}, tu tiquetera en {academia} ya no tiene clases. ¿Te la renovamos para que no pierdas el ritmo?": "Hi {nombre}, your class pack at {academia} has no classes left. Shall we renew it so you keep your rhythm?",
   "Hola {nombre}, ¿cómo te fue en tus primeras clases en {academia}? Queremos que te sientas en casa. ¿Qué horario te queda mejor esta semana?": "Hi {nombre}, how did your first classes at {academia} go? We want you to feel at home. Which time works best for you this week?",
   "Hola {nombre}, te extrañamos en {academia}. ¿Todo bien? Si algo te impide venir (horario, lesión, trabajo), cuéntanos y buscamos cómo ayudarte. ¡Te esperamos!": "Hi {nombre}, we miss you at {academia}. All good? If something is keeping you away (schedule, injury, work), tell us and we'll find a way to help. See you soon!",
+  "Aún no hay alumnos en esta academia. Agrégalos o pide al dueño que los registre.": "There are no students in this academy yet. Add them or ask the owner to register them.",
+  "Vinieron este mes": "Came this month",
 };

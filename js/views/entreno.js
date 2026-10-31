@@ -6,6 +6,7 @@ import * as S from "../store.js";
 import {icon, toast, modal, confirmDlg, haptic} from "../ui.js";
 import {esc, today, fmtDate, addDays, h, norm, parseISO} from "../util.js";
 import {t, tn, lang} from "../i18n.js";
+import {rol, perfil} from "../roles.js";
 
 const PLAT = {youtube: ["YouTube", "#ff0033"], tiktok: ["TikTok", "#25f4ee"], udemy: ["Udemy", "#a435f0"], instagram: ["Instagram", "#e1306c"], articulo: [t("Artículo"), "#d4a73c"], web: ["Web", "#8a8a8a"]};
 const st = {dia: today(), hoy: today(), filtro: "todas", gq: "", ga: "", cr: {}};
@@ -13,7 +14,7 @@ const st = {dia: today(), hoy: today(), filtro: "todas", gq: "", ga: "", cr: {}}
 const SUBS = {repaso: () => import("../entreno/repaso.js"), stats: () => import("../entreno/stats.js"), logros: () => import("../entreno/logros.js"), diario: () => import("../entreno/diario.js")};
 const IDS = () => E.ARTES.map(a => a.id);
 /* títulos de las sub-vistas (el título grande de la barra lo pinta el shell) */
-const SUB_T = {repaso: "Repaso", stats: "Estadísticas", logros: "Logros", diario: "Diario"};
+const SUB_T = {repaso: "Repaso", stats: "Progreso", logros: "Logros", diario: "Diario"};
 /* tono de cada arte (texto, anillos, puntos) y su degradado oscuro (tarjetas): ver css/entreno.css */
 export const tono = a => a ? `var(--art-${a.id || a})` : "var(--accent2)";
 const artVars = a => `--c:var(--art-${a.id});--g:var(--g-${a.id})`;
@@ -105,11 +106,13 @@ function vistaHub(el, r){
   const princ = (bloques || []).filter(b => b.tipo !== "tarea"), tareas = (bloques || []).filter(b => b.tipo === "tarea");
   const nb = princ.filter(b => b.tipo !== "video").length, nh = princ.filter(b => hechos.has(b.b)).length;
   const ms = E.metaSemana(r), nRep = E.pendientesRepaso().length, ayer = E.faltoAyer(r);
-  const disp = E.disponibles(), artes = disp.filter(a => !E.esComplemento(a)), comps = disp.filter(E.esComplemento);
+  /* las artes que eligió al empezar (modo estudiante) van primero */
+  const fav = perfil()?.artes || [], favI = a => { const i = fav.indexOf(a.id); return i < 0 ? 99 : i; };
+  const disp = E.disponibles(), artes = disp.filter(a => !E.esComplemento(a)).sort((a, b) => favI(a) - favI(b)), comps = disp.filter(E.esComplemento);
   const metaTxt = m => m.tipo === "min" ? `${m.hecho}/${m.valor} min` : `${m.hecho}/${m.valor}`;
 
   const semN = E.semana(hoy).filter(d => conSes.has(d)).length;
-  const TOOLS = [["glosario", "book", "Glosario", "steel"], ["repaso", "repeat", "Repaso", "crimson"], ["stats", "chart", "Estadísticas", "olive"],
+  const TOOLS = [["glosario", "book", "Glosario", "steel"], ["repaso", "repeat", "Repaso", "crimson"], ["stats", "chart", "Progreso", "olive"],
     ["logros", "award", "Logros", "brass"], ["diario", "edit", "Diario", "burnt"], ["curriculo", "belt", "Mi cinturón", "gunmetal"]];
 
   el.innerHTML = `
@@ -237,12 +240,15 @@ function tdsCard(box, r){
   if(!box) return;
   import("../entreno/semana.js").then(M => {
     if(!box.isConnected || !M.tdsActual) return;
-    const ac = S.academy();
-    const x = M.tdsActual({fecha: new Date(), artes: M.artesTds(r, E.disponibles().map(a => a.id)), pin: ac?.tds || null});
+    /* modo estudiante: la academia (si la hay) queda oculta, también su técnica fijada */
+    const ac = rol() === "estudiante" ? null : S.academy();
+    /* sin rutina, las artes que eligió al empezar (modo estudiante) */
+    const fav = perfil()?.artes || [], base = r || (fav.length ? {artes: fav} : null);
+    const x = M.tdsActual({fecha: new Date(), artes: M.artesTds(base, E.disponibles().map(a => a.id)), pin: ac?.tds || null});
     if(!x || !E.arte(x.arte)) return;
     const a = E.arte(x.arte), m = E.cargado(x.arte)?.modulos.find(y => y.id === x.mod), k = tdsKey(x);
     const fija = ac?.tds?.semana === M.isoWeek(new Date()) && ac.tds.id === x.id;
-    box.innerHTML = `<div class="en-h"><h2>${t("Técnica de la semana")}</h2><div class="en-h-act">${fija ? `<span class="pill info">${t("Fijada por la academia")}</span>` : ""}<button class="btn-link" data-tds-pin>${t("Cambiar")}</button></div></div>
+    box.innerHTML = `<div class="en-h"><h2>${t("Técnica de la semana")}</h2><div class="en-h-act">${fija ? `<span class="pill info">${t("Fijada por la academia")}</span>` : ""}${ac ? `<button class="btn-link" data-tds-pin>${t("Cambiar")}</button>` : ""}</div></div>
       <section class="card en-tds" style="${artVars(a)}">
       <div class="en-tds-b"><div class="en-bt"><span class="en-tag" style="--c:${tono(a)}">${esc(t(a.corto))}</span>${m ? `<a class="muted small en-1l" href="#/entreno/${a.id}/${m.id}">${esc(m.titulo)}</a>` : ""}</div>
         <h4>${esc(x.foco)}</h4>
@@ -250,7 +256,7 @@ function tdsCard(box, r){
         ${x.reto ? `<p class="en-reto"><b>${t("Reto")}:</b> ${esc(x.reto)}</p>` : ""}
         ${x.pregunta ? `<p class="muted small"><b>${t("Pregunta para pensar")}:</b> ${esc(x.pregunta)}</p>` : ""}
         ${k && E.itemDe(k) ? chk(k, t("La practiqué")) : ""}</div></section>`;
-    box.querySelector("[data-tds-pin]").onclick = () => pinTds(M, x);
+    const pin = box.querySelector("[data-tds-pin]"); if(pin) pin.onclick = () => pinTds(M, x);
     box.onchange = e => { const kk = e.target.dataset.k; if(kk){ e.stopPropagation(); haptic(e.target.checked ? "light" : "selection"); E.marcar(kk, e.target.checked); } };
   }).catch(() => {});
 }
@@ -404,7 +410,9 @@ export function registrarModal({fecha, ses} = {}){
 const rutinaTxt = r => `${r.dias.map(d => t(E.DIAS_C[d - 1])).join(", ")} · ${tn(r.min, "1 min", "{n} min")} · ${r.artes.map(a => t(E.arte(a)?.corto)).join(", ")}`;
 
 function editarRutina(){
-  const r = E.rutina() || {dias: [1, 3, 5], min: 60, artes: [], modo: "pareja"}, mt = r.meta || {};
+  /* rutina nueva: con las artes que eligió al empezar (las que existen) */
+  const disp = new Set(E.disponibles().map(a => a.id)), fav = (perfil()?.artes || []).filter(a => disp.has(a));
+  const r = E.rutina() || {dias: [1, 3, 5], min: 60, artes: fav, modo: "pareja"}, mt = r.meta || {};
   const body = h(`<form class="form" novalidate>
     <div class="field"><span class="lbl">${t("¿Qué días entrenas?")}</span><div class="chips en-dias">${E.DIAS.map((d, i) => `<label class="chip"><input type="checkbox" name="dias" value="${i + 1}" ${r.dias.includes(i + 1) ? "checked" : ""}><span>${t(E.DIAS_C[i])}</span></label>`).join("")}</div></div>
     <div class="field"><span class="lbl">${t("¿Cuánto tiempo por día?")}</span><div class="seg en-mins">${[30, 45, 60, 75, 90, 120].map(m => `<label><input type="radio" name="min" value="${m}" ${r.min === m ? "checked" : ""}><span>${m} min</span></label>`).join("")}</div></div>

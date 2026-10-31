@@ -6,6 +6,7 @@ import {esc, $, $$, debounce, today} from "./util.js";
 import {t, tn, lang, setLang, LANGS} from "./i18n.js";
 import {applyTheme, watchSystemTheme, logo, gIcon, createAcademy, setRenderer} from "./shell.js";
 import {estadoPago, estadoEf} from "./cobros.js";
+import * as R from "./roles.js";
 /* las vistas importan esto de shell.js; se reexporta por compatibilidad */
 export {toggleTheme, gIcon, logo, createAcademy} from "./shell.js";
 
@@ -32,19 +33,44 @@ const ROUTES = {
   kiosko: {load: () => import("./views/kiosko.js"), t: "Modo kiosco", ic: "tablet", hidden: true, bare: true, grp: "dia"},
 };
 const GROUPS = [["dia", "Día a día"], ["progreso", "Progreso"], ["negocio", "Negocio"]];
-const BOTTOM = ["inicio", "asistencia", "alumnos", "pagos"];
 export const routes = () => ROUTES;
 
+/* ---------- menús según el modo de uso (roles.js) ----------
+   Cada entrada: k (lo que se marca, "ruta" o "entreno/sub"), href, ic, t. El estudiante tiene las sub-pantallas de
+   Entrenamiento como secciones propias; dueño y profesor, las rutas visibles que su modo permite. */
+const STUDENT_GROUPS = R.NAV_ESTUDIANTE;
+const BOTTOMS = {dueno: ["inicio", "asistencia", "alumnos", "pagos"], profesor: ["inicio", "asistencia", "alumnos", "horario"], estudiante: ["entreno", "entreno/stats", "frases", "ajustes"]};
+let NAV = null;
+function buildNav(role){
+  const it = (k, ic, tt) => ({k, href: "#/" + k, ic, t: tt});
+  const groups = role === "estudiante"
+    ? STUDENT_GROUPS.map(([g, n, xs]) => [g, n, xs.map(x => it(...x))])
+    : GROUPS.map(([g, n]) => [g, n, Object.entries(ROUTES).filter(([k, r]) => !r.hidden && r.grp === g && R.allowed(k, role)).map(([k, r]) => it(k, r.ic, r.t))]).filter(x => x[2].length);
+  const foot = it("ajustes", ROUTES.ajustes.ic, ROUTES.ajustes.t);
+  const all = [...groups.flatMap(x => x[2]), foot];
+  const by = new Map(all.map(x => [x.k, x]));
+  return {role, groups, foot, all, by, bottom: (BOTTOMS[role] || BOTTOMS.dueno).map(k => by.get(k)).filter(Boolean)};
+}
+/* qué entrada del menú corresponde a la pantalla actual */
+function navKey(r, params, route){
+  const sub = r + "/" + (params[0] || "");
+  if(params.length && NAV && NAV.by.has(sub)) return sub;
+  return route.parent || r;
+}
+
 /* ---------- estructura ---------- */
-const navLink = (k, r) => `<a href="#/${k}" data-r="${k}">${icon(r.ic)}<span>${t(r.t)}</span>${k === "pagos" ? `<i class="nav-badge" data-venc hidden></i>` : ""}</a>`;
+const navLink = x => `<a href="${x.href}" data-r="${x.k}">${icon(x.ic)}<span>${t(x.t)}</span>${x.k === "pagos" ? `<i class="nav-badge" data-venc hidden></i>` : ""}</a>`;
+const BRAND_SUB = {dueno: "Gestión de academia", profesor: "Modo profesor", estudiante: "Entrenamiento personal"};
+let shellRol = null;
 function shell(){
-  const vis = Object.entries(ROUTES).filter(([, r]) => !r.hidden);
+  const role = R.rol();
+  NAV = buildNav(role); shellRol = role;
   document.body.innerHTML = `${beltDefs}
-  <div class="app">
+  <div class="app" data-rol="${role}">
     <aside class="side" id="side">
-      <div class="brand">${logo()}<div><b data-acad-name></b><span class="muted small">${t("Gestión de academia")}</span></div></div>
-      <nav class="nav" aria-label="${t("Secciones")}">${GROUPS.map(([g, n]) => `<div class="nav-grp" role="group" aria-label="${t(n)}"><span class="nav-lbl">${t(n)}</span>${vis.filter(([, r]) => r.grp === g).map(([k, r]) => navLink(k, r)).join("")}</div>`).join("")}</nav>
-      <div class="side-foot">${navLink("ajustes", ROUTES.ajustes)}<div id="syncBox"></div>${langSwitch()}</div>
+      <div class="brand">${logo()}<div><b data-acad-name></b><span class="muted small brand-sub">${role === "profesor" ? icon("lock", "inline") : ""}${t(BRAND_SUB[role])}</span></div></div>
+      <nav class="nav" aria-label="${t("Secciones")}">${NAV.groups.map(([, n, xs]) => `<div class="nav-grp" role="group" aria-label="${t(n)}"><span class="nav-lbl">${t(n)}</span>${xs.map(navLink).join("")}</div>`).join("")}</nav>
+      <div class="side-foot">${navLink(NAV.foot)}<div id="syncBox"></div>${langSwitch()}</div>
     </aside>
     <div class="scrim" id="scrim"></div>
     <div class="main-wrap">
@@ -55,28 +81,28 @@ function shell(){
         <div class="top-r">
           <div class="nav-act" id="navAct"></div>
           <button type="button" class="top-search" id="searchBtn" aria-label="${t("Buscar")}" aria-keyshortcuts="Control+K Meta+K /">${icon("search")}<span>${t("Buscar")}</span><kbd class="kbd">${/Mac|iP/.test(navigator.platform) ? "⌘" : "Ctrl"} K</kbd></button>
-          <label class="sede-pick">${icon("map")}<select id="sedeSel" aria-label="${t("Sede")}"></select></label>
+          ${role !== "estudiante" ? `<label class="sede-pick">${icon("map")}<select id="sedeSel" aria-label="${t("Sede")}"></select></label>` : ""}
           <button class="sync-chip" id="syncChip"></button>
         </div>
       </header>
       <div class="lt-wrap"><h1 id="title" class="large-title"></h1></div>
       <main id="main" tabindex="-1" aria-labelledby="title"></main>
     </div>
-    <nav class="bottom" aria-label="${t("Navegación principal")}">${BOTTOM.map(k => navLink(k, ROUTES[k])).join("")}<a href="#" id="moreBtn" aria-haspopup="dialog">${icon("grid")}<span>${t("Más")}</span></a></nav>
+    <nav class="bottom" aria-label="${t("Navegación principal")}">${NAV.bottom.map(navLink).join("")}<a href="#" id="moreBtn" aria-haspopup="dialog">${icon("grid")}<span>${t("Más")}</span></a></nav>
   </div>
   <div id="toasts" class="toasts" role="status" aria-live="polite"></div>`;
   $("#menuBtn").onclick = () => document.body.classList.add("drawer");
   $("#moreBtn").onclick = e => { e.preventDefault(); moreSheet(); };
   $("#scrim").onclick = () => document.body.classList.remove("drawer");
   $("#side").addEventListener("click", e => { if(e.target.closest("a")){ document.body.classList.remove("drawer"); if(e.target.closest("a[data-r]")) navIntent = "tab"; } });
-  $("#sedeSel").onchange = e => { S.setPref("sede", e.target.value); render(); };
+  if($("#sedeSel")) $("#sedeSel").onchange = e => { S.setPref("sede", e.target.value); render(); };
   $("#searchBtn").onclick = () => import("./palette.js").then(m => m.openPalette()).catch(() => {});
   /* tocar una pestaña: respuesta háptica; tocar la pestaña activa sube al inicio (como en iOS) */
   $(".bottom").addEventListener("click", e => {
     const a = e.target.closest("a"); if(!a) return;
     haptic("selection");
     if(a.dataset.r) navIntent = "tab";
-    if(a.classList.contains("on") && a.dataset.r && parse().r === a.dataset.r && !parse().params.length){ e.preventDefault(); window.scrollTo({top: 0, behavior: reduced() ? "auto" : "smooth"}); }
+    if(a.classList.contains("on") && a.dataset.r && location.hash.replace(/\?.*/, "") === a.getAttribute("href")){ e.preventDefault(); window.scrollTo({top: 0, behavior: reduced() ? "auto" : "smooth"}); }
   });
   $("#navBack").addEventListener("click", e => {
     /* volver con el historial si la pantalla anterior es la de arriba; si no, ir a ella */
@@ -93,9 +119,10 @@ function bindLang(root = document){ for(const b of $$("[data-lang]", root)) b.on
 
 /* «Más» en el celular: todas las secciones que no están en la barra de abajo */
 function moreSheet(){
-  const ks = Object.keys(ROUTES).filter(k => !ROUTES[k].hidden && !BOTTOM.includes(k));
-  const r = parse().r;
-  const body = `<div class="more-grid">${ks.map(k => `<a href="#/${k}" class="more-it ${k === r ? "on" : ""}">${icon(ROUTES[k].ic)}<span>${t(ROUTES[k].t)}</span></a>`).join("")}
+  const inBar = new Set(NAV.bottom.map(x => x.k));
+  const ks = NAV.all.filter(x => !inBar.has(x.k));
+  const {r, params} = parse(), key = navKey(r, params, ROUTES[r]);
+  const body = `<div class="more-grid">${ks.map(x => `<a href="${x.href}" class="more-it ${x.k === key ? "on" : ""}">${icon(x.ic)}<span>${t(x.t)}</span></a>`).join("")}
     <button type="button" class="more-it" data-pal>${icon("search")}<span>${t("Buscar")}</span></button></div>
     <div class="more-foot"><div class="more-sync"></div>${langSwitch()}</div>`;
   const sh = sheet({title: t("Más"), body});
@@ -110,11 +137,13 @@ function moreSheet(){
 }
 
 function paintSedes(){
+  /* estudiante: su nombre o «Mi entrenamiento» (la academia, si la hay, queda oculta) */
+  const nombre = shellRol === "estudiante" ? (R.perfil()?.nombre || t("Mi entrenamiento")) : S.academy()?.nombre || t("Mi academia");
+  for(const el of $$("[data-acad-name]")) el.textContent = nombre;
   const sel = $("#sedeSel"); if(!sel) return;
   const ss = S.sedes(), cur = S.curSede();
   sel.innerHTML = `<option value="">${t("Todas las sedes")}</option>` + ss.map(s => `<option value="${s.id}" ${s.id === cur ? "selected" : ""}>${esc(s.nombre)}</option>`).join("");
   sel.parentElement.hidden = ss.length < 2;
-  for(const el of $$("[data-acad-name]")) el.textContent = S.academy()?.nombre || t("Mi academia");
 }
 /* globo rojo en Pagos: alumnos activos con pago vencido */
 function paintBadge(){
@@ -136,6 +165,8 @@ function syncLook(st){
   return map[st.phase] || map.off;
 }
 function syncTap(st){
+  /* modo profesor: conectar o reconectar Google (quizá con otra cuenta) lo hace el dueño, tras salir con su PIN */
+  if(R.rol() === "profesor" && (st.phase === "off" || st.phase === "reconnect")) return void (location.hash = "#/ajustes");
   if(st.phase === "reconnect") return Sync.reconnect();
   if(st.phase !== "off") return void (location.hash = "#/ajustes");
   const sh = sheet({title: t("Solo en este aparato"), body: `<div class="sync-sheet"><span class="empty-ic">${icon("cloud")}</span>
@@ -157,7 +188,7 @@ function paintSync(st){
   chip.setAttribute("aria-label", txt);
   chip.onclick = () => syncTap(st);
   box.innerHTML = st.email ? `<div class="acct">${st.photo ? `<img src="${esc(st.photo)}" alt="" referrerpolicy="no-referrer">` : icon("cloud")}<div><b>${esc(st.name || "Google")}</b><span class="muted small">${esc(st.email)}</span></div></div>`
-    : `<button type="button" class="btn ghost small block" data-sync-cta>${icon("cloud")} ${t("Conectar Google")}</button>`;
+    : R.rol() === "profesor" ? "" : `<button type="button" class="btn ghost small block" data-sync-cta>${icon("cloud")} ${t("Conectar Google")}</button>`;
   const cta = box.querySelector("[data-sync-cta]"); if(cta) cta.onclick = () => { document.body.classList.remove("drawer"); syncTap(Sync.status()); };
 }
 function paintOnline(){ const el = $("#offStrip"); if(el) el.hidden = navigator.onLine !== false; }
@@ -176,8 +207,8 @@ function parse(){
   const raw = location.hash.replace(/^#\/?/, "");
   const qi = raw.indexOf("?");
   const path = qi < 0 ? raw : raw.slice(0, qi), qs = qi < 0 ? "" : raw.slice(qi + 1);
-  const [r, ...rest] = (path || "inicio").split("/");
-  return {r: ROUTES[r] ? r : "inicio", params: rest.filter(x => x !== "").map(x => { try{ return decodeURIComponent(x); }catch(e){ return x; } }), query: new URLSearchParams(qs)};
+  const [r, ...rest] = (path || R.home()).split("/");
+  return {r: ROUTES[r] ? r : R.home(), params: rest.filter(x => x !== "").map(x => { try{ return decodeURIComponent(x); }catch(e){ return x; } }), query: new URLSearchParams(qs)};
 }
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 async function loadMod(k){
@@ -185,7 +216,7 @@ async function loadMod(k){
   const r = ROUTES[k];
   return (mods[k] = r.v || await r.load());
 }
-const unavailable = () => `<div class="card">${`<div class="empty-st warn"><span class="empty-ic">${icon("alert")}</span><h3>${t("Esta sección no está disponible")}</h3><p>${t("Revisa tu conexión y vuelve a intentarlo.")}</p><div class="empty-cta"><button type="button" class="btn ghost" data-retry>${icon("sync")}<span>${t("Reintentar")}</span></button><a class="btn primary" href="#/inicio">${t("Ir a Inicio")}</a></div></div>`}</div>`;
+const unavailable = () => `<div class="card">${`<div class="empty-st warn"><span class="empty-ic">${icon("alert")}</span><h3>${t("Esta sección no está disponible")}</h3><p>${t("Revisa tu conexión y vuelve a intentarlo.")}</p><div class="empty-cta"><button type="button" class="btn ghost" data-retry>${icon("sync")}<span>${t("Reintentar")}</span></button><a class="btn primary" href="#/${R.home()}">${t("Ir a Inicio")}</a></div></div>`}</div>`;
 /* el foco vuelve al mismo control después de repintar la misma pantalla: por id, por name o por sus data-* */
 function focusKey(el){
   if(!el || el === document.body || !el.closest?.("#main")) return null;
@@ -195,21 +226,26 @@ function focusKey(el){
   return d.length ? el.tagName.toLowerCase() + d.map(x => `[${x.name}="${CSS.escape(x.value)}"]`).join("") : null;
 }
 /* barra de pestañas y lateral: marcar la sección; las de «Más» marcan «Más» */
-function paintTabs(r, route){
-  for(const a of $$("[data-r]")){ const on = a.dataset.r === r || a.dataset.r === route.parent; a.classList.toggle("on", on); on ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"); }
+function paintTabs(r, route, params){
+  const key = navKey(r, params, route);
+  for(const a of $$(".side [data-r], .bottom [data-r]")){ const on = a.dataset.r === key; a.classList.toggle("on", on); on ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current"); }
   const more = $("#moreBtn");
-  if(more){ const inBar = BOTTOM.includes(r) || BOTTOM.includes(route.parent); more.classList.toggle("on", !inBar); inBar ? more.removeAttribute("aria-current") : more.setAttribute("aria-current", "page"); }
+  if(more){ const inBar = NAV.bottom.some(x => x.k === key); more.classList.toggle("on", !inBar); inBar ? more.removeAttribute("aria-current") : more.setAttribute("aria-current", "page"); }
 }
 const scrollMem = new Map();
 let spinT = 0;
 export function render(keepScroll){
-  if(!S.academy()) return welcome();
-  if(!$(".app")) shell();
+  const role = R.rol();
+  if(!role) return welcome();
+  /* otro modo de uso: se arma de nuevo la estructura (menús, pestañas, marca) */
+  if(!$(".app") || shellRol !== role){ shell(); cur = null; }
   paintSedes();
   paintBadge();
   const {r, params, query} = parse();
+  /* una ruta que este modo no muestra (escrita a mano, un atajo, un enlace viejo) lleva al inicio del modo */
+  if(!R.allowed(r, role)){ location.replace("#/" + R.home(role)); return; }
   /* kiosco activo en este aparato: «atrás» o un enlace no sacan de él; solo el PIN del profesor */
-  if(S.pref("kioskOn") && S.pref("kioskPin") && r !== "kiosko"){ location.replace("#/kiosko"); return; }
+  if(role !== "estudiante" && S.pref("kioskOn") && S.pref("kioskPin") && r !== "kiosko"){ location.replace("#/kiosko"); return; }
   const route = ROUTES[r];
   const main = $("#main");
   const sameRoute = cur === location.hash;
@@ -222,7 +258,7 @@ export function render(keepScroll){
     document.body.classList.toggle("bare", !!route.bare);
     setTitle(t(route.t));
     paintBack(r, route, params);
-    paintTabs(r, route);
+    paintTabs(r, route, params);
   };
   let dir = "";
   const paint = mod => {
@@ -320,14 +356,17 @@ function setBack(b, href, label){
 }
 function paintBack(r, route, params){
   const b = $("#navBack"); if(!b) return;
-  const up = route.parent || (params.length ? r : "");
+  /* estudiante: sus secciones (Progreso, Repaso, Glosario...) son raíces de pestaña o del menú, sin «atrás» (como en iOS) */
+  const tabRoot = shellRol === "estudiante" && params.length === 1 && !!NAV?.by.has(r + "/" + params[0]);
+  document.body.classList.toggle("tab-root", tabRoot);
+  const up = tabRoot ? "" : route.parent || (params.length ? r : "");
   b.hidden = !up;
   document.body.classList.toggle("has-back", !!up);
   if(up) setBack(b, "#/" + up, t(ROUTES[up].t));
 }
 /* si la vista trae su propio enlace «atrás» (p. ej. certificado → alumno), la barra lo usa y se oculta el de la vista */
 function adoptBack(){
-  const b = $("#navBack"), v = $("#main > .back"); if(!b) return;
+  const b = $("#navBack"), v = document.body.classList.contains("tab-root") ? null : $("#main > .back"); if(!b) return;
   document.body.classList.toggle("view-back", !!v);
   if(v) setBack(b, v.getAttribute("href"), v.textContent.trim());
 }
@@ -376,12 +415,27 @@ const rerender = debounce(() => { if(!document.querySelector(".modal-back")) ren
 let pendingRender = false;
 window.addEventListener("mma:modal", () => { if(pendingRender && !document.querySelector(".modal-back")){ pendingRender = false; render(true); } });
 
-/* ---------- bienvenida: crear la academia ---------- */
-function welcome(){
+/* ---------- bienvenida: primero, cómo se va a usar (entrenar o manejar una academia) ---------- */
+const W_ARTES = [["bjj", "BJJ"], ["muaythai", "Muay Thai"], ["lucha", "Lucha"], ["boxeo", "Boxeo"], ["mma", "MMA"]];
+let wStep = "rol";
+function welcome(step = wStep){
+  wStep = step;
   document.body.classList.remove("bare", "drawer");
-  document.body.innerHTML = `${beltDefs}<div class="welcome">
-    <div class="w-card">
-      <div class="w-brand">${logo(64)}<h1>Academia<span>Pro</span></h1></div>
+  const back = `<button type="button" class="btn plain w-back" id="wBack">${icon("back")}<span>${t("Atrás")}</span></button>`;
+  const brand = `<div class="w-brand">${logo(64)}<h1>Academia<span>Pro</span></h1></div>`;
+  const legal = `<p class="small muted w-legal">${t("Con Google tus datos se guardan en una carpeta privada de tu propio Drive y puedes usar la app en el celular y el computador. Si ya tienes datos, se recuperan solos.")}</p>`;
+  const card = {
+    rol: `${brand}
+      <h2 class="w-q">${t("¿Cómo vas a usar AcademiaPro?")}</h2>
+      <div class="w-roles">
+        <button type="button" class="w-role press" id="wTrain"><span class="w-role-ic tr">${icon("fist")}</span><span class="w-role-t"><b>${t("Quiero entrenar")}</b><span>${t("Soy estudiante o practico por mi cuenta: rutas de BJJ, Muay Thai, Lucha, Boxeo y MMA, rutina, progreso y frases.")}</span></span>${icon("chevron", "w-role-go")}</button>
+        <button type="button" class="w-role press" id="wOwner"><span class="w-role-ic ac">${icon("building")}</span><span class="w-role-t"><b>${t("Tengo una academia")}</b><span>${t("Soy dueño de una academia: alumnos, pagos, asistencia, cinturones y ranking.")}</span></span>${icon("chevron", "w-role-go")}</button>
+      </div>
+      <p class="small muted w-note">${t("¿Eres profesor de una academia que ya usa AcademiaPro? No crees otra: pide al dueño que active el modo profesor en Ajustes, en el aparato de la academia.")}</p>
+      <div class="w-or"><span>${t("¿Ya usas AcademiaPro?")}</span></div>
+      <div class="w-actions"><button class="btn ghost big" id="wGoogle">${gIcon()}<span>${t("Entrar con Google")}</span></button></div>
+      ${legal}`,
+    dueno: `${back}${brand}
       <p class="lead">${t("Alumnos, pagos, cinturones y ranking de tu academia de artes marciales, sincronizados con tu Google Drive. Gratis y sin servidores.")}</p>
       <ul class="w-feats">
         <li>${icon("users")} ${t("Fichas completas: foto, tipo de sangre, contactos de emergencia, equipo")}</li>
@@ -394,19 +448,61 @@ function welcome(){
         <button class="btn primary big" id="wGoogle">${gIcon()}<span>${t("Entrar con Google")}</span></button>
         <button class="btn ghost big" id="wLocal">${t("Empezar sin cuenta")}</button>
       </div>
-      <p class="small muted">${t("Con Google tus datos se guardan en una carpeta privada de tu propio Drive y puedes usar la app en el celular y el computador. Si ya tienes datos, se recuperan solos.")}</p>
-      <div class="w-lang">${langSwitch()}</div>
-    </div></div>
+      ${legal}`,
+    estudiante: `${back}${brand}
+      <p class="lead">${t("Caminos de aprendizaje de lo básico a lo avanzado, una rutina que se arma sola y tu progreso. Gratis, sin academia y sin cuenta.")}</p>
+      <form class="form w-form" id="wForm" novalidate>
+        <div class="field"><label class="lbl" for="wName">${t("¿Cómo te llamas? (opcional)")}</label><input id="wName" name="nombre" autocomplete="given-name" maxlength="60" enterkeyhint="go" placeholder="${t("Tu nombre")}"></div>
+        <div class="field"><span class="lbl">${t("¿Qué quieres entrenar? (opcional)")}</span><div class="chips">${W_ARTES.map(([k, n]) => `<label class="chip"><input type="checkbox" name="artes" value="${k}"><span>${esc(t(n))}</span></label>`).join("")}</div></div>
+      </form>
+      <div class="w-actions">
+        <button class="btn primary big" id="wStudent">${icon("fist")}<span>${t("Empezar a entrenar")}</span></button>
+        <button class="btn ghost big" id="wGoogle">${gIcon()}<span>${t("Entrar con Google")}</span></button>
+      </div>
+      <p class="small muted w-legal">${t("Tu progreso se guarda en este aparato. Con Google también queda en tu Drive y lo ves en el celular y el computador.")}</p>`,
+  }[step] || "";
+  document.body.innerHTML = `${beltDefs}<div class="welcome">
+    <div class="w-card w-${step}" role="main">${card}<div class="w-lang">${langSwitch()}</div></div></div>
   <div id="toasts" class="toasts" role="status" aria-live="polite"></div>`;
   bindLang();
-  $("#wGoogle").onclick = async () => {
+  const on = (id, fn) => { const b = $("#" + id); if(b) b.onclick = fn; };
+  on("wBack", () => welcome("rol"));
+  on("wTrain", () => { welcome("estudiante"); setTimeout(() => $("#wName")?.focus({preventScroll: true}), 60); });
+  on("wOwner", () => welcome("dueno"));
+  on("wLocal", () => createAcademy());
+  /* cuenta: el modo también se guarda en la cuenta (perfil). No se hace si Google no pudo bajar los datos: el perfil
+     de la cuenta podría ser otro y este, más nuevo, le ganaría */
+  const empezar = (cuenta = true) => {
+    const f = $("#wForm"), nombre = (f?.nombre?.value || "").trim().slice(0, 60);
+    const artes = [...(f?.querySelectorAll("[name=artes]:checked") || [])].map(x => x.value);
+    /* solo lo que se escribió: un campo vacío no borra el nombre o las artes que la cuenta ya tenía */
+    const datos = {};
+    if(nombre) datos.nombre = nombre;
+    if(artes.length) datos.artes = artes;
+    if(Object.keys(datos).length) R.guardarPerfil(datos);
+    if(cuenta) R.setRol("estudiante"); else S.setPref("rol", "estudiante");
+    wStep = "rol";
+    location.hash = "#/entreno";
+    render();
+    const quien = nombre || R.perfil()?.nombre || "";
+    toast(quien ? t("¡Listo, {nombre}! Arma tu rutina o elige un camino.", {nombre: quien}) : t("¡Listo! Arma tu rutina o elige un camino."));
+  };
+  on("wStudent", () => empezar());
+  $("#wForm")?.addEventListener("submit", e => { e.preventDefault(); empezar(); });
+  on("wGoogle", async () => {
     try{
       await Sync.connect();
-      if(S.academy()){ toast(t("Datos recuperados de Google Drive")); render(); }
-      else createAcademy();
+      /* connect() no falla si la bajada falla: se mira si de verdad quedó sincronizado */
+      const bajo = Sync.status().phase === "ok";
+      /* eligió entrenar: manda su elección en este aparato (la academia de la cuenta, si la hay, queda oculta) */
+      if(step === "estudiante") return empezar(bajo && !S.academy());
+      /* la cuenta ya tenía datos: se entra en el modo guardado (estudiante o dueño) */
+      if(R.adoptarSincronizado(step === "dueno" ? "dueno" : null)){ toast(t("Datos recuperados de Google Drive")); wStep = "rol"; if(!location.hash || location.hash === "#/") location.hash = "#/" + R.home(); render(); return; }
+      if(!bajo){ toast(Sync.status().msg || t("No se pudieron bajar tus datos de Google Drive. Inténtalo de nuevo."), "warn"); return; }
+      if(step === "dueno") createAcademy();
+      else toast(t("Conectado con Google Drive. Ahora elige cómo vas a usar la app."));
     }catch(e){ toast(Sync.errText(e.code), "error"); }
-  };
-  $("#wLocal").onclick = () => createAcademy();
+  });
 }
 
 /* ---------- arranque ---------- */
@@ -417,8 +513,10 @@ async function boot(){
   applyTheme(); watchSystemTheme();
   document.title = t("AcademiaPro · Gestión de academias de artes marciales");
   S.load();
+  /* quien ya tenía academia antes de los modos de uso sigue como dueño, aunque otro aparato de la cuenta sea de estudiante */
+  if(!S.pref("rol") && S.academy()) S.setPref("rol", "dueno");
   await S.loadFotos();
-  S.subscribe(() => { if(document.querySelector(".app")) rerender(); else if(S.academy() && !document.querySelector(".modal-back")) render(); });
+  S.subscribe(() => { if(document.querySelector(".app")) rerender(); else if(R.rol() && !document.querySelector(".modal-back")) render(); });
   window.addEventListener("hashchange", () => { document.body.classList.remove("drawer"); dismissToasts(); render(); });
   window.addEventListener("beforeunload", S.flush);
   window.addEventListener("online", paintOnline);
@@ -426,7 +524,7 @@ async function boot(){
   document.addEventListener("visibilitychange", () => {
     if(document.visibilityState === "hidden") S.flush();
     /* pasó la medianoche con la app abierta: volver a pintar con la fecha nueva */
-    else if(rendDay && rendDay !== today() && S.academy() && !document.querySelector(".modal-back")) render(true);
+    else if(rendDay && rendDay !== today() && R.rol() && !document.querySelector(".modal-back")) render(true);
   });
   window.addEventListener("mma:quota", () => toast(t("El almacenamiento de este aparato está lleno"), "error"));
   Sync.init();

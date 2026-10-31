@@ -5,6 +5,7 @@ import {studentForm, paymentModal, promotionModal, quickPay} from "../forms.js";
 import {STATUS, planById, GEAR} from "../catalog.js";
 import {t, tn, lang} from "../i18n.js";
 import {deuda, pillTxt, estadoPago, estadoEf} from "../cobros.js";
+import {veDinero} from "../roles.js";
 import * as E from "../evaluacion.js";
 import {badges} from "./grados.js";
 import {fichaUrl} from "../ficha-link.js";
@@ -32,7 +33,10 @@ export function render(el, [id], ctx){
   if(!a){ el.innerHTML = emptyState({icon: "users", title: t("Alumno no encontrado"), text: t("Puede que se haya eliminado."), cta: {label: t("Ver alumnos"), href: "#/alumnos"}}); return; }
   const acad = S.academy(), cur = acad.moneda || "COP";
   const e = estadoPago(a, acad.avisoDias ?? 5), dd = deuda(a), debeTxt = pillTxt(a, e, dd), monto = dd.monto || S.valorPlan(a);
-  if(tabDe !== id){ tabDe = id; abiertos = new Set(); tab = e.k === "vencido" ? "pagos" : "grados"; }
+  /* modo profesor: sin pestaña de pagos, deuda ni cobro (roles.js) */
+  const dinero = veDinero(), TABS_V = dinero ? TABS : TABS.filter(x => x[0] !== "pagos");
+  if(tabDe !== id){ tabDe = id; abiertos = new Set(); tab = e.k === "vencido" && dinero ? "pagos" : "grados"; }
+  if(!dinero && tab === "pagos") tab = "grados";
   opcionales(el, id, ctx);
   if(ctx?.setTitle) ctx.setTitle(a.nombre); else { const ti = document.querySelector("#title"); if(ti) ti.textContent = a.nombre; }
   const stats = S.asistenciaStats(a.id);
@@ -150,9 +154,9 @@ export function render(el, [id], ctx){
   const rk = M.ret?.riesgo?.(a);
   const waRiesgo = rk && rk.nivel !== "bajo" && rk.script && waLink(tel, rk.script);
 
-  const tabs = TABS.map(([k]) => k);
+  const tabs = TABS_V.map(([k]) => k);
   if(!tabs.includes(tab)) tab = "grados";
-  const debe = e.k === "vencido";
+  const debe = dinero && e.k === "vencido";
   const waCobro = debe && waLink(tel, t("Hola {nombre}, te recordamos que tu mensualidad en {academia} está pendiente. ¡Te esperamos!", {nombre: a.nombre.split(" ")[0], academia: acad.nombre}));
   const estado = estadoEf(a);
   const due = ["vencido", "pronto"].includes(e.k);
@@ -169,11 +173,11 @@ export function render(el, [id], ctx){
         <div class="pf-photo">${avatar(a, 104)}</div>
         <p class="pf-name" aria-hidden="true">${esc(a.nombre)}</p>
         ${sub ? `<p class="pf-sub">${esc(sub)}</p>` : ""}
-        <div class="pf-tags">${estado !== "activo" ? pill(estado, t(STATUS[estado] || "")) : ""}${pill(e.k, e.txt)}${lesion ? `<button class="tag lesion pf-lesion" data-tab="notas" title="${esc(lesion.texto)}">${icon("alert")}${t("Lesión")}</button>` : ""}</div>
+        <div class="pf-tags">${estado !== "activo" ? pill(estado, t(STATUS[estado] || "")) : ""}${dinero ? pill(e.k, e.txt) : ""}${lesion ? `<button class="tag lesion pf-lesion" data-tab="notas" title="${esc(lesion.texto)}">${icon("alert")}${t("Lesión")}</button>` : ""}</div>
         <div class="pf-qa">
           ${qa("phone", t("Llamar"), `href="${esc(telH(tel))}"`, !tel)}
           ${qa("whatsapp", "WhatsApp", `href="${esc(wa || "")}" target="_blank" rel="noopener"`, !wa)}
-          ${qa("cash", t("Pago"), due ? "data-quick" : "data-pay")}
+          ${dinero ? qa("cash", t("Pago"), due ? "data-quick" : "data-pay") : ""}
           ${qa("calendar", t("Asistencia"), `data-tab="asistencia" data-jump`)}
         </div>
       </section>
@@ -184,7 +188,7 @@ export function render(el, [id], ctx){
         ${sede && S.sedes().length > 1 ? `<div class="row-inset"><span class="k">${t("Sede")}</span><span class="row-val">${esc(sede.nombre)}</span></div>` : ""}
       </div>
       <div class="grouped pf-links">
-        <button type="button" class="row-inset chev" data-share><span class="row-ic" style="--rc:var(--system-blue)">${icon("share")}</span><span>${t("Compartir ficha")}</span></button>
+        <button type="button" class="row-inset chev" data-share ${dinero ? "" : "hidden"}><span class="row-ic" style="--rc:var(--system-blue)">${icon("share")}</span><span>${t("Compartir ficha")}</span></button>
         ${M.clases?.qrCardHTML ? `<button type="button" class="row-inset chev" data-qr><span class="row-ic" style="--rc:var(--system-gray)">${icon("qr")}</span><span>${t("Carné QR")}</span></button>` : ""}
       </div>
     </aside>
@@ -194,7 +198,7 @@ export function render(el, [id], ctx){
           ${waCobro ? `<a class="btn gray small" href="${esc(waCobro)}" target="_blank" rel="noopener">${icon("whatsapp")}<span>WhatsApp</span></a>` : ""}</div></div>` : ""}
       ${rk && rk.nivel !== "bajo" ? `<div class="pf-rk ${rk.nivel}"><span class="pf-due-ic">${icon("alert")}</span><div><b>${rk.nivel === "alto" ? t("Riesgo alto de abandono") : t("Riesgo medio de abandono")}</b><span class="small muted">${esc(rk.motivos.join(" · "))}</span></div>
         ${waRiesgo ? `<a class="btn gray small" href="${esc(waRiesgo)}" target="_blank" rel="noopener">${icon("whatsapp")}<span>${t("Escribirle")}</span></a>` : ""}</div>` : ""}
-      <div class="pf-seg" role="tablist" aria-label="${t("Secciones de la ficha")}">${TABS.map(([k, n, ic]) => `<button class="pf-tab ${tab === k ? "on" : ""}" role="tab" id="pft-${k}" aria-selected="${tab === k}" aria-controls="pf-panel" tabindex="${tab === k ? 0 : -1}" data-tab="${k}">${icon(ic)}<span>${t(n)}</span></button>`).join("")}</div>
+      <div class="pf-seg" role="tablist" aria-label="${t("Secciones de la ficha")}">${TABS_V.map(([k, n, ic]) => `<button class="pf-tab ${tab === k ? "on" : ""}" role="tab" id="pft-${k}" aria-selected="${tab === k}" aria-controls="pf-panel" tabindex="${tab === k ? 0 : -1}" data-tab="${k}">${icon(ic)}<span>${t(n)}</span></button>`).join("")}</div>
       <section class="pf-panel ${anim ? "pf-in" : ""}" role="tabpanel" id="pf-panel" aria-labelledby="pft-${tab}">${{grados: gradosHtml, asistencia: asisHtml, pagos: pagosHtml, notas: notasHtml, info: infoHtml, equipo: equipoHtml}[tab]}</section>
     </div>
   </div>`;

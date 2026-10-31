@@ -2,7 +2,8 @@ import * as S from "../store.js";
 import * as Sync from "../sync.js";
 import {icon, toast, confirmDlg, formModal, haptic} from "../ui.js";
 import {esc, download, today, fmtDate} from "../util.js";
-import {themePref, setTheme, gIcon} from "../shell.js";
+import {themePref, setTheme, gIcon, createAcademy} from "../shell.js";
+import * as R from "../roles.js";
 import {loadDemo, removeDemo, hasDemo} from "../demo.js";
 import {GOOGLE_CLIENT_ID} from "../config.js";
 import {installState, promptInstall, iosStepsHTML} from "../install.js";
@@ -11,8 +12,14 @@ import {t, tn, lang, locale, setLang, LANGS} from "../i18n.js";
 /* globo (idioma); no está en el set de iconos compartido */
 const GLOBE = `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg>`;
 
-export function render(el){
+/* colecciones del entrenamiento personal: la copia del modo estudiante lleva solo esto */
+const COLS_ENTRENO = ["progreso", "rutinas", "sesiones", "repasos", "favoritos", "perfil"];
+
+export function render(el, params, ctx){
   const st = Sync.status();
+  const role = R.rol(), est = role === "estudiante", prof = role === "profesor";
+  /* dueño que ocultó su academia para entrenar: la academia sigue en este aparato */
+  const oculta = est && !!S.academy();
   const n = c => S.all(c).length;
   const inst = installState();
   const last = st.lastSync ? new Date(st.lastSync).toLocaleString(locale(), {dateStyle: "medium", timeStyle: "short"}) : t("nunca");
@@ -29,19 +36,19 @@ export function render(el){
       <div class="row-inset aj-me">${st.photo ? `<img class="aj-av" src="${esc(st.photo)}" alt="" referrerpolicy="no-referrer">` : `<span class="aj-av">${icon("cloud")}</span>`}
         <div class="aj-me-t"><b>${esc(st.name || t("Cuenta de Google"))}</b><span>${esc(st.email || "")}</span></div></div>
       <div class="row-inset">${ic(st.phase === "ok" ? "check" : "sync", st.phase === "ok" ? "olive" : st.phase === "reconnect" ? "burnt" : "steel")}<span class="aj-l aj-wrap">${st.phase === "ok" ? esc(t("Sincronizado · última vez {fecha}", {fecha: last})) : esc(st.msg || t("Sincronizando…"))}</span></div>
-      ${st.phase === "reconnect" ? `<button type="button" class="row-inset aj-act" data-reconnect>${ic("sync", "burnt")}<span class="aj-l">${t("Reconectar")}</span></button>`
+      ${st.phase === "reconnect" ? prof ? "" : `<button type="button" class="row-inset aj-act" data-reconnect>${ic("sync", "burnt")}<span class="aj-l">${t("Reconectar")}</span></button>`
         : `<button type="button" class="row-inset aj-act" data-sync>${ic("sync", "steel")}<span class="aj-l">${t("Sincronizar ahora")}</span></button>`}
-      <button type="button" class="row-inset aj-act aj-red" data-disconnect>${ic("logout", "graphite")}<span class="aj-l">${t("Desconectar")}</span></button>
+      ${prof ? "" : `<button type="button" class="row-inset aj-act aj-red" data-disconnect>${ic("logout", "graphite")}<span class="aj-l">${t("Desconectar")}</span></button>`}
     </section>
-    <p class="section-footer">${t("Los datos se guardan en una carpeta privada de la app dentro de tu Google Drive (no se ve entre tus archivos y la app no puede leer nada más). Entra con la misma cuenta en el celular o el computador y verás lo mismo.")}</p>`
+    <p class="section-footer">${prof && st.phase === "reconnect" ? `${t("Para reconectar Google, el dueño debe salir del modo profesor con su PIN.")}<br>` : ""}${t("Los datos se guardan en una carpeta privada de la app dentro de tu Google Drive (no se ve entre tus archivos y la app no puede leer nada más). Entra con la misma cuenta en el celular o el computador y verás lo mismo.")}</p>`
   : `
     <h3 class="section-header">${t("Cuenta y sincronización")}</h3>
     <section class="grouped aj-grp">
       <div class="row-inset aj-me"><span class="aj-av off">${icon("cloudOff")}</span>
         <div class="aj-me-t"><b>Google Drive</b><span>${t("Ahora tus datos están")} ${t("solo en este aparato")}.</span></div></div>
-      <button type="button" class="row-inset aj-act aj-google" data-connect><span class="aj-g">${gIcon()}</span><span class="aj-l">${t("Entrar con Google")}</span></button>
+      ${prof ? "" : `<button type="button" class="row-inset aj-act aj-google" data-connect><span class="aj-g">${gIcon()}</span><span class="aj-l">${t("Entrar con Google")}</span></button>`}
     </section>
-    <p class="section-footer">${st.msg ? `<span class="err-t">${esc(st.msg)}</span><br>` : ""}${t("Conecta Google para tener copia en tu Drive y usar la app en varios dispositivos.")}</p>`;
+    <p class="section-footer">${st.msg ? `<span class="err-t">${esc(st.msg)}</span><br>` : ""}${prof ? t("Para conectar Google, el dueño debe salir del modo profesor con su PIN.") : t("Conecta Google para tener copia en tu Drive y usar la app en varios dispositivos.")}</p>`;
 
   const prefs = `
     <h3 class="section-header">${t("Preferencias")}</h3>
@@ -50,20 +57,46 @@ export function render(el){
         <div class="seg small" role="radiogroup" aria-label="${t("Idioma / Language")}">${LANGS.map(([k, l]) => `<label><input type="radio" name="lang" value="${k}" data-lang ${lang() === k ? "checked" : ""}><span>${esc(l)}</span></label>`).join("")}</div></div>
       <div class="aj-theme" role="radiogroup" aria-label="${t("Tema")}">${themeOpt("system", t("Sistema"))}${themeOpt("light", t("Claro"))}${themeOpt("dark", t("Oscuro"))}</div>
     </section>
-    <h3 class="section-header">${t("Datos de ejemplo")}</h3>
+    ${est || prof ? "" : `<h3 class="section-header">${t("Datos de ejemplo")}</h3>
     <section class="grouped aj-grp">
       ${hasDemo() ? `<button type="button" class="row-inset aj-act aj-red" data-undemo>${ic("trash", "graphite")}<span class="aj-l">${t("Quitar datos de ejemplo")}</span></button>`
         : `<button type="button" class="row-inset aj-act" data-demo>${ic("users", "brass")}<span class="aj-l">${t("Cargar alumnos de ejemplo")}</span></button>`}
       ${S.academy() && S.pref("setupHide:" + S.academy().id, false) ? `<button type="button" class="row-inset aj-act" data-setup-show>${ic("check", "olive")}<span class="aj-l">${t("Mostrar primeros pasos")}</span></button>` : ""}
-    </section>`;
+    </section>`}`;
 
-  const copia = `
+  /* modo de uso: estudiante, dueño o profesor (roles.js). Solo cambia lo que se ve en este aparato */
+  const rolFoot = {
+    estudiante: t("Ves tus caminos, tu rutina, tu progreso y las frases. Si abres una academia, tu progreso de entrenamiento se conserva."),
+    dueno: t("Modo estudiante oculta la academia sin borrar nada. Modo profesor deja pasar lista y ver alumnos, grados y horario, sin pagos, reportes, prospectos ni tienda; para salir pide un PIN."),
+    profesor: t("Este aparato no muestra pagos, reportes, prospectos, tienda ni los ajustes de la academia. Para salir hace falta el PIN del dueño."),
+  }[role];
+  const rolSec = `
+    <h3 class="section-header">${t("Modo de uso")}</h3>
+    <section class="grouped aj-grp aj-rol">
+      <div class="row-inset">${ic(R.ROL_IC[role], est ? "crimson" : prof ? "burnt" : "steel")}<span class="aj-l">${t("Modo actual")}</span><span class="row-val" data-rol-now>${t(R.ROLES[role])}</span></div>
+      ${est ? `<button type="button" class="row-inset chev" data-perfil>${ic("edit", "graphite")}<span class="aj-l">${t("Tu nombre")}</span><span class="row-val">${esc(R.perfil()?.nombre || t("Sin nombre"))}</span></button>` : ""}
+      ${est ? `<button type="button" class="row-inset chev" data-rol-dueno>${ic("building", "steel")}<span class="aj-l">${S.academy() ? t("Volver a mi academia") : t("Tengo una academia")}</span></button>` : ""}
+      ${role === "dueno" ? `<button type="button" class="row-inset chev" data-rol-est>${ic("fist", "crimson")}<span class="aj-l">${t("Usar solo para entrenar")}</span></button>
+        <button type="button" class="row-inset chev" data-rol-prof>${ic("lock", "gunmetal")}<span class="aj-l">${t("Activar modo profesor")}</span></button>` : ""}
+      ${prof ? `<button type="button" class="row-inset chev" data-rol-salir>${ic("lock", "burnt")}<span class="aj-l">${t("Salir del modo profesor")}</span></button>` : ""}
+    </section>
+    <p class="section-footer">${rolFoot} ${t("Es un modo de uso, no una medida de seguridad: los datos siguen en este aparato y en tu Drive.")}</p>`;
+
+  const nEnt = S.all("sesiones").length;
+  const copia = prof ? "" : est && !oculta ? `
+    <h3 class="section-header">${t("Copia de seguridad")}</h3>
+    <section class="grouped aj-grp">
+      <button type="button" class="row-inset aj-act" data-export>${ic("download", "olive")}<span class="aj-l">${t("Descargar mi progreso (.json)")}</span></button>
+      <label class="row-inset aj-act" tabindex="0" role="button">${ic("upload", "steel")}<span class="aj-l">${t("Restaurar copia")}</span><input type="file" accept=".json,application/json" data-import hidden></label>
+    </section>
+    <p class="section-footer">${t("Descarga tu rutina, tus sesiones y tu progreso en un archivo, o restaura uno descargado antes. Al restaurar se mezcla con lo que ya hay.")}<br>
+      <span class="tnum">${tn(nEnt, "1 sesión", "{n} sesiones")}</span></p>` : `
     <h3 class="section-header">${t("Copia de seguridad")}</h3>
     <section class="grouped aj-grp">
       <button type="button" class="row-inset aj-act" data-export>${ic("download", "olive")}<span class="aj-l">${t("Descargar copia (.json)")}</span></button>
       <label class="row-inset aj-act" tabindex="0" role="button">${ic("upload", "steel")}<span class="aj-l">${t("Restaurar copia")}</span><input type="file" accept=".json,application/json" data-import hidden></label>
     </section>
-    <p class="section-footer">${t("Descarga todos los datos en un archivo (sin fotos) o restaura uno descargado antes. Al restaurar se mezcla con lo que ya hay.")}<br>
+    <p class="section-footer">${oculta ? t("La copia incluye tu progreso y también la academia oculta (alumnos, pagos, grados y asistencias).") + " " : ""}${t("Descarga todos los datos en un archivo (sin fotos) o restaura uno descargado antes. Al restaurar se mezcla con lo que ya hay.")}<br>
       <span class="tnum">${tn(n("alumnos"), "1 alumno", "{n} alumnos")} · ${tn(n("pagos"), "1 pago", "{n} pagos")} · ${tn(n("grados"), "1 registro de grado", "{n} registros de grado")} · ${tn(n("asistencias"), "1 clase", "{n} clases")} · ${tn(S.fotoIds().length, "1 foto", "{n} fotos")}</span></p>`;
 
   const instalar = `
@@ -81,26 +114,28 @@ export function render(el){
       <button type="button" class="row-inset chev" data-palette>${ic("search", "steel")}<span class="aj-l">${t("Abrir buscador")}</span><kbd class="aj-kbd hide-s">Ctrl K</kbd></button>
       <button type="button" class="row-inset chev" data-keys>${ic("keyboard", "gunmetal")}<span class="aj-l">${t("Ver atajos")}</span></button>
     </section>
-    <p class="section-footer">${t("Busca alumnos, pagos, técnicas y acciones desde cualquier pantalla con Ctrl+K (o Cmd+K en Mac) o la lupa de arriba.")}</p>`;
+    <p class="section-footer">${est ? t("Busca técnicas, términos del glosario y secciones desde cualquier pantalla con Ctrl+K (o Cmd+K en Mac) o la lupa de arriba.") : t("Busca alumnos, pagos, técnicas y acciones desde cualquier pantalla con Ctrl+K (o Cmd+K en Mac) o la lupa de arriba.")}</p>`;
 
-  const avanzado = `
+  const avanzado = prof ? `<p class="section-footer aj-legal"><a href="privacy.html" target="_blank">${t("Privacidad")}</a> · AcademiaPro · ${t("Gratis y de código abierto")}</p>` : `
     <h3 class="section-header">${t("Avanzado")}</h3>
     <section class="grouped aj-grp">
       <button type="button" class="row-inset chev" data-client>${ic("info", "gunmetal")}<span class="aj-l">${t("Cambiar ID de cliente")}</span></button>
     </section>
     <p class="section-footer">${t("ID de cliente de Google en uso:")} <code class="break aj-code">${esc(Sync.clientId())}</code></p>
-    <section class="grouped aj-grp">
+    ${oculta ? `<p class="section-footer">${t("Para borrar los datos de este aparato, vuelve primero a tu academia: así ves todo lo que se borraría.")}</p>`
+      : `<section class="grouped aj-grp">
       <button type="button" class="row-inset aj-act aj-red aj-center" data-wipe><span class="aj-l">${t("Borrar datos de este aparato")}</span></button>
-    </section>
+    </section>`}
     <p class="section-footer aj-legal"><a href="privacy.html" target="_blank">${t("Privacidad")}</a> · AcademiaPro · ${t("Gratis y de código abierto")}</p>`;
 
   el.innerHTML = `<div class="aj">
-    <div class="aj-col">${cuenta}${prefs}${copia}</div>
+    <div class="aj-col">${rolSec}${cuenta}${prefs}${copia}</div>
     <div class="aj-col">${instalar}${atajos}${avanzado}</div>
   </div>`;
 
   el.onclick = async e => {
     const tg = e.target;
+    if(prof && tg.closest("[data-connect],[data-reconnect],[data-disconnect],[data-wipe]")) return;
     if(tg.closest("[data-connect]")){ try{ await Sync.connect(); toast(t("Conectado con Google Drive")); }catch(err){ toast(Sync.errText(err.code), "error"); } render(el); return; }
     if(tg.closest("[data-reconnect]")){ await Sync.reconnect(); render(el); return; }
     if(tg.closest("[data-sync]")){ await Sync.sync(); toast(Sync.status().phase === "ok" ? t("Sincronizado") : Sync.status().msg, Sync.status().phase === "ok" ? "ok" : "warn"); render(el); return; }
@@ -108,7 +143,20 @@ export function render(el){
     if(tg.closest("[data-install]")){ if(await promptInstall()) render(el); return; }
     if(tg.closest("[data-palette]")){ import("../palette.js").then(m => m.openPalette()).catch(() => {}); return; }
     if(tg.closest("[data-keys]")){ import("../palette.js").then(m => m.atajos()).catch(() => {}); return; }
-    if(tg.closest("[data-export]")){ download(`academia-copia-${today()}.json`, JSON.stringify(S.snapshot())); return; }
+    if(tg.closest("[data-export]")){ est && !oculta ? download(`entrenamiento-copia-${today()}.json`, JSON.stringify(S.snapshot(COLS_ENTRENO))) : download(`academia-copia-${today()}.json`, JSON.stringify(S.snapshot())); return; }
+    const repaint = () => ctx?.render ? ctx.render() : render(el, params, ctx);
+    if(tg.closest("[data-rol-dueno]")){
+      if(!S.academy()) return createAcademy();
+      R.setRol("dueno"); toast(t("Modo dueño de academia")); location.hash = "#/inicio"; return;
+    }
+    if(tg.closest("[data-perfil]")) return formModal({title: t("Tu nombre"), values: {nombre: R.perfil()?.nombre || ""}, fields: [{k: "nombre", label: t("Nombre"), ph: t("Tu nombre")}],
+      onSave: v => { R.guardarPerfil({nombre: String(v.nombre || "").trim().slice(0, 60)}); repaint(); }});
+    if(tg.closest("[data-rol-est]")){
+      if(!await confirmDlg(t("La academia queda oculta en este aparato, sin borrar nada. Verás solo tus caminos, tu rutina, tu progreso y las frases. Puedes volver cuando quieras desde Ajustes."), {ok: t("Usar solo para entrenar"), danger: false, title: t("¿Cambiar a modo estudiante?")})) return;
+      R.setRol("estudiante"); toast(t("Modo estudiante")); location.hash = "#/entreno"; return;
+    }
+    if(tg.closest("[data-rol-prof]")){ if(await R.activarProfesor()){ toast(t("Modo profesor activado")); location.hash = "#/inicio"; } return; }
+    if(tg.closest("[data-rol-salir]")){ if(await R.salirProfesor()){ toast(t("Modo dueño de academia")); repaint(); } return; }
     if(tg.closest("[data-demo]")){ const k = loadDemo(); k ? toast(t("Alumnos de ejemplo agregados")) : toast(t("Primero crea una sede y una disciplina en Academia."), "warn"); render(el); return; }
     if(tg.closest("[data-undemo]")){
       if(!await confirmDlg(t("Se borran los alumnos, pagos, grados y asistencias de ejemplo. Tus datos reales no se tocan."), {ok: t("Quitar datos de ejemplo"), title: t("¿Quitar datos de ejemplo?")})) return;
@@ -119,6 +167,7 @@ export function render(el){
       {k: "id", label: t("ID de cliente OAuth (termina en .apps.googleusercontent.com)"), ph: GOOGLE_CLIENT_ID, hint: t("Déjalo vacío para usar el de la app.")}],
       onSave: v => { S.setPref("clientId", v.id); toast(t("Guardado. Vuelve a conectar Google.")); render(el); }});
     if(tg.closest("[data-wipe]")){
+      if(oculta) return;
       if(!await confirmDlg(Sync.connected() ? t("Se borran los datos de este aparato y se desconecta Google. La copia en tu Drive NO se borra: al volver a entrar con Google se recupera.") : t("Se borrarán TODOS los datos de este aparato. Descarga una copia antes si la necesitas."), {ok: t("Borrar todo")})) return;
       Sync.disconnect(); localStorage.clear(); indexedDB.deleteDatabase("mma-fotos"); location.reload();
     }
@@ -129,7 +178,7 @@ export function render(el){
   if(rest) rest.onkeydown = e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); rest.querySelector("input").click(); } };
   el.querySelectorAll("[data-lang]").forEach(r => r.onchange = () => { if(r.checked && r.value !== lang()) setLang(r.value); });
   const imp = el.querySelector("[data-import]");
-  imp.onchange = async () => {
+  if(imp) imp.onchange = async () => {
     const f = imp.files[0]; if(!f) return;
     try{ const o = JSON.parse(await f.text()); if(!o.col) throw 0; S.merge(o, true); S.flush(); toast(t("Copia restaurada")); }
     catch(err){ toast(t("El archivo no es una copia válida"), "error"); }

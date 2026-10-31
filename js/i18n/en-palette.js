@@ -53,4 +53,6 @@ export default {
   "Ábrela como una app, a pantalla completa y sin internet.": "Open it like an app, full screen and offline.",
   "Instalar": "Install",
   "Ahora no": "Not now",
+  "Busca técnicas, glosario o secciones…": "Search techniques, glossary or sections…",
+  "Busca alumnos, técnicas o acciones…": "Search students, techniques or actions…",
 };

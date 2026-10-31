@@ -7,6 +7,7 @@ import {icon, modal, shareOrDownload} from "../ui.js";
 import {esc, today, addDays} from "../util.js";
 import {t, tn} from "../i18n.js";
 import {volver} from "../views/entreno.js";
+import {nombreAcademia} from "../roles.js";
 
 /* prog(c) → [actual, meta] */
 export const LOGROS = [
@@ -90,7 +91,7 @@ async function compartir(x){
   g.textAlign = "center"; g.fillStyle = "#ff8a8f"; g.font = `700 40px ${font}`; g.fillText(t("¡Logro desbloqueado!").toUpperCase(), 540, 720);
   g.fillStyle = "#fff"; g.font = `800 76px ${font}`; g.fillText(t(x.t), 540, 815, 980);
   g.fillStyle = "#b9c0cf"; g.font = `500 40px ${font}`; g.fillText(t(x.d), 540, 885, 980);
-  g.fillStyle = "#8b95a8"; g.font = `600 34px ${font}`; g.fillText([S.academy()?.nombre, "AcademiaPro"].filter(Boolean).join(" · "), 540, 1010, 980);
+  g.fillStyle = "#8b95a8"; g.font = `600 34px ${font}`; g.fillText([nombreAcademia(), "AcademiaPro"].filter(Boolean).join(" · "), 540, 1010, 980);
   const blob = await new Promise(r => c.toBlob(r, "image/png"));
   if(blob) shareOrDownload({title: t(x.t), text: t("¡Logro desbloqueado!") + " " + t(x.t), files: [new File([blob], `logro-${x.id}.png`, {type: "image/png"})], filename: `logro-${x.id}.png`});
 }

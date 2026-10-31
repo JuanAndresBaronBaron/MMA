@@ -10,6 +10,7 @@ import {loadDemo, removeDemo, hasDemo} from "../demo.js";
 import {deuda, pillTxt, estadoPago, estadoEf} from "../cobros.js";
 import * as C from "../cobros.js";
 import {t, tn, locale} from "../i18n.js";
+import {rol} from "../roles.js";
 
 const AUS = 14; /* días sin venir para la tarjeta de retención */
 
@@ -33,6 +34,8 @@ export function render(el, params, ctx){
   const sum = ps => ps.reduce((s, p) => s + (Number(p.monto) || 0), 0);
   const demo = hasDemo();
   const rerender = () => ctx && ctx.render ? ctx.render(true) : render(el, params, ctx);
+  /* modo profesor: lo del día a día de la clase, sin dinero ni prospectos (roles.js) */
+  const prof = rol() === "profesor";
 
   /* ---------- primeros pasos (solo datos reales, sin los de ejemplo) ---------- */
   const todos = S.alumnos({todos: true, sede: ""});
@@ -50,7 +53,7 @@ export function render(el, params, ctx){
   const nOk = steps.filter(s => s.ok).length;
   const hideKey = "setupHide:" + acad.id;
   const showSetup = nOk < steps.length && !S.pref(hideKey, false);
-  const demoBtn = !demo ? `<button type="button" class="btn ghost" data-demo>${icon("users")} ${t("Probar con datos de ejemplo")}</button>` : "";
+  const demoBtn = !demo && !prof ? `<button type="button" class="btn ghost" data-demo>${icon("users")} ${t("Probar con datos de ejemplo")}</button>` : "";
   /* con datos de ejemplo, primeros pasos queda en una línea (se abre con un toque) */
   const setupMini = demo && !S.pref("setupOpen", false);
   const pctSetup = Math.round(nOk / steps.length * 100);
@@ -91,7 +94,7 @@ export function render(el, params, ctx){
   const done = unsub => { const off = eyebrow(); return () => { off && off(); unsub && unsub(); }; };
 
   if(!todos.length){
-    el.innerHTML = (setup || `<section class="card">${emptyS({icon: "users", title: t("Bienvenido a {academia}", {academia: acad.nombre}), text: t("Empieza agregando a tus alumnos. Puedes subir su foto, registrar su cinturón actual y su plan de pago."),
+    el.innerHTML = ((prof ? "" : setup) || `<section class="card">${emptyS({icon: "users", title: t("Bienvenido a {academia}", {academia: acad.nombre}), text: prof ? t("Aún no hay alumnos en esta academia. Agrégalos o pide al dueño que los registre.") : t("Empieza agregando a tus alumnos. Puedes subir su foto, registrar su cinturón actual y su plan de pago."),
       cta: `<div class="row gap wrap dash-empty-cta"><button type="button" class="btn primary" data-new>${icon("plus")} ${t("Agregar primer alumno")}</button>${demoBtn}</div>`})}</section>`);
     bind();
     return done(watchSync());
@@ -269,17 +272,44 @@ export function render(el, params, ctx){
     {k: "asis", c: "var(--system-cyan)", tc: "info", p: asisAcad.length ? P(ids7.size, activos.length) : 0, l: t("Vinieron (7 días)"), v: asisAcad.length ? ids7.size : "–", of: asisAcad.length ? activos.length : "", href: "#/asistencia"},
   ];
   const R0 = [52, 37, 22];
+  const heroOf = (rings, sub) => {
   const ringSvg = `<svg class="dh-rings" viewBox="0 0 120 120" aria-hidden="true"><g transform="rotate(-90 60 60)">${rings.map((r, i) => `<circle class="dr-track" cx="60" cy="60" r="${R0[i]}" style="--rc:${r.c}"/><circle class="dr-val ${r.p ? "" : "zero"}" cx="60" cy="60" r="${R0[i]}" pathLength="100" style="--rc:${r.c};--off:${100 - Math.min(100, r.p)};--d:${i * 120}ms"/>`).join("")}</g></svg>`;
-  const hero = `<section class="card dash-hero" aria-labelledby="dhT">
+  return `<section class="card dash-hero" aria-labelledby="dhT">
     <div class="dh-top"><div class="dh-hi"><h2 id="dhT">${t("Hola, {academia}", {academia: esc(acad.nombre)})}</h2>
-      <p>${hoyN ? `<a href="#/pagos" class="dh-due">${icon("clock")}${tn(hoyN, "1 cobro vence hoy", "{n} cobros vencen hoy")}</a>` : t("Ningún cobro vence hoy")}</p></div>
+      <p>${sub}</p></div>
       <div class="dh-act"><a class="btn primary" href="#/asistencia">${icon("calendar")} ${t("Pasar lista")}</a><button type="button" class="btn gray dash-new" data-new>${icon("plus")} ${t("Nuevo alumno")}</button></div></div>
     <div class="dh-body" role="img" aria-label="${esc(rings.map(r => `${r.l}: ${String(r.v).replace(/<[^>]+>/g, "")}${r.of !== "" ? " / " + String(r.of).replace(/<[^>]+>/g, "") : ""}`).join(", "))}">
       ${ringSvg}
       <ul class="dh-leg">${rings.map(r => `<li class="${r.tc}"><span class="dh-l">${r.l}</span><b class="dh-v">${r.v}${r.of !== "" ? `<small>/${r.of}</small>` : ""}</b><span class="dh-p">${r.of !== "" ? r.p + "%" : t("Aún no tomas asistencia")}</span></li>`).join("")}</ul>
     </div>
-  </section>`;
+  </section>`; };
+  const hero = heroOf(rings, hoyN ? `<a href="#/pagos" class="dh-due">${icon("clock")}${tn(hoyN, "1 cobro vence hoy", "{n} cobros vencen hoy")}</a>` : t("Ningún cobro vence hoy"));
   const notes = [demoBar, bdayBar, setupMiniRow].filter(Boolean).join("");
+
+  if(prof){
+    const idsMes = new Set();
+    for(const r of asisAcad) if((r.fecha || "").startsWith(ym) && r.fecha <= hoy) for(const id of r.presentes || []) if(actIds.has(id)) idsMes.add(id);
+    const nListos = new Set(listos.map(x => x.a.id)).size;
+    const ringsP = [rings[2],
+      {k: "mes", c: "var(--system-green)", tc: "ok", p: asisAcad.length ? P(idsMes.size, activos.length) : 0, l: t("Vinieron este mes"), v: asisAcad.length ? idsMes.size : "–", of: asisAcad.length ? activos.length : ""},
+      {k: "listos", c: "var(--system-yellow)", tc: "gold", p: P(nListos, activos.length), l: t("Listos para promoción"), v: nListos, of: activos.length}];
+    el.innerHTML = `${heroOf(ringsP, `<span class="dh-mode">${icon("lock", "inline")} ${t("Modo profesor")}</span>`)}${bdayBar ? `<div class="grouped dash-notes">${bdayBar}</div>` : ""}
+    <div class="dash-kpis k4">
+      ${kpi("users", "c1", activos.length, t("Alumnos activos"), altas ? delta(altas, t("{n} este mes", {n: altas})) : `<small class="kpi-sub">${t("Sin altas este mes")}</small>`, `href="#/alumnos"`, "a")}
+      ${kpi("calendar", "c2", asisAcad.length ? ids7.size : "–", t("Vinieron (7 días)"), "", `href="#/asistencia"`, "a")}
+      ${kpi("belt", "c4", nListos, t("Listos para promoción"), "", `href="#/grados"`, "a")}
+      ${kpi("clock", "c5", asisAcad.length ? ausentes.length : "–", t("Sin venir +{n} días", {n: AUS}), asisAcad.length ? "" : `<small class="kpi-sub">${t("Aún no tomas asistencia")}</small>`, ausentes.length ? `type="button" data-goto="dashRet"` : `href="#/asistencia"`, ausentes.length ? "button" : "a")}
+    </div>
+    <div class="dash-cols">
+      <div class="dash-col">${slot("clases")}${cAus}${cListos}</div>
+      <div class="dash-col">${slot("tds")}${slot("frase")}${cCumple}${cRapidas}${cDist}</div>
+    </div>
+    <button type="button" class="fab only-m" data-new aria-label="${t("Nuevo alumno")}">${icon("plus")}</button>`;
+    bind();
+    for(const k of ["riesgo", "install", "ingresos"]) poner(k, "");
+    tarjetas();
+    return done(null);
+  }
 
   el.innerHTML = `${hero}${notes ? `<div class="grouped dash-notes">${notes}</div>` : ""}${setup}${slot("install")}
   <div class="dash-kpis">

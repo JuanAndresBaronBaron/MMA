@@ -162,6 +162,11 @@ The user wants "colores de hombre, rudos, fuertes": a masculine, rugged palette 
 - **Tab bar.** On phones the bottom tab bar is glass, 49px tall plus the safe area. Content needs bottom padding, which `main` already has. For sticky footers, use `bottom: calc(var(--bottom-h) + env(safe-area-inset-bottom) + 10px)`.
 - **Sidebar.** On desktop it is a floating glass panel.
 - **Search.** The Ctrl+K palette is a Spotlight-style glass panel.
+- **Usage modes (`js/roles.js`).** Each device runs in one mode, and the shell builds its sidebar, tab bar and allowed routes from it. A route the mode does not allow redirects to that mode's home.
+  - `estudiante` trains on their own with no academy: Entrenamiento (with its sub-screens as sections), Frases and Ajustes. The brand shows the person's name or "Mi entrenamiento". Views must work with `S.academy() === null`.
+  - `dueno` is the full app.
+  - `profesor` is a restricted owner device: no pagos, recibo, reportes, leads, tienda or academia. Leaving it asks for the owner's PIN. Views that show money check `veDinero()` from `js/roles.js` and hide amounts, debt pills and payment actions when it is false.
+  - Modes are not security: they only change what this device shows. Say so in any help text about them.
 
 ## 4. Motion
 

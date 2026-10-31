@@ -5,6 +5,7 @@ import * as S from "../store.js";
 import {icon, toast, sheet, haptic, emptyState} from "../ui.js";
 import {esc} from "../util.js";
 import {t, lang} from "../i18n.js";
+import {nombreAcademia} from "../roles.js";
 import {FRASES, CATEGORIAS} from "../frases/data.js";
 
 /* ---------- categorías ---------- */
@@ -166,7 +167,7 @@ export async function quoteImage(q){
   if(quien(q)){ c.font = `500 30px ${FONT}`; c.fillStyle = "rgba(255,255,255,.78)"; wrap(c, quien(q), maxW).slice(0, 2).forEach((l, i) => c.fillText(l, P, y + 80 + i * 40)); }
   /* marca */
   c.font = `700 28px ${FONT}`; c.fillStyle = "rgba(255,255,255,.7)";
-  let acad = ""; try{ acad = S.academy()?.nombre || ""; }catch(e){}
+  let acad = ""; try{ acad = nombreAcademia(); }catch(e){}
   c.fillText(acad ? `${acad} · AcademiaPro` : "AcademiaPro", P, H - 70);
   c.textAlign = "right"; c.fillText(t("Frases de guerreros"), W - P, H - 70); c.textAlign = "left";
   return new Promise(res => cv.toBlob(b => res(b), "image/png"));

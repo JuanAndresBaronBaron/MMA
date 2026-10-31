@@ -4,6 +4,7 @@ import {icon, modal, avatar, toast} from "./ui.js";
 import {esc, norm, money, fmtDate, $} from "./util.js";
 import {t, lang} from "./i18n.js";
 import {estadoEf} from "./cobros.js";
+import * as R from "./roles.js";
 
 let ROUTES = {}, open = null, gWait = 0;
 const go = h => { location.hash = h; };
@@ -70,15 +71,22 @@ function acciones(){
     {ic: "whatsapp", label: t("Mensaje masivo"), hay: "mensaje masivo difusion whatsapp todos recordatorio", fn: () => import("./difusion.js").then(m => m.openDifusion()).catch(() => toast(t("Esta sección no está disponible"), "warn"))},
     {ic: "userPlus", label: t("Nuevo prospecto"), hay: "nuevo prospecto lead interesado clase de prueba", href: "#/leads?nuevo=1"},
     {ic: "keyboard", label: t("Atajos de teclado"), hay: "atajos teclado ayuda shortcuts", fn: ayuda},
-  ].map(x => ({g: "acc", ...x}));
-  for(const [k, r] of Object.entries(ROUTES)) if(!r.hidden) A.push({g: "ir", ic: r.ic, label: t("Ir a {x}", {x: t(r.t)}), hay: `ir a ${t(r.t)} ${r.t}`, href: "#/" + k, w: -2});
+  ].map(x => ({g: "acc", ...x}))
+    /* solo lo que este modo de uso muestra (estudiante: entrenamiento y frases; profesor: sin pagos ni prospectos) */
+    .filter(x => x.href ? R.allowedHref(x.href) : x.mode === "pago" ? R.veDinero() : x.fn === ayuda || R.rol() === "dueno");
+  /* «Ir a»: las secciones del menú de este modo (el estudiante tiene las de Entrenamiento como propias) */
+  const ir = R.rol() === "estudiante" ? [...R.NAV_ESTUDIANTE.flatMap(g => g[2]), ["ajustes", ROUTES.ajustes?.ic || "settings", "Ajustes"]]
+    : Object.entries(ROUTES).filter(([k, r]) => !r.hidden && R.allowed(k)).map(([k, r]) => [k, r.ic, r.t]);
+  for(const [k, ic, tt] of ir) A.push({g: "ir", ic, label: t("Ir a {x}", {x: t(tt)}), hay: `ir a ${t(tt)} ${tt}`, href: "#/" + k, w: -2});
   return A;
 }
 function alumnosIdx(){
+  if(!R.allowed("alumnos")) return [];
   return S.inAcad("alumnos").map(a => ({g: "al", al: a, label: a.nombre, sub: [a.documento, a.telefono, estadoEf(a) !== "activo" ? t(estadoEf(a) === "congelado" ? "Congelado" : "Inactivo") : ""].filter(Boolean).join(" · "),
     hay: [a.nombre, a.documento, a.telefono, String(a.telefono || "").replace(/\D/g, "")].filter(Boolean).join(" "), href: "#/alumno/" + a.id, w: estadoEf(a) === "activo" ? 2 : 0}));
 }
 function pagosIdx(){
+  if(!R.veDinero()) return [];
   const al = new Map(S.inAcad("alumnos").map(a => [a.id, a]));
   const cur = S.academy()?.moneda || "COP";
   return S.all("pagos").filter(p => al.has(p.alumnoId)).sort((a, b) => (b.fecha || "").localeCompare(a.fecha || "") || b._c - a._c).slice(0, 200).map(p => {
@@ -88,6 +96,7 @@ function pagosIdx(){
   });
 }
 function leadsIdx(){
+  if(!R.allowed("leads")) return [];
   return S.inAcad("leads").map(l => ({g: "lead", ic: "userPlus", label: l.nombre || t("Sin nombre"), sub: [t(ETAPA[l.etapa] || l.etapa || ""), l.telefono].filter(Boolean).join(" · "),
     hay: [l.nombre, l.telefono, l.email].filter(Boolean).join(" "), href: "#/leads?lead=" + l.id}));
 }
@@ -98,8 +107,9 @@ const MAX = {al: 8, pag: 5, lead: 5, tec: 6, glo: 5, acc: 6, ir: 6};
 /* ---------- paleta ---------- */
 export function openPalette(initial = ""){
   if(open){ open.input.focus(); return; }
-  if(!S.academy() || !document.querySelector(".app")) return;
-  const body = `<div class="pal-in">${icon("search")}<input type="search" id="palQ" autocomplete="off" spellcheck="false" enterkeyhint="go" placeholder="${esc(t("Busca alumnos, pagos, técnicas o acciones…"))}" aria-label="${esc(t("Buscar"))}" role="combobox" aria-expanded="true" aria-controls="palList" aria-autocomplete="list"><kbd class="hide-s">Esc</kbd></div>
+  if(!R.rol() || !document.querySelector(".app")) return;
+  const ph = R.rol() === "estudiante" ? t("Busca técnicas, glosario o secciones…") : R.veDinero() ? t("Busca alumnos, pagos, técnicas o acciones…") : t("Busca alumnos, técnicas o acciones…");
+  const body = `<div class="pal-in">${icon("search")}<input type="search" id="palQ" autocomplete="off" spellcheck="false" enterkeyhint="go" placeholder="${esc(ph)}" aria-label="${esc(t("Buscar"))}" role="combobox" aria-expanded="true" aria-controls="palList" aria-autocomplete="list"><kbd class="hide-s">Esc</kbd></div>
     <div class="pal-list" id="palList" role="listbox" aria-label="${esc(t("Resultados"))}"></div>
     <div class="pal-foot"><span><span class="kbd">↑</span> <span class="kbd">↓</span> ${t("moverse")}</span><span><span class="kbd">Enter</span> ${t("abrir")}</span><span><span class="kbd">Esc</span> ${t("cerrar")}</span><span><span class="kbd">?</span> ${t("atajos")}</span></div>`;
   const m = modal({title: t("Buscar"), body, foot: false, cls: "pal", onClose: () => { open = null; }});
@@ -162,7 +172,7 @@ export function openPalette(initial = ""){
     if(e.key === "ArrowDown"){ e.preventDefault(); sel = items.length ? (sel + 1) % items.length : 0; hi(); }
     else if(e.key === "ArrowUp"){ e.preventDefault(); sel = items.length ? (sel - 1 + items.length) % items.length : 0; hi(); }
     else if(e.key === "Enter"){ e.preventDefault(); pick(sel); }
-    else if(e.key === "Backspace" && !input.value && mode){ mode = null; input.placeholder = t("Busca alumnos, pagos, técnicas o acciones…"); paint(); }
+    else if(e.key === "Backspace" && !input.value && mode){ mode = null; input.placeholder = ph; paint(); }
   });
   list.addEventListener("click", e => { const b = e.target.closest(".pal-it"); if(b) pick(+b.dataset.i); });
   list.addEventListener("mousemove", e => { const b = e.target.closest(".pal-it"); if(b && +b.dataset.i !== sel){ sel = +b.dataset.i; hi(); } });
@@ -176,15 +186,19 @@ export function openPalette(initial = ""){
 /* ---------- ayuda de atajos ---------- */
 function ayuda(){
   const K = [["Ctrl K", t("Buscar")], ["/", t("Buscar")], ["N", t("Nuevo alumno")], ["A", t("Asistencia")], ["P", t("Pagos")], ["H", t("Horario")], ["E", t("Entrenamiento")],
-    ["G I", t("Ir a {x}", {x: t("Inicio")})], ["G A", t("Ir a {x}", {x: t("Alumnos")})], ["G P", t("Ir a {x}", {x: t("Pagos")})], ["?", t("Atajos de teclado")], ["Esc", t("Cerrar")]];
+    ["G I", t("Ir a {x}", {x: t("Inicio")})], ["G A", t("Ir a {x}", {x: t("Alumnos")})], ["G P", t("Ir a {x}", {x: t("Pagos")})], ["?", t("Atajos de teclado")], ["Esc", t("Cerrar")]]
+    /* cada atajo, solo si su pantalla existe en este modo de uso */
+    .filter(([k]) => { const g = /^G (.)$/.exec(k), to = g ? GKEYS[g[1].toLowerCase()] : k.length === 1 ? KEYS[k.toLowerCase()] : null; return !to || R.allowedHref(to); });
   modal({title: t("Atajos de teclado"), body: `<div class="keys">${K.map(([k, d]) => `<span class="kbd">${k.split(" ").map(esc).join(" + ")}</span><span>${esc(d)}</span>`).join("")}</div>
     <p class="muted small">${t("Los atajos funcionan cuando no estás escribiendo en un campo.")}</p>`, foot: false});
 }
 
 /* ---------- atajos ---------- */
+const KEYS = {n: "#/alumnos?new=1", a: "#/asistencia", p: "#/pagos", h: "#/horario", e: "#/entreno"};
+const GKEYS = {i: "#/inicio", a: "#/alumnos", p: "#/pagos", h: "#/horario", g: "#/grados", e: "#/entreno", r: "#/reportes"};
 const enCampo = el => !!el && (el.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName));
 function onKey(e){
-  if(!S.academy() || !document.querySelector(".app")) return;
+  if(!R.rol() || !document.querySelector(".app")) return;
   const k = e.key;
   if((e.ctrlKey || e.metaKey) && !e.altKey && (k === "k" || k === "K")){
     if(document.body.classList.contains("bare")) return;
@@ -197,15 +211,15 @@ function onKey(e){
   const now = Date.now();
   if(gWait && now - gWait < 1200){
     gWait = 0;
-    const to = {i: "#/inicio", a: "#/alumnos", p: "#/pagos", h: "#/horario", g: "#/grados", e: "#/entreno", r: "#/reportes"}[k.toLowerCase()];
-    if(to){ e.preventDefault(); go(to); }
+    const to = GKEYS[k.toLowerCase()];
+    if(to && R.allowedHref(to)){ e.preventDefault(); go(to); }
     return;
   }
-  const map = {n: "#/alumnos?new=1", a: "#/asistencia", p: "#/pagos", h: "#/horario", e: "#/entreno"};
+  const map = KEYS;
   if(k === "/"){ e.preventDefault(); openPalette(); }
   else if(k === "?"){ e.preventDefault(); ayuda(); }
   else if(k === "g" || k === "G"){ gWait = now; }
-  else if(map[k.toLowerCase()] && k.length === 1){ e.preventDefault(); go(map[k.toLowerCase()]); }
+  else if(map[k.toLowerCase()] && k.length === 1 && R.allowedHref(map[k.toLowerCase()])){ e.preventDefault(); go(map[k.toLowerCase()]); }
 }
 let bound = false;
 export function initPalette({routes} = {}){

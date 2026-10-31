@@ -7,7 +7,7 @@ import {planById} from "./catalog.js";
 import {t, tn, lang} from "./i18n.js";
 
 const KEY = "mma:data", PREFS = "mma:prefs";
-export const COLS = ["academias", "sedes", "disciplinas", "alumnos", "pagos", "grados", "asistencias", "productos", "progreso", "rutinas", "sesiones", "clases", "leads", "evaluaciones", "notas", "repasos", "favoritos"];
+export const COLS = ["academias", "sedes", "disciplinas", "alumnos", "pagos", "grados", "asistencias", "productos", "progreso", "rutinas", "sesiones", "clases", "leads", "evaluaciones", "notas", "repasos", "favoritos", "perfil"];
 export const APP = "mma-academia", VER = 1;
 
 const empty = () => ({app: APP, v: VER, col: Object.fromEntries(COLS.map(c => [c, {}]))});
@@ -82,6 +82,8 @@ export function merge(remote, local = false){
       const r = R[id]; if(!isObj(r) || typeof r._u !== "number") continue;
       /* misma clase viva en los dos lados: se mezcla alumno por alumno */
       if(c === "asistencias" && L[id] && !L[id]._d && !r._d){ const m = unirAsis(L[id], r); if(m){ L[id] = m; any = true; } continue; }
+      /* el perfil se mezcla campo por campo (rol, nombre, artes): cada aparato escribe solo lo suyo */
+      if(c === "perfil" && L[id] && !L[id]._d && !r._d){ const m = unirCampos(L[id], r); if(m){ L[id] = m; any = true; } continue; }
       if(!L[id] || (L[id]._u || 0) < r._u){ L[id] = r; any = true; }
     }
   }
@@ -342,6 +344,24 @@ const unirMarcas = ms => { const out = {}; for(const m of ms) for(const id in m)
 const igualMarcas = (a, b) => { const ka = Object.keys(a); return ka.length === Object.keys(b).length && ka.every(id => b[id] && b[id].on === a[id].on && b[id]._u === a[id]._u); };
 /* mezcla local l con remota r de la misma clase. null si l no cambia. Si l aporta marcas que r no tiene, el _u sube
    por encima del remoto para que se suba a Drive; el resto de campos, del más reciente */
+/* dos versiones vivas de un registro con hora por campo (_f: {campo: _u}): gana cada campo el más reciente.
+   Sin _f el campo cuenta con el _u del registro. Si el resultado no es el remoto, el _u sube para que viaje */
+function unirCampos(l, r){
+  const lu = l._u || 0, fl = l._f || {}, fr = r._f || {};
+  const out = Object.assign({}, lu < r._u ? l : r, lu < r._u ? r : l), f = {};
+  for(const k of new Set([...Object.keys(l), ...Object.keys(r)])){
+    if(k === "id" || k[0] === "_") continue;
+    const tl = k in l ? (fl[k] || lu) : -1, tr = k in r ? (fr[k] || r._u) : -1;
+    const w = tl >= tr ? l : r;
+    out[k] = w[k]; f[k] = Math.max(tl, tr, 0);
+  }
+  out._f = f;
+  const canon = o => isObj(o) ? Object.keys(o).sort().map(k => [k, canon(o[k])]) : o;
+  const sinU = o => JSON.stringify(canon(Object.assign({}, o, {_u: 0, _c: 0})));
+  out._u = sinU(out) === sinU(r) ? Math.max(lu, r._u) : Math.max(lu, r._u + 1);
+  if(sinU(out) === sinU(l) && out._u === lu) return null;
+  return out;
+}
 function unirAsis(l, r){
   const a = marcasDe(l), b = marcasDe(r), m = unirMarcas([a, b]);
   const lu = l._u || 0, base = lu < r._u ? r : l;

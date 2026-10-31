@@ -5,6 +5,7 @@ import {today, addDays, daysBetween} from "./util.js";
 import {estadoPago, diasSinVenir, ultimasAsistencias, estadoEf} from "./cobros.js";
 import {saldoTiquetera} from "./clases.js";
 import {t, tn} from "./i18n.js";
+import {veDinero} from "./roles.js";
 
 /* datos que se reusan al calcular muchos alumnos: última clase por alumno y si la academia toma asistencia */
 export function contexto(){
@@ -12,7 +13,8 @@ export function contexto(){
   const asis = S.all("asistencias").filter(a => !a.academiaId || a.academiaId === acad?.id);
   let primera = null;
   for(const a of asis) if(a.fecha && (!primera || a.fecha < primera)) primera = a.fecha;
-  return {hoy: today(), ult: ultimasAsistencias(), hayAsis: asis.length > 0, primera, acad};
+  /* dinero: el modo profesor no ve deudas, así que tampoco cuentan como motivo ni salen en el mensaje */
+  return {hoy: today(), ult: ultimasAsistencias(), hayAsis: asis.length > 0, primera, acad, dinero: veDinero()};
 }
 
 export function riesgo(al, cx = contexto()){
@@ -50,11 +52,12 @@ export function riesgo(al, cx = contexto()){
       if(!sem2) add(20, t("Alumno nuevo sin clases en su segunda semana"), "nuevo");
     }
   }
-  /* pago vencido */
-  const e = estadoPago(al, acad?.avisoDias ?? 5);
+  /* pago vencido (solo para quien ve dinero) */
+  const dinero = cx.dinero !== false;
+  const e = dinero ? estadoPago(al, acad?.avisoDias ?? 5) : {};
   if(e.k === "vencido") add(15 + Math.min(10, Math.round(-(e.dias || 0) / 3)), e.txt, "pago");
   /* tiquetera agotada o vencida */
-  try{
+  if(dinero) try{
     const s = saldoTiquetera(al);
     if(s && (s.saldo <= 0 || s.vencida)) add(15, s.vencida ? t("Tiquetera vencida") : t("Tiquetera sin clases"), "tiquetera");
   }catch(err){}

@@ -5,6 +5,7 @@ import {icon, avatar, belt, rankLabel, modal, toast, haptic} from "../ui.js";
 import {esc, norm, today, h} from "../util.js";
 import {t, tn, locale} from "../i18n.js";
 import {clasesHoy, claseActual, nombreClase, checkIn, leerQr} from "../clases.js";
+import {veDinero} from "../roles.js";
 
 const st = {q: "", pin: "", setup: false, msg: ""};
 let wake = null, reloj = 0, okT = 0, cam = null;
@@ -158,8 +159,10 @@ function registrar(al, sede){
   const res = document.querySelector("[data-res]"); if(res) res.innerHTML = "";
   const d = S.get("disciplinas", discId), g = d && S.rangoActual(al.id, d.id);
   const avisos = [];
-  if(r.pago?.k === "vencido") avisos.push(`<div class="ki-warn err">${icon("alert")}<span>${t("Tu pago está vencido. Acércate a recepción.")}</span></div>`);
-  const s = r.saldo;
+  /* el modo profesor no muestra deudas: tampoco en el check-in */
+  const dinero = veDinero();
+  if(dinero && r.pago?.k === "vencido") avisos.push(`<div class="ki-warn err">${icon("alert")}<span>${t("Tu pago está vencido. Acércate a recepción.")}</span></div>`);
+  const s = dinero ? r.saldo : null;
   if(s && s.vencida) avisos.push(`<div class="ki-warn err">${icon("receipt")}<span>${t("Tu tiquetera venció. Pregunta por la renovación.")}</span></div>`);
   else if(s && s.saldo === 0) avisos.push(`<div class="ki-warn err">${icon("receipt")}<span>${t("Usaste todas las clases de tu tiquetera.")}</span></div>`);
   else if(s && s.saldo <= 3) avisos.push(`<div class="ki-warn warn">${icon("receipt")}<span>${tn(s.saldo, "Te queda 1 clase en tu tiquetera.", "Te quedan {n} clases en tu tiquetera.")}</span></div>`);

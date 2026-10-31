@@ -4,6 +4,7 @@ import {esc, norm, age, csv, download, today, h} from "../util.js";
 import {studentForm, quickPay} from "../forms.js";
 import {STATUS, planById} from "../catalog.js";
 import {pillTxt, estadoPago, vence, ultimasAsistencias, diasSinVenir, estadoEf} from "../cobros.js";
+import {veDinero} from "../roles.js";
 import {t, tn, locale} from "../i18n.js";
 
 /* filtros que se recuerdan mientras la app está abierta */
@@ -21,6 +22,9 @@ export function render(el, params, ctx, query){
     setTimeout(() => studentForm(null, {onSaved: a => { location.hash = volver ? `#/${volver}${volver.includes("?") ? "&" : "?"}nuevo=${a.id}` : "#/alumno/" + a.id; }}), 0);
   }
   const acad = S.academy();
+  /* modo profesor: sin estado de pago, cobros, filtros por pago ni exportar (roles.js) */
+  const dinero = veDinero();
+  if(!dinero){ st.pago = ""; if(st.orden === "pago") st.orden = "nombre"; }
   const discs = S.discsOfSede(S.curSede());
   const all = S.alumnos({todos: true});
   const ult = ultimasAsistencias();
@@ -52,19 +56,19 @@ export function render(el, params, ctx, query){
   const tags = a => (a.disciplinaIds || []).map(id => S.get("disciplinas", id)).filter(Boolean).map(dtag).join("");
   const blood = a => a.sangre ? `<span class="blood">${icon("drop")}${esc(a.sangre)}</span>` : "";
   const svTxt = x => estadoEf(x.a) !== "activo" ? "" : !ult.has(x.a.id) ? t("Sin asistencias") : x.sv === 0 ? t("Vino hoy") : tn(x.sv, "Última clase hace 1 día", "Última clase hace {n} días");
-  const payBtn = ({a, e}, cls = "") => ["vencido", "pronto"].includes(e.k) ? `<button type="button" class="icon-btn ok ${cls}" data-pay="${a.id}" title="${t("Marcar pagado")}" aria-label="${esc(t("Marcar pagado") + ": " + a.nombre)}">${icon("cash")}</button>` : "";
+  const payBtn = ({a, e}, cls = "") => dinero && ["vencido", "pronto"].includes(e.k) ? `<button type="button" class="icon-btn ok ${cls}" data-pay="${a.id}" title="${t("Marcar pagado")}" aria-label="${esc(t("Marcar pagado") + ": " + a.nombre)}">${icon("cash")}</button>` : "";
   /* tarjeta: el enlace es el nombre (estirado sobre toda la tarjeta); el botón de pago queda fuera del <a> */
   const card = x => { const {a, e} = x; return `<div class="st-card st-card2">
       ${avatar(a, 72)}
       <a class="st-name st-a" href="#/alumno/${a.id}">${esc(a.nombre)}</a>
       <span class="muted small st-line">${[a.nacimiento ? esc(tn(age(a.nacimiento), "1 año", "{n} años")) : "", blood(a), S.sedes().length > 1 ? esc(sede(a.sedeId)) : ""].filter(Boolean).join(" · ") || "&nbsp;"}</span>
       <div class="st-belts">${belts(a)}</div>
-      <div class="st-foot2">${pill(e.k, pillTxt(a, e))}${svTxt(x) ? `<span class="muted small ${aus(x) ? "warn-t" : ""}">${esc(svTxt(x))}</span>` : ""}</div>
+      <div class="st-foot2">${dinero ? pill(e.k, pillTxt(a, e)) : estadoEf(a) !== "activo" ? pill(estadoEf(a), t(STATUS[estadoEf(a)] || "")) : ""}${svTxt(x) ? `<span class="muted small ${aus(x) ? "warn-t" : ""}">${esc(svTxt(x))}</span>` : ""}</div>
       ${payBtn(x, "st-pay")}
     </div>`; };
   const rowH = x => { const {a, e} = x; return `<div class="li st-row"><a class="li-link" href="#/alumno/${a.id}">${avatar(a, 40)}
       <div class="li-main"><span class="st-nm"><b>${esc(a.nombre)}</b></span>
-        <span class="st-sub"><span title="${esc(pillTxt(a, e))}">${pill(e.k, e.txt)}</span><span class="st-tags">${tags(a)}</span><span class="muted small ${aus(x) ? "warn-t" : ""}">${[esc(svTxt(x)), S.sedes().length > 1 ? esc(sede(a.sedeId)) : ""].filter(Boolean).join(" · ")}</span></span></div></a>
+        <span class="st-sub">${dinero ? `<span title="${esc(pillTxt(a, e))}">${pill(e.k, e.txt)}</span>` : ""}<span class="st-tags">${tags(a)}</span><span class="muted small ${aus(x) ? "warn-t" : ""}">${[esc(svTxt(x)), S.sedes().length > 1 ? esc(sede(a.sedeId)) : ""].filter(Boolean).join(" · ")}</span></span></div></a>
       <div class="li-belts hide-s">${belts(a)}</div>
       <span class="hide-s st-blood">${blood(a)}</span>
       ${payBtn(x) || `<span class="icon-btn ghost-sp"></span>`}
@@ -73,8 +77,8 @@ export function render(el, params, ctx, query){
   const pagoN = {pend: t("Pendientes"), vencido: t("Vencidos"), aldia: t("Al día"), beca: t("Becados")};
   const activos = [st.disc && {k: "disc", txt: discN(st.disc)}, st.pago && {k: "pago", txt: pagoN[st.pago]}, st.aus && {k: "aus", txt: t("Sin venir +14 días")}].filter(Boolean);
   const selDisc = (id = "fDisc") => `<select id="${id}" aria-label="${t("Disciplina")}"><option value="">${t("Todas las disciplinas")}</option>${discs.map(d => `<option value="${d.id}" ${st.disc === d.id ? "selected" : ""}>${esc(t(d.nombre))}</option>`).join("")}</select>`;
-  const selPago = (id = "fPago") => `<select id="${id}" aria-label="${t("Pago")}"><option value="">${t("Cualquier pago")}</option>${Object.entries(pagoN).map(([k, n]) => `<option value="${k}" ${st.pago === k ? "selected" : ""}>${n}</option>`).join("")}</select>`;
-  const selOrden = (id = "fOrden") => `<select id="${id}" aria-label="${t("Orden")}">${[["nombre", t("Orden: nombre")], ["pago", t("Orden: vencimiento")], ["ingreso", t("Orden: más recientes")], ["asist", t("Orden: más días sin venir")]].map(([k, n]) => `<option value="${k}" ${st.orden === k ? "selected" : ""}>${n}</option>`).join("")}</select>`;
+  const selPago = (id = "fPago") => !dinero ? "" : `<select id="${id}" aria-label="${t("Pago")}"><option value="">${t("Cualquier pago")}</option>${Object.entries(pagoN).map(([k, n]) => `<option value="${k}" ${st.pago === k ? "selected" : ""}>${n}</option>`).join("")}</select>`;
+  const selOrden = (id = "fOrden") => `<select id="${id}" aria-label="${t("Orden")}">${[["nombre", t("Orden: nombre")], dinero && ["pago", t("Orden: vencimiento")], ["ingreso", t("Orden: más recientes")], ["asist", t("Orden: más días sin venir")]].filter(Boolean).map(([k, n]) => `<option value="${k}" ${st.orden === k ? "selected" : ""}>${n}</option>`).join("")}</select>`;
 
   /* lista por nombre: secciones por inicial, como Contactos (con índice A-Z en el celular) */
   const inicial = a => { const c = norm(a.nombre).trim().charAt(0).toUpperCase(); return /[A-Z]/.test(c) ? c : "#"; };
@@ -93,7 +97,7 @@ export function render(el, params, ctx, query){
   <div class="st-sticky" data-sticky>
     <div class="toolbar st-tools">
       <label class="search st-search">${icon("search")}<input id="q" type="search" placeholder="${t("Buscar por nombre, documento o teléfono")}" value="${esc(st.q)}" aria-label="${t("Buscar")}" autocomplete="off" enterkeyhint="search"></label>
-      <button class="btn ghost st-bulk hide-s" data-bulk title="${t("Mensaje masivo por WhatsApp")}" aria-label="${t("Mensaje masivo por WhatsApp")}">${icon("whatsapp")}<span>${t("Mensaje masivo")}</span></button>
+      ${dinero ? `<button class="btn ghost st-bulk hide-s" data-bulk title="${t("Mensaje masivo por WhatsApp")}" aria-label="${t("Mensaje masivo por WhatsApp")}">${icon("whatsapp")}<span>${t("Mensaje masivo")}</span></button>` : ""}
       <button class="btn primary hide-s" data-new>${icon("plus")}<span>${t("Nuevo alumno")}</span></button>
     </div>
   </div>
@@ -106,9 +110,9 @@ export function render(el, params, ctx, query){
     <p class="count st-count" aria-live="polite">${tn(filtered.length, "1 alumno", "{n} alumnos")}</p>
     <div class="st-acts">
       <button class="icon-btn gray only-m f-btn ${activos.length ? "on" : ""}" data-filtros aria-haspopup="dialog" title="${t("Filtros")}" aria-label="${esc(t("Filtros") + (activos.length ? ` (${activos.length})` : ""))}">${icon("filter")}${activos.length ? `<i class="f-n" aria-hidden="true">${activos.length}</i>` : ""}</button>
-      <button class="icon-btn gray only-m st-bulk-m" data-bulk title="${t("Mensaje masivo por WhatsApp")}" aria-label="${t("Mensaje masivo por WhatsApp")}">${icon("whatsapp")}</button>
+      ${dinero ? `<button class="icon-btn gray only-m st-bulk-m" data-bulk title="${t("Mensaje masivo por WhatsApp")}" aria-label="${t("Mensaje masivo por WhatsApp")}">${icon("whatsapp")}</button>` : ""}
       <div class="seg small icons st-view"><label title="${t("Tarjetas")}"><input type="radio" name="vista" value="grid" ${st.vista === "grid" ? "checked" : ""} aria-label="${t("Tarjetas")}"><span>${icon("grid")}</span></label><label title="${t("Lista")}"><input type="radio" name="vista" value="list" ${st.vista === "list" ? "checked" : ""} aria-label="${t("Lista")}"><span>${icon("list")}</span></label></div>
-      <button class="btn ghost small st-csv" data-csv title="${t("Exportar a Excel (CSV)")}" aria-label="${t("Exportar a Excel (CSV)")}">${icon("download")}<span class="hide-s">CSV</span></button>
+      ${dinero ? `<button class="btn ghost small st-csv" data-csv title="${t("Exportar a Excel (CSV)")}" aria-label="${t("Exportar a Excel (CSV)")}">${icon("download")}<span class="hide-s">CSV</span></button>` : ""}
     </div>
   </div>
   ${activos.length ? `<div class="f-active">${activos.map(f => `<button type="button" class="f-chip" data-rmf="${f.k}" aria-label="${esc(t("Quitar filtro {f}", {f: f.txt}))}">${esc(f.txt)}${icon("x")}</button>`).join("")}</div>` : ""}
@@ -120,7 +124,7 @@ export function render(el, params, ctx, query){
 
   el.querySelector("#q").oninput = e => { st.q = e.target.value; st.f = true; render(el); };
   el.querySelector("#fDisc").onchange = e => { st.disc = e.target.value; render(el); };
-  el.querySelector("#fPago").onchange = e => { st.pago = e.target.value; render(el); };
+  if(el.querySelector("#fPago")) el.querySelector("#fPago").onchange = e => { st.pago = e.target.value; render(el); };
   el.querySelector("#fOrden").onchange = e => { st.orden = e.target.value; render(el); };
   el.querySelector("#fAus").onchange = e => { st.aus = e.target.checked; render(el); };
   el.onchange = e => {
@@ -193,7 +197,7 @@ const dtag = d => `<span class="dtag" style="--dc:${esc(d.color || "#888")}" tit
 function filtersSheet(el, {selDisc, selPago, selOrden, nAus}){
   const body = h(`<form class="form st-fsheet" novalidate>
     <div class="field"><label class="lbl" for="sDisc">${t("Disciplina")}</label>${selDisc("sDisc")}</div>
-    <div class="field"><label class="lbl" for="sPago">${t("Pago")}</label>${selPago("sPago")}</div>
+    ${selPago("sPago") ? `<div class="field"><label class="lbl" for="sPago">${t("Pago")}</label>${selPago("sPago")}</div>` : ""}
     <div class="field"><label class="lbl" for="sOrden">${t("Orden")}</label>${selOrden("sOrden")}</div>
     <label class="check toggle st-aus"><input type="checkbox" class="switch" name="aus" ${st.aus ? "checked" : ""}><span>${t("Sin venir +14 días")} <span class="muted">(${nAus})</span></span></label>
   </form>`);
@@ -202,7 +206,7 @@ function filtersSheet(el, {selDisc, selPago, selOrden, nAus}){
   m.foot.querySelector("[data-clear]").onclick = () => { Object.assign(st, {disc: "", pago: "", aus: false, orden: "nombre"}); m.close(); render(el); };
   m.foot.querySelector("[data-apply]").onclick = () => {
     const q = s => body.querySelector(s);
-    Object.assign(st, {disc: q("#sDisc").value, pago: q("#sPago").value, orden: q("#sOrden").value, aus: q("[name=aus]").checked});
+    Object.assign(st, {disc: q("#sDisc").value, pago: q("#sPago")?.value || "", orden: q("#sOrden").value, aus: q("[name=aus]").checked});
     m.close(); render(el);
   };
 }
