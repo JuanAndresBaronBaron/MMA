@@ -17,4 +17,5 @@ export default {
   "Volante o afiche": "Flyer or poster",
   "Pasaba por ahí": "Walked by",
   "Página web o Google": "Website or Google",
+  "Tus datos": "Your details",
 };

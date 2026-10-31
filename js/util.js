@@ -55,7 +55,7 @@ const MES = EN ? ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep",
 /* el idioma no cambia sin recargar la página, así que MESES ya queda en el idioma actual */
 export const MESES = EN ? ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"] : ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 export function fmtDate(iso, long){
-  const d = parseISO(iso); if(!d) return "—";
+  const d = parseISO(iso); if(!d) return "–";
   if(EN) return `${(long ? MESES : MES)[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`;
   return long ? `${d.getDate()} de ${MESES[d.getMonth()]} de ${d.getFullYear()}` : `${d.getDate()} ${MES[d.getMonth()]} ${d.getFullYear()}`;
 }

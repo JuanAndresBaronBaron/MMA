@@ -50,7 +50,7 @@ export function render(el){
     <div class="en-tile"><span class="kpi-ic c3">${icon("fist")}</span><div><b>${fmtN(D.hs.length)}</b><span>${t("Sesiones en total")}</span></div></div>
     <div class="en-tile"><span class="kpi-ic c1">${icon("clock")}</span><div><b>${fmtN(D.tot / 60)} h</b><span>${t("Horas entrenadas")}</span></div></div>
     <div class="en-tile"><span class="kpi-ic c4">${icon("flame")}</span><div><b>${tn(rc.record, "1 día", "{n} días")}</b><span>${t("Mejor racha")}</span></div></div>
-    <div class="en-tile"><span class="kpi-ic c2">${icon("zap")}</span><div><b>${D.rpe ? D.rpe.toFixed(1) : "—"}</b><span>${t("RPE promedio")}</span></div></div>
+    <div class="en-tile"><span class="kpi-ic c2">${icon("zap")}</span><div><b>${D.rpe ? D.rpe.toFixed(1) : "–"}</b><span>${t("RPE promedio")}</span></div></div>
   </div>
   ${!D.hs.length ? `<div class="card"><div class="empty">${icon("chart", "big")}<h3>${t("Todavía no hay datos")}</h3><p>${t("Registra tus entrenos y aquí verás tus minutos por semana, tu esfuerzo y tus días activos.")}</p><a class="btn primary" href="#/entreno">${t("Ir a Entrenamiento")}</a></div></div>` : `
   <div class="en-charts">
@@ -65,7 +65,7 @@ export function render(el){
     : `<p class="muted">${t("Anota tus rollos al registrar un entreno (en «Diario») para ver tus mejores técnicas y dónde más pierdes.")}</p>`}
   </section>
   <details class="card en-tabla"><summary>${icon("list")} ${t("Ver datos en tabla")}</summary><div class="tbl-wrap"><table class="tbl"><thead><tr><th>${t("Semana")}</th><th>${t("Sesiones")}</th><th>${t("Minutos")}</th>${D.artes.map(a => `<th>${esc(nomArte(a))}</th>`).join("")}<th>RPE</th></tr></thead>
-    <tbody>${D.W.map(w => `<tr><td>${corto(w.l)}</td><td>${w.n}</td><td>${fmtN(w.min)}</td>${D.artes.map(a => `<td>${fmtN(w.por[a] || 0)}</td>`).join("")}<td>${w.rpeM ? w.rpeM.toFixed(1) : "—"}</td></tr>`).join("")}</tbody></table></div></details>`}`;
+    <tbody>${D.W.map(w => `<tr><td>${corto(w.l)}</td><td>${w.n}</td><td>${fmtN(w.min)}</td>${D.artes.map(a => `<td>${fmtN(w.por[a] || 0)}</td>`).join("")}<td>${w.rpeM ? w.rpeM.toFixed(1) : "–"}</td></tr>`).join("")}</tbody></table></div></details>`}`;
   el.onclick = el.onchange = null;
   if(!D.hs.length) return;
   const pintar = () => {

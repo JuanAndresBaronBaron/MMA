@@ -1,12 +1,12 @@
 import * as S from "../store.js";
-import {icon, avatar, belt, empty, rankLabel} from "../ui.js";
+import {icon, avatar, belt, empty, rankLabel, haptic} from "../ui.js";
 import {esc, fmtDate, fmtDuration, addMonths, today, clamp, fmtMonths} from "../util.js";
 import {promotionModal} from "../forms.js";
 import {t, tn} from "../i18n.js";
 import * as E from "../evaluacion.js";
 import {estadoEf} from "../cobros.js";
 
-const st = {disc: ""};
+const st = {disc: "", more: {}};
 /* etiqueta corta de disciplina (BJJ, MMA, MT) en vez de solo un punto de color */
 const tag = d => `<span class="disc-tag" style="--c:${d.color}">${esc(S.discCorto(d))}</span>`;
 const CASI_DIAS = 45;
@@ -14,12 +14,30 @@ const CASI_DIAS = 45;
 /* insignias de preparación: tiempo, clases (si la disciplina pide mínimo) y requisitos (si hay currículo) */
 export function badges(r){
   const b = [];
-  b.push(r.tiempo.ok ? `<span class="rb ok">${icon("check")}${t("Tiempo")}</span>` : `<span class="rb warn">${icon("clock")}${r.tiempo.faltanDias ? tn(r.tiempo.faltanDias, "Tiempo: 1 día", "Tiempo: {n} días") : t("Tiempo: hoy")}</span>`);
-  if(r.clases.min) b.push(`<span class="rb ${r.clases.ok ? "ok" : "warn"}">${r.clases.ok ? icon("check") : ""}${t("Clases {hechas}/{min}", {hechas: r.clases.hechas, min: r.clases.min})}</span>`);
-  if(r.req) b.push(`<span class="rb ${r.req.listo ? "ok" : "warn"}" title="${r.req.criticosPend.length ? esc(tn(r.req.criticosPend.length, "1 crítico pendiente", "{n} críticos pendientes")) : ""}">${r.req.listo ? icon("check") : ""}${t("Requisitos {ok}/{total}", {ok: r.req.ok, total: r.req.total})}</span>`);
+  b.push(r.tiempo.ok ? `<span class="rb ok rb-t">${icon("check")}${t("Tiempo")}</span>` : `<span class="rb warn rb-t">${icon("clock")}${r.tiempo.faltanDias ? tn(r.tiempo.faltanDias, "Tiempo: 1 día", "Tiempo: {n} días") : t("Tiempo: hoy")}</span>`);
+  if(r.clases.min) b.push(`<span class="rb rb-c ${r.clases.ok ? "ok" : "warn"}">${r.clases.ok ? icon("check") : ""}${t("Clases {hechas}/{min}", {hechas: r.clases.hechas, min: r.clases.min})}</span>`);
+  if(r.req) b.push(`<span class="rb rb-r ${r.req.listo ? "ok" : "warn"}" title="${r.req.criticosPend.length ? esc(tn(r.req.criticosPend.length, "1 crítico pendiente", "{n} críticos pendientes")) : ""}">${r.req.listo ? icon("check") : ""}${t("Requisitos {ok}/{total}", {ok: r.req.ok, total: r.req.total})}</span>`);
   return `<span class="rbs">${b.join("")}</span>`;
 }
+/* anillos de preparación al estilo Actividad: tiempo (exterior), clases y requisitos (interior). Solo los que aplican. */
+export function rings(r, size = 44){
+  const v = [{k: "t", p: r.n?.min ? r.n.meses / r.n.min : (r.tiempo.ok ? 1 : 0)}];
+  if(r.clases.min) v.push({k: "c", p: r.clases.hechas / r.clases.min});
+  if(r.req) v.push({k: "r", p: r.req.ok / r.req.total});
+  if(r.tiempo.ok) v[0].p = 1;
+  const sw = v.length > 2 ? 5 : 6, gap = 1.5;
+  const arcs = v.map((x, i) => {
+    const rad = 22 - sw / 2 - i * (sw + gap), pct = Math.round(clamp(x.p, 0, 1) * 100);
+    return `<g class="rg-${x.k}"><circle class="rg-track" cx="22" cy="22" r="${rad}" stroke-width="${sw}"/>${pct ? `<circle class="rg-val" cx="22" cy="22" r="${rad}" stroke-width="${sw}" pathLength="100" style="--p:${pct}" stroke-dasharray="${pct} 100"/>` : ""}</g>`;
+  }).join("");
+  const lbl = [t("Tiempo"), ...(r.clases.min ? [t("Clases")] : []), ...(r.req ? [t("Requisitos")] : [])].map((n, i) => `${n} ${Math.round(clamp(v[i].p, 0, 1) * 100)}%`).join(", ");
+  return `<svg class="rings ${r.listo ? "done" : ""}" viewBox="0 0 44 44" width="${size}" height="${size}" role="img" aria-label="${esc(lbl)}">${arcs}</svg>`;
+}
 const elegible = r => r.tiempo.ok ? "" : !r.tiempo.faltanDias ? t("elegible hoy") : tn(r.tiempo.faltanDias, "elegible el {fecha} · en 1 día", "elegible el {fecha} · en {n} días", {fecha: fmtDate(r.tiempo.fecha)});
+const LIM = 5;
+const verMas = (k, n) => n > LIM ? `<button type="button" class="gr-more" data-more="${k}" aria-expanded="${st.more[k] ? "true" : "false"}">${st.more[k] ? t("Ver menos") : t("Ver todos ({n})", {n})}</button>` : "";
+const corta = (k, xs) => st.more[k] ? xs : xs.slice(0, LIM);
+const nadie = (txt, ic = "check") => `<div class="gr-none">${icon(ic)}<span>${txt}</span></div>`;
 
 export function render(el){
   const discs = S.discsOfSede(S.curSede());
@@ -27,6 +45,26 @@ export function render(el){
   /* el currículo llega aparte: al cargarse se repinta con los requisitos */
   if(!E.listo()) E.precargar().then(ok => { if(ok && el.isConnected && location.hash.startsWith("#/grados")) render(el); });
   if(st.disc && !discs.find(d => d.id === st.disc)) st.disc = "";
+  /* el selector queda fuera de lo que se repinta: así el deslizador del control segmentado se mueve con resorte */
+  el.innerHTML = `${discs.length > 1 ? `<div class="gr-top"><div class="seg gr-seg" role="radiogroup" aria-label="${t("Disciplina")}">
+    <label><input type="radio" name="disc" value="" ${!st.disc ? "checked" : ""}><span>${t("Todas")}</span></label>
+    ${discs.map(d => `<label title="${esc(t(d.nombre))}"><input type="radio" name="disc" value="${d.id}" ${st.disc === d.id ? "checked" : ""} aria-label="${esc(t(d.nombre))}"><span><i class="gr-dot" style="--c:${esc(d.color || "#888")}"></i><b class="sl">${esc(t(d.nombre))}</b><b class="ss">${esc(S.discCorto(d))}</b></span></label>`).join("")}
+  </div></div>` : ""}<div class="gr-body"></div>`;
+  const body = el.querySelector(".gr-body");
+  paint(body, discs);
+  el.onchange = e => { if(e.target.name === "disc"){ st.disc = e.target.value; st.more = {}; paint(body, discs, true); } };
+  el.onclick = e => {
+    const p = e.target.closest("[data-promo]"); if(p) return promotionModal(S.get("alumnos", p.dataset.promo), p.dataset.d);
+    const v = e.target.closest("[data-eval]"); if(v) return E.evaluarModal(S.get("alumnos", v.dataset.eval), S.get("disciplinas", v.dataset.d));
+    const pr = e.target.closest("[data-print]"); if(pr) return imprimirCurriculo(S.get("disciplinas", pr.dataset.print));
+    const m = e.target.closest("[data-more]");
+    if(m){ st.more[m.dataset.more] = !st.more[m.dataset.more]; haptic("light"); paint(body, discs); body.querySelector(`[data-more="${m.dataset.more}"]`)?.focus({preventScroll: true}); return; }
+    const go = e.target.closest("[data-go]");
+    if(go){ const s = body.querySelector("#" + go.dataset.go); if(s){ haptic("selection"); s.scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "start"}); } }
+  };
+}
+
+function paint(body, discs, fade){
   const ds = st.disc ? discs.filter(d => d.id === st.disc) : discs;
   const listos = new Map(), casi = new Map(), recientes = [], rapidas = [], sinGrado = [];
   const hoy = today(), hace90 = addMonths(hoy, -3), hace12 = addMonths(hoy, -12);
@@ -48,50 +86,59 @@ export function render(el){
   recientes.sort((x, y) => y.g.fecha.localeCompare(x.g.fecha));
   rapidas.sort((x, y) => y.g.fecha.localeCompare(x.g.fecha));
 
-  /* una fila por alumno; dentro, una línea por disciplina con su siguiente rango, insignias y acciones */
-  const fila = ({a, xs}) => `<div class="li rd-row">${avatar(a, 40)}<div class="li-main"><a class="rd-name" href="#/alumno/${a.id}"><b>${esc(a.nombre)}</b></a>
+  /* una fila por alumno; dentro, una línea por disciplina con anillos, siguiente rango, insignias y acciones */
+  const fila = ({a, xs}) => `<div class="li rd-row"><a class="rd-who chev" href="#/alumno/${a.id}">${avatar(a, 40)}<b class="rd-name">${esc(a.nombre)}</b></a><div class="rd-lines">
     ${xs.map(({d, r}) => {
       const g = r.cur, bc = S.rankDef(d, r.n.tipo === "grado" ? g.rank : g.rank + 1).c;
-      const pct = r.n.min ? clamp(r.n.meses / r.n.min * 100, 0, 100) : 100;
-      return `<div class="rd-line"><div class="rd-info">
-        <span class="muted small">${tag(d)}${esc(rankLabel(d, g))} · ${fmtDuration(r.n.tipo === "grado" ? g.fecha : S.inicioCinturon(S.gradosDe(a.id, d.id)).fecha)}</span>
-        <span class="next-rank small" style="--bc:${esc(bc)}"><i aria-hidden="true"></i>→ ${esc(r.n.txt)}</span>
-        ${elegible(r) ? `<span class="small muted">${esc(elegible(r))}</span><div class="progress thin"><span style="width:${pct}%"></span></div>` : ""}
+      return `<div class="rd-line">${rings(r, 40)}<div class="rd-info">
+        <span class="muted small rd-cur">${tag(d)}${esc(rankLabel(d, g))} · ${fmtDuration(r.n.tipo === "grado" ? g.fecha : S.inicioCinturon(S.gradosDe(a.id, d.id)).fecha)}</span>
+        <span class="next-rank" style="--bc:${esc(bc)}"><i aria-hidden="true"></i><span>${esc(r.n.txt)}</span></span>
+        ${elegible(r) ? `<span class="small muted">${esc(elegible(r))}</span>` : ""}
         ${badges(r)}</div>
-        <div class="rd-act">${r.req ? `<button class="btn small ghost" data-eval="${a.id}" data-d="${d.id}">${icon("target")}<span>${t("Evaluar")}</span></button>` : ""}
-        <button class="btn small ${r.listo ? "primary" : "ghost"}" data-promo="${a.id}" data-d="${d.id}">${t("Promover")}</button></div></div>`;
+        <div class="rd-act">${r.req ? `<button class="btn small gray" data-eval="${a.id}" data-d="${d.id}">${icon("target")}<span>${t("Evaluar")}</span></button>` : ""}
+        <button class="btn small ${r.listo ? "primary" : "tinted"}" data-promo="${a.id}" data-d="${d.id}">${t("Promover")}</button></div></div>`;
     }).join("")}</div></div>`;
 
-  el.innerHTML = `
-  <div class="filters"><div class="chips">
-    <label class="chip"><input type="radio" name="disc" value="" ${!st.disc ? "checked" : ""}><span>${t("Todas")}</span></label>
-    ${discs.map(d => `<label class="chip" style="--dc:${d.color}"><input type="radio" name="disc" value="${d.id}" ${st.disc === d.id ? "checked" : ""}><span>${esc(t(d.nombre))}</span></label>`).join("")}
-  </div></div>
-  <div class="grid2">
-    <section class="card"><header class="card-h"><h3>${icon("check")} ${t("Listos para promoción")} <span class="count-b">${L.length}</span></h3></header>
-      <p class="muted small">${t("Cumplen el tiempo mínimo, las clases y los requisitos del currículo (cuando aplican).")}</p>
-      ${L.length ? `<div class="list">${L.map(fila).join("")}</div>` : `<p class="muted">${t("Nadie por ahora.")}</p>`}</section>
-    <section class="card"><header class="card-h"><h3>${icon("target")} ${t("Casi listos")} <span class="count-b">${C.length}</span></h3></header>
-      <p class="muted small">${t("Les falta poco: tiempo en los próximos {n} días, clases o requisitos.", {n: CASI_DIAS})}</p>
-      ${C.length ? `<div class="list">${C.map(fila).join("")}</div>` : `<p class="muted">${t("Nadie cumple tiempo en las próximas semanas.")}</p>`}</section>
-    <section class="card ${rapidas.length ? "warn-card" : ""}"><header class="card-h"><h3>${icon("alert")} ${t("Promociones antes de tiempo")} <span class="count-b">${rapidas.length}</span></h3></header>
-      <p class="muted small">${t("Grados del último año que se dieron con menos tiempo del recomendado.")}</p>
-      ${rapidas.length ? `<div class="list">${rapidas.map(x => `<a class="li" href="#/alumno/${x.a.id}">${avatar(x.a, 38)}<div class="li-main"><b>${esc(x.a.nombre)}</b><span class="small">${tag(x.d)}${esc(rankLabel(x.d, x.g))}</span><span class="small warn-t">${esc(x.avisos.map(w => w.txt).join(" "))}</span></div><span class="muted small">${fmtDate(x.g.fecha)}</span></a>`).join("")}</div>` : `<p class="muted">${t("Todo en orden")}</p>`}</section>
-    <section class="card"><header class="card-h"><h3>${icon("medal")} ${t("Promociones recientes (90 días)")}</h3></header>
-      ${recientes.length ? `<div class="list">${recientes.map(x => `<div class="li"><a class="li-link" href="#/alumno/${x.a.id}">${avatar(x.a, 38)}<div class="li-main"><b>${esc(x.a.nombre)}</b><span class="muted small">${tag(x.d)}${esc(rankLabel(x.d, x.g))}${x.g.profesor ? " · " + esc(x.g.profesor) : ""} · ${fmtDate(x.g.fecha)}</span></div></a><span class="li-belt hide-s">${belt(x.d, x.g.rank, x.g.grado, {w: 64, h: 12})}</span><a class="icon-btn" href="#/certificado/${x.a.id}/${x.d.id}" title="${t("Certificado")}" aria-label="${t("Certificado")}">${icon("award")}</a></div>`).join("")}</div>` : `<p class="muted">${t("Sin promociones recientes.")}</p>`}</section>
-    ${sinGrado.length ? `<section class="card"><header class="card-h"><h3>${icon("info")} ${t("Sin grado registrado")} <span class="count-b">${sinGrado.length}</span></h3></header>
-      <div class="list">${sinGrado.map(x => `<div class="li"><a class="li-link" href="#/alumno/${x.a.id}">${avatar(x.a, 36)}<div class="li-main"><b>${esc(x.a.nombre)}</b><span class="muted small">${tag(x.d)}${esc(t(x.d.nombre))}</span></div></a><button class="btn small ghost" data-promo="${x.a.id}" data-d="${x.d.id}">${t("Registrar")}</button></div>`).join("")}</div></section>` : ""}
-    <section class="card"><header class="card-h"><h3>${icon("belt")} ${t("Tiempos mínimos configurados")}</h3><a class="btn-link" href="#/academia">${t("Editar")}</a></header>
-      ${ds.map(d => `<h4 class="grp gr-h">${tag(d)} ${esc(t(d.nombre))}${E.listo() && E.claveDe(d) ? `<button class="btn small ghost" data-print="${d.id}">${icon("print")}<span>${t("Imprimir currículo")}</span></button>` : ""}</h4><div class="tbl-wrap"><table class="tbl"><thead><tr><th>${t("Cinturón")}</th><th>${t("Grados")}</th><th>${t("Tiempo mín.")}</th><th>${t("Entre grados")}</th><th>${t("Clases mín.")}</th></tr></thead><tbody>
-        ${d.ranks.map((r, i) => `<tr><td>${belt(d, i, 0, {w: 50, h: 10})} ${esc(t(r.n))}</td><td>${r.g || "—"}</td><td>${i < d.ranks.length - 1 ? fmtMonths(r.m) : "—"}</td><td>${r.g ? fmtMonths(r.mg) : "—"}</td><td>${Number(r.cl) || "—"}</td></tr>`).join("")}</tbody></table></div>`).join("")}
-    </section>
+  const stat = (go, ic, sc, lbl, n) => `<button type="button" class="card gr-stat press" data-go="${go}" style="--sc:var(${sc})"><span class="stat-l">${icon(ic)}${lbl}</span><span class="stat-v">${n}</span></button>`;
+  const sec = (id, title, n, extra = "") => `<h2 class="section-header" id="${id}"><span>${title}${n != null ? ` <span class="gr-n">${n}</span>` : ""}</span>${extra}</h2>`;
+
+  body.innerHTML = `
+  <div class="gr-sum stagger">
+    ${stat("gr-listos", "check", "--ok", t("Listos"), L.length)}
+    ${stat("gr-casi", "target", "--accent2", t("Casi listos"), C.length)}
+    ${stat("gr-rec", "medal", "--gold", t("Últimos 90 días"), recientes.length)}
+    ${stat("gr-rap", "alert", rapidas.length ? "--warn" : "--muted", t("Antes de tiempo"), rapidas.length)}
+  </div>
+  <div class="gr-cols">
+    <div class="gr-col">
+      ${sec("gr-listos", t("Listos para promoción"), L.length)}
+      <section class="card flush gr-list">${L.length ? L.map(fila).join("") : nadie(t("Nadie por ahora."), "belt")}</section>
+      <p class="section-footer">${t("Cumplen el tiempo mínimo, las clases y los requisitos del currículo (cuando aplican).")}</p>
+      ${sec("gr-casi", t("Casi listos"), C.length)}
+      <section class="card flush gr-list">${C.length ? corta("casi", C).map(fila).join("") + verMas("casi", C.length) : nadie(t("Nadie cumple tiempo en las próximas semanas."), "clock")}</section>
+      <p class="section-footer">${t("Les falta poco: tiempo en los próximos {n} días, clases o requisitos.", {n: CASI_DIAS})}</p>
+      <div class="gr-legend" aria-hidden="true"><span class="lg-t">${t("Tiempo")}</span><span class="lg-c">${t("Clases")}</span><span class="lg-r">${t("Requisitos")}</span></div>
+    </div>
+    <div class="gr-col">
+      ${sec("gr-rec", t("Promociones recientes (90 días)"), recientes.length || null)}
+      <section class="card flush gr-list">${recientes.length ? corta("rec", recientes).map(x => `<div class="li gr-rec"><a class="li-link" href="#/alumno/${x.a.id}">${avatar(x.a, 38)}<div class="li-main"><b>${esc(x.a.nombre)}</b><span class="muted small">${tag(x.d)}${esc(rankLabel(x.d, x.g))}${x.g.profesor ? " · " + esc(x.g.profesor) : ""} · ${fmtDate(x.g.fecha)}</span></div></a><span class="li-belt hide-s">${belt(x.d, x.g.rank, x.g.grado, {w: 64, h: 12})}</span><a class="icon-btn gray gr-cert" href="#/certificado/${x.a.id}/${x.d.id}" title="${t("Certificado")}" aria-label="${t("Certificado")}">${icon("award")}</a></div>`).join("") + verMas("rec", recientes.length) : nadie(t("Sin promociones recientes."), "medal")}</section>
+      ${sec("gr-rap", t("Promociones antes de tiempo"), rapidas.length)}
+      <section class="card flush gr-list">${rapidas.length ? corta("rap", rapidas).map(x => `<a class="li gr-rap" href="#/alumno/${x.a.id}">${avatar(x.a, 38)}<div class="li-main"><b>${esc(x.a.nombre)}</b><span class="small muted">${tag(x.d)}${esc(rankLabel(x.d, x.g))} · ${fmtDate(x.g.fecha)}</span><span class="small warn-t">${esc(x.avisos.map(w => w.txt).join(" "))}</span></div></a>`).join("") + verMas("rap", rapidas.length) : nadie(t("Todo en orden"))}</section>
+      <p class="section-footer">${t("Grados del último año que se dieron con menos tiempo del recomendado.")}</p>
+      ${sinGrado.length ? `${sec("gr-sin", t("Sin grado registrado"), sinGrado.length)}
+      <section class="card flush gr-list">${corta("sin", sinGrado).map(x => `<div class="li"><a class="li-link" href="#/alumno/${x.a.id}">${avatar(x.a, 36)}<div class="li-main"><b>${esc(x.a.nombre)}</b><span class="muted small">${tag(x.d)}${esc(t(x.d.nombre))}</span></div></a><button class="btn small tinted" data-promo="${x.a.id}" data-d="${x.d.id}">${t("Registrar")}</button></div>`).join("") + verMas("sin", sinGrado.length)}</section>` : ""}
+    </div>
+  </div>
+  ${sec("gr-min", t("Tiempos mínimos configurados"), null, `<a class="btn-link" href="#/academia">${t("Editar")}</a>`)}
+  <div class="gr-mins">
+    ${ds.map(d => `<section class="card flush gr-min"><header class="gr-min-h">${tag(d)}<b>${esc(t(d.nombre))}</b>${E.listo() && E.claveDe(d) ? `<button class="btn small gray" data-print="${d.id}">${icon("print")}<span>${t("Imprimir currículo")}</span></button>` : ""}</header>
+      ${d.ranks.map((r, i) => {
+        const det = [r.g ? tn(r.g, "1 grado", "{n} grados") : "", r.g && r.mg ? t("{t} entre grados", {t: fmtMonths(r.mg)}) : "", Number(r.cl) ? tn(Number(r.cl), "1 clase mín.", "{n} clases mín.") : ""].filter(Boolean).join(" · ");
+        const last = i === d.ranks.length - 1;
+        return `<div class="row-inset gr-mrow">${belt(d, i, 0, {w: 44, h: 10})}<div class="li-main"><b>${esc(t(r.n))}</b>${det ? `<span class="muted small">${esc(det)}</span>` : ""}</div><span class="row-val tnum">${last ? "" : esc(fmtMonths(r.m))}</span></div>`;
+      }).join("")}</section>`).join("")}
   </div>`;
-  el.onchange = e => { if(e.target.name === "disc"){ st.disc = e.target.value; render(el); } };
-  el.onclick = e => {
-    const p = e.target.closest("[data-promo]"); if(p) return promotionModal(S.get("alumnos", p.dataset.promo), p.dataset.d);
-    const v = e.target.closest("[data-eval]"); if(v) return E.evaluarModal(S.get("alumnos", v.dataset.eval), S.get("disciplinas", v.dataset.d));
-    const pr = e.target.closest("[data-print]"); if(pr) return imprimirCurriculo(S.get("disciplinas", pr.dataset.print));
-  };
+  if(fade){ body.classList.remove("gr-fade"); void body.offsetWidth; body.classList.add("gr-fade"); }
 }
 
 /* hoja imprimible con el currículo de cada cinturón de una disciplina (casillas para marcar a mano) */

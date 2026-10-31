@@ -116,7 +116,7 @@ export function siguienteNumRecibo(){
   S.put("academias", {id: a.id, ultimoRecibo: n});
   return n;
 }
-export const fmtNumRecibo = n => n ? String(n).padStart(6, "0") : "—";
+export const fmtNumRecibo = n => n ? String(n).padStart(6, "0") : "–";
 
 /* ---------- reportes ---------- */
 const ymDe = iso => String(iso || "").slice(0, 7);

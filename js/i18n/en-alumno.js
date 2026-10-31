@@ -137,4 +137,6 @@ export default {
   "Fecha": "Date",
   "Certificado": "Certificate",
   "Evaluar": "Assess",
+  "Última clase": "Last class",
+  "Sin registrar": "Not set",
 };

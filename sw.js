@@ -1,9 +1,9 @@
 /* Funciona sin internet: la app se guarda en caché. Primero la red (siempre la última versión) y, sin conexión, la
    caché. Los datos del usuario no pasan por aquí (están en localStorage/IndexedDB y en su Google Drive).
    Al cambiar archivos, subir VERSION. */
-const VERSION = 7;
+const VERSION = 9;
 const CACHE = "mma-v" + VERSION;
-const SHELL = ["./", "index.html", "privacy.html", "inscripcion.html", "ficha.html", "manifest.webmanifest", "icons/icon.svg", "icons/icon-192.png", "icons/sc-alumno.png", "icons/sc-lista.png", "icons/sc-horario.png",
+const SHELL = ["./", "index.html", "privacy.html", "inscripcion.html", "ficha.html", "manifest.webmanifest", "icons/icon.svg", "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-192-maskable.png", "icons/icon-512-maskable.png", "icons/sc-alumno.png", "icons/sc-lista.png", "icons/sc-horario.png",
   "css/app.css", "css/entreno.css", "css/dash.css", "css/tracking.css", "css/students.css",
   "css/clases.css", "css/leads.css", "css/recibo.css", "css/reportes.css", "css/grados.css", "css/certificado.css", "css/ficha.css", "css/inscripcion.css", "css/frases.css",
   "js/app.js", "js/shell.js", "js/cobros.js", "js/util.js", "js/catalog.js", "js/store.js", "js/sync.js", "js/config.js", "js/ui.js", "js/forms.js", "js/demo.js",

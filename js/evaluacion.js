@@ -99,11 +99,11 @@ export async function evaluarModal(al, disc){
     for(const r of b.req){ let c = cats.find(x => x.cat === r.cat); if(!c) cats.push(c = {cat: r.cat, req: []}); c.req.push(r); }
     return {b, cats};
   });
-  const seg = r => `<div class="ev-seg" role="radiogroup" aria-label="${esc(r.txt)}">${NIVELES.map((x, i) => `<label class="${NIV_C[i]}"><input type="radio" name="${esc(r.id)}" value="${i}" ${(items[r.id] || 0) === i ? "checked" : ""}><span>${t(x)}</span></label>`).join("")}</div>`;
+  const seg = r => `<div class="seg ev-seg" role="radiogroup" aria-label="${esc(r.txt)}">${NIVELES.map((x, i) => `<label class="${NIV_C[i]}"><input type="radio" name="${esc(r.id)}" value="${i}" ${(items[r.id] || 0) === i ? "checked" : ""}><span>${t(x)}</span></label>`).join("")}</div>`;
   const body = `${head}
     <div class="ev-sum" data-sum></div>
-    <div class="ev-tools"><label class="chip"><input type="checkbox" data-pend><span>${t("Solo pendientes")}</span></label>
-      <span class="muted small">${t("Para subir: 80% en drill o más y los críticos en vivo.")}</span></div>
+    <div class="ev-tools"><label class="check ev-pend"><input type="checkbox" class="switch" data-pend><span>${t("Solo pendientes")}</span></label></div>
+    <p class="muted small ev-rule">${t("Para subir: 80% en drill o más y los críticos en vivo.")}</p>
     <div class="ev-list">${bloques.map(({b, cats}) => `<section class="ev-blk"><h4>${b.g ? `<span class="ev-g">${tn(b.g, "1° grado", "{n}° grado")}</span>` : ""}${esc(b.titulo || "")}</h4>
       ${cats.map(c => `<h5 class="ev-cat">${esc(t(CATS[c.cat] || c.cat || ""))}</h5>${c.req.map(r => `<div class="ev-it" data-r="${esc(r.id)}"><p>${r.critico ? `<span class="ev-crit" title="${t("Crítico: debe estar en vivo")}">${icon("star")}<span class="sr">${t("Crítico")}</span></span>` : ""}${esc(r.txt)}</p>${seg(r)}</div>`).join("")}`).join("")}</section>`).join("")}</div>
     <div class="field"><label class="lbl" for="evNota">${t("Nota")}</label><textarea id="evNota" rows="2" placeholder="${t("Ej: mejorar la postura en la guardia cerrada")}">${esc(ev?.nota || "")}</textarea></div>
@@ -119,9 +119,18 @@ export async function evaluarModal(al, disc){
   };
   const pinta = () => {
     const e = est();
-    m.body.querySelector("[data-sum]").innerHTML = `<div class="ev-sum-h"><b>${t("Para {rank}: {ok}/{total}", {rank: esc(rankTxt), ok: e.ok, total: e.total})}</b><span class="${e.listo ? "ok-t" : "muted"} small">${e.listo ? icon("check") + " " + t("Listo en requisitos") : e.criticosPend.length ? tn(e.criticosPend.length, "1 crítico pendiente", "{n} críticos pendientes") : t("{pct}% dominado", {pct: e.pct})}</span></div>
-      <div class="progress ${e.listo ? "ok" : ""}"><span style="width:${e.pct}%"></span></div>`;
+    const sum = m.body.querySelector("[data-sum]");
+    if(!sum.firstChild) sum.innerHTML = `<div class="ev-sum-h"><b data-st></b><span class="small" data-sl></span></div><div class="progress ev-bar"><span style="width:0%"></span></div>`;
+    sum.querySelector("[data-st]").textContent = t("Para {rank}: {ok}/{total}", {rank: rankTxt, ok: e.ok, total: e.total});
+    const sl = sum.querySelector("[data-sl]");
+    sl.className = "small " + (e.listo ? "ok-t" : "muted");
+    sl.innerHTML = e.listo ? icon("check") + " " + t("Listo en requisitos") : e.criticosPend.length ? tn(e.criticosPend.length, "1 crítico pendiente", "{n} críticos pendientes") : t("{pct}% dominado", {pct: e.pct});
+    const bar = sum.querySelector(".ev-bar");
+    bar.classList.toggle("ok", e.listo);
+    requestAnimationFrame(() => { bar.firstElementChild.style.width = e.pct + "%"; });
     for(const x of m.body.querySelectorAll(".ev-it")){ const v = items[x.dataset.r] || 0; x.dataset.n = v; x.hidden = soloPend && v >= 2 && !(reqs.find(r => r.id === x.dataset.r)?.critico && v < 3); }
+    /* títulos de categoría sin requisitos visibles: ocultos */
+    for(const h of m.body.querySelectorAll(".ev-cat")){ let x = h.nextElementSibling, vis = false; while(x && x.classList.contains("ev-it")){ if(!x.hidden) vis = true; x = x.nextElementSibling; } h.hidden = !vis; }
     for(const b of m.body.querySelectorAll(".ev-blk")) b.hidden = ![...b.querySelectorAll(".ev-it")].some(x => !x.hidden);
   };
   m.body.addEventListener("change", e => {

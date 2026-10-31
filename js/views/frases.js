@@ -2,23 +2,24 @@
    de tarjetas que se pasan como en Tinder (derecha = guardar, izquierda = siguiente, arriba = compartir), las
    favoritas y una imagen 1080×1350 lista para historias o publicaciones. */
 import * as S from "../store.js";
-import {icon, toast, sheet} from "../ui.js";
+import {icon, toast, sheet, haptic, emptyState} from "../ui.js";
 import {esc} from "../util.js";
 import {t, lang} from "../i18n.js";
 import {FRASES, CATEGORIAS} from "../frases/data.js";
 
 /* ---------- categorías ---------- */
 const CAT = {
-  disciplina: {n: "Disciplina", ic: "clock", g: ["#1f2937", "#ef3340"]},
-  entrenamiento: {n: "Entrenamiento", ic: "fist", g: ["#7c2d12", "#f97316"]},
-  mente: {n: "Mente", ic: "zap", g: ["#1e1b4b", "#6366f1"]},
-  miedo: {n: "Miedo y valor", ic: "flame", g: ["#450a0a", "#dc2626"]},
-  dolor: {n: "Dolor", ic: "drop", g: ["#3b0764", "#c026d3"]},
-  constancia: {n: "Constancia", ic: "repeat", g: ["#022c22", "#10b981"]},
-  derrota: {n: "Levantarse", ic: "sync", g: ["#172554", "#0ea5e9"]},
-  combate: {n: "Combate", ic: "target", g: ["#0b0d12", "#b91c1c"]},
-  humildad: {n: "Humildad", ic: "book", g: ["#1c1917", "#78716c"]},
-  victoria: {n: "Victoria", ic: "trophy", g: ["#451a03", "#d97706"]},
+  /* g: degradado oscuro y rudo (de la sombra al tono), siempre con texto blanco encima */
+  disciplina: {n: "Disciplina", ic: "clock", g: ["#1A1A1A", "#A3172A"]},
+  entrenamiento: {n: "Entrenamiento", ic: "fist", g: ["#2A1408", "#A3480D"]},
+  mente: {n: "Mente", ic: "zap", g: ["#18242F", "#3E5C76"]},
+  miedo: {n: "Miedo y valor", ic: "flame", g: ["#160606", "#C8102E"]},
+  dolor: {n: "Dolor", ic: "drop", g: ["#1A0A0C", "#7A0F1C"]},
+  constancia: {n: "Constancia", ic: "repeat", g: ["#232B14", "#556B2F"]},
+  derrota: {n: "Levantarse", ic: "sync", g: ["#1F252B", "#4A5560"]},
+  combate: {n: "Combate", ic: "target", g: ["#0B0B0B", "#8E1424"]},
+  humildad: {n: "Humildad", ic: "book", g: ["#161616", "#3A3A38"]},
+  victoria: {n: "Victoria", ic: "trophy", g: ["#3A2A10", "#8C6A2F"]},
 };
 /* en inglés se muestran el texto, el autor y la descripción en inglés (campos en, autorEn, quienEn) */
 const en = () => lang() === "en";
@@ -73,7 +74,6 @@ const isFav = id => store.favs().includes(id);
 /* view: la vista montada ahora (los avisos con "Deshacer" llaman a esta, no a una vista ya desmontada) */
 const st = {cat: "", deck: null, deckCat: null, i: 0, hist: [], busy: false, view: null};
 const reduced = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
-const buzz = () => { try{ navigator.vibrate && navigator.vibrate(10); }catch(e){} };
 
 function buildDeck(){
   const seen = new Set(store.seen());
@@ -196,18 +196,21 @@ function openShare(q){
   const canNative = !!navigator.share;
   const canFiles = (() => { try{ return !!(navigator.canShare && navigator.canShare({files: [new File([""], "x.png", {type: "image/png"})]})); }catch(e){ return false; } })();
   const sh = sheet({title: t("Compartir frase"), cls: "fr-share-sheet", body: `
-    <div class="fr-share-prev" style="${gradVars(q)}"><p>“${esc(txt(q))}”</p><b>${esc(aut(q))}</b></div>
-    <div class="fr-share-grid">
-      ${canNative ? `<button type="button" class="fr-share-op" data-op="native">${icon("share")}<span>${t("Compartir…")}</span></button>` : ""}
-      <a class="fr-share-op wa" data-op="wa" href="https://wa.me/?text=${encodeURIComponent(shareText(q))}" target="_blank" rel="noopener">${icon("whatsapp")}<span>WhatsApp</span></a>
-      ${canFiles ? `<button type="button" class="fr-share-op" data-op="img">${icon("camera")}<span>${t("Compartir imagen")}</span></button>` : ""}
-      <button type="button" class="fr-share-op" data-op="dl">${icon("download")}<span>${t("Descargar imagen")}</span></button>
-      <button type="button" class="fr-share-op" data-op="copy">${icon("copy")}<span>${t("Copiar texto")}</span></button>
+    <div class="fr-share-prev" style="${gradVars(q)}"><span class="fr-share-ic" aria-hidden="true">${icon(catOf(q).ic)}</span><div><p>“${esc(txt(q))}”</p><b>${esc(aut(q))}</b></div></div>
+    <div class="fr-share-list">
+      ${canNative ? `<button type="button" class="fr-share-op" data-op="native"><span>${t("Compartir…")}</span>${icon("share")}</button>` : ""}
+      <a class="fr-share-op wa" data-op="wa" href="https://wa.me/?text=${encodeURIComponent(shareText(q))}" target="_blank" rel="noopener"><span>WhatsApp</span>${icon("whatsapp")}</a>
     </div>
-    <p class="muted small fr-share-tip">${t("La imagen mide 1080 × 1350: sirve para historias y publicaciones de Instagram.")}</p>`});
+    <div class="fr-share-list">
+      ${canFiles ? `<button type="button" class="fr-share-op" data-op="img"><span>${t("Compartir imagen")}</span>${icon("camera")}</button>` : ""}
+      <button type="button" class="fr-share-op" data-op="dl"><span>${t("Descargar imagen")}</span>${icon("download")}</button>
+      <button type="button" class="fr-share-op" data-op="copy"><span>${t("Copiar texto")}</span>${icon("copy")}</button>
+    </div>
+    <p class="fr-share-tip">${t("La imagen mide 1080 × 1350: sirve para historias y publicaciones de Instagram.")}</p>`});
   sh.body.onclick = async e => {
     const b = e.target.closest("[data-op]"); if(!b) return;
     const op = b.dataset.op;
+    haptic("selection");
     if(op === "wa"){ sh.close(); return; }
     e.preventDefault();
     if(op === "native"){ if(await shareNative(q)) sh.close(); }
@@ -264,7 +267,7 @@ export function render(el){
       </section>
 
       <section class="fr-favs" aria-labelledby="frFavH">
-        <div class="fr-sec-h"><h2 id="frFavH">${icon("heart")} ${t("Favoritas")}</h2><span class="muted small" id="frFavN"></span></div>
+        <div class="fr-sec-h"><h2 id="frFavH">${t("Favoritas")}</h2><span class="muted small" id="frFavN"></span></div>
         <div id="frFavList"></div>
       </section>
     </div>
@@ -279,16 +282,16 @@ export function render(el){
     el.querySelector("#frFavN").textContent = ids.length ? String(ids.length) : "";
     const list = el.querySelector("#frFavList");
     if(!ids.length){
-      list.innerHTML = `<div class="fr-empty">${icon("heart")}<b>${t("Aún no tienes favoritas")}</b><span>${t("Desliza una tarjeta a la derecha o toca ♥ para guardarla aquí.")}</span></div>`;
+      list.innerHTML = emptyState({icon: "heart", title: t("Aún no tienes favoritas"), text: t("Desliza una tarjeta a la derecha o toca ♥ para guardarla aquí."), cls: "fr-empty"});
       return;
     }
     list.innerHTML = `<ul class="fr-fav-list">${ids.slice().reverse().map(id => byId.get(id)).filter(Boolean).map(q => `
       <li class="fr-fav" style="${gradVars(q)}">
-        <span class="fr-fav-bar" aria-hidden="true"></span>
+        <span class="fr-fav-ic" aria-hidden="true">${icon(catOf(q).ic)}</span>
         <div class="fr-fav-main"><p>“${esc(txt(q))}”</p><span>${esc(aut(q))}</span></div>
         <div class="fr-fav-act">
-          <button type="button" class="icon-btn" data-fshare="${q.id}" aria-label="${t("Compartir")}">${icon("share")}</button>
-          <button type="button" class="icon-btn" data-fdel="${q.id}" aria-label="${t("Quitar de favoritas")}">${icon("trash")}</button>
+          <button type="button" class="icon-btn" data-fshare="${q.id}" aria-label="${t("Compartir")}" title="${t("Compartir")}">${icon("share")}</button>
+          <button type="button" class="icon-btn" data-fdel="${q.id}" aria-label="${t("Quitar de favoritas")}" title="${t("Quitar de favoritas")}">${icon("trash")}</button>
         </div>
       </li>`).join("")}</ul>`;
   };
@@ -306,7 +309,7 @@ export function render(el){
     deckEl.innerHTML = ids.map((id, k) => {
       const q = byId.get(id);
       return `<article class="fr-card ${k === 0 ? "is-top" : ""}" data-id="${id}" data-depth="${k}" style="${gradVars(q)};z-index:${3 - k}" ${k ? `aria-hidden="true"` : `aria-label="${esc(txt(q))} (${esc(aut(q))})"`}>
-        <div class="fr-card-in">${cardInner(q)}</div>
+        <div class="fr-card-in">${cardInner(q)}</div><i class="fr-dim" aria-hidden="true"></i>
         ${k === 0 ? `<span class="fr-stamp like" aria-hidden="true">${icon("heart")}${t("Guardar")}</span><span class="fr-stamp nope" aria-hidden="true">${icon("x")}${t("Siguiente")}</span><span class="fr-stamp up" aria-hidden="true">${icon("share")}${t("Compartir")}</span>` : ""}
       </article>`;
     }).reverse().join("");
@@ -331,17 +334,23 @@ export function render(el){
     const card = top();
     if(!card || st.busy || (!fromDrag && card.classList.contains("dragging"))) return;
     st.busy = true;
+    stopSpring(card);
     const id = card.dataset.id, q = byId.get(id);
     const hadFocus = el.contains(document.activeElement);
-    buzz();
-    const W = deckEl.clientWidth || 360;
-    const cur = card._pos || {x: 0, y: 0};
-    const to = dir === "right" ? {x: W * 1.6, y: cur.y + 40, r: 28} : dir === "left" ? {x: -W * 1.6, y: cur.y + 40, r: -28} : {x: cur.x * .5, y: -(deckEl.clientHeight || 500) * 1.4, r: cur.x / 30};
+    haptic(dir === "left" ? "light" : "medium");
+    const W = deckEl.clientWidth || 360, H = deckEl.clientHeight || 500;
+    const cur = card._pos || {x: 0, y: 0}, v = (fromDrag && card._vel) || {x: 0, y: 0};
+    /* sale con el impulso del dedo: sigue la dirección en que se lanzó, sin frenar de golpe */
+    const to = dir === "right" ? {x: W * 1.5, y: cur.y + 60 + v.y * .12, r: 24}
+      : dir === "left" ? {x: -W * 1.5, y: cur.y + 60 + v.y * .12, r: -24}
+      : {x: cur.x + v.x * .1, y: -H * 1.35, r: cur.x / 28};
+    const speed = Math.hypot(v.x, v.y), dist = Math.hypot(to.x - cur.x, to.y - cur.y);
+    const dur = fromDrag ? Math.max(.2, Math.min(.3, speed > 300 ? dist / speed : .3)) : .36;
     card.classList.add("flying", "go-" + dir);
     if(reduced()){ card.style.transition = "opacity .15s"; card.style.opacity = "0"; }
     else{
-      card.style.transition = `transform ${fromDrag ? ".38s" : ".48s"} cubic-bezier(.2,.8,.2,1), opacity .38s ease`;
-      card.style.transform = `translate(${to.x}px, ${to.y}px) rotate(${to.r}deg)`;
+      card.style.transition = `transform ${dur}s ${fromDrag ? "cubic-bezier(.3,.6,.5,1)" : "cubic-bezier(.5,0,.75,.4)"}, opacity ${dur}s cubic-bezier(.6,0,1,1)`;
+      card.style.transform = `translate3d(${to.x}px, ${to.y}px, 0) rotate(${to.r}deg)`;
       card.style.opacity = "0";
     }
     for(const c of deckEl.querySelectorAll(".fr-card:not(.is-top)")){ c.style.transition = ""; c.style.transform = ""; }
@@ -364,61 +373,116 @@ export function render(el){
     st.i = last.i;
     if(last.fav) toggleFav(last.id, false);
     paintDeck(); paintFavs(); syncDayFav();
+    haptic("light");
+    /* la tarjeta vuelve desde donde salió y se asienta con el resorte (un pequeño rebote) */
     const c = top();
-    if(c && !reduced()){ c.style.transition = "none"; c.style.transform = `translate(${last.dir === "right" ? 420 : last.dir === "left" ? -420 : 0}px, ${last.dir === "up" ? -500 : 0}px) rotate(${last.dir === "right" ? 20 : last.dir === "left" ? -20 : 0}deg)`; c.offsetWidth; c.style.transition = "transform .5s cubic-bezier(.2,.8,.2,1)"; c.style.transform = ""; }
+    if(c && c._paint && !reduced()){
+      const W = deckEl.clientWidth || 360, H = deckEl.clientHeight || 500;
+      const from = {x: last.dir === "right" ? W * 1.1 : last.dir === "left" ? -W * 1.1 : 0, y: last.dir === "up" ? -H * .9 : 30};
+      c._paint(from.x, from.y);
+      runSpring(c, from, {x: 0, y: 0}, c._paint);
+    }
     say(t("Frase anterior"));
     focusDeckIfLost();
   };
+
+  /* resorte físico (masa 1, rigidez K, amortiguación C): con ζ ≈ 0.65 se pasa un poco del centro y se asienta,
+     y arranca con la velocidad con que se soltó la tarjeta, como en iOS */
+  function stopSpring(card){ if(card && card._raf){ cancelAnimationFrame(card._raf); card._raf = 0; } }
+  function runSpring(card, from, vel, paint, {K = 330, C = 24} = {}){
+    stopSpring(card);
+    if(reduced()){ paint(0, 0); return; }
+    let x = from.x, y = from.y, vx = vel.x || 0, vy = vel.y || 0, last = performance.now();
+    const step = now => {
+      const dt = Math.min(.034, Math.max(.001, (now - last) / 1000)); last = now;
+      for(let s = 0, h = dt / 4; s < 4; s++){ vx += (-K * x - C * vx) * h; vy += (-K * y - C * vy) * h; x += vx * h; y += vy * h; }
+      if(Math.abs(x) < .35 && Math.abs(y) < .35 && Math.abs(vx) < 6 && Math.abs(vy) < 6){ card._raf = 0; paint(0, 0, true); return; }
+      paint(x, y);
+      card._raf = requestAnimationFrame(step);
+    };
+    card._raf = requestAnimationFrame(step);
+  }
+  /* banda elástica de iOS: hacia abajo (sin acción) la tarjeta se resiste cada vez más */
+  const rubber = (d, dim) => (1 - 1 / (d * .55 / dim + 1)) * dim;
 
   /* arrastre con pointer events (mouse, dedo y lápiz). Solo un puntero a la vez: un segundo dedo se ignora.
      touch-action:none va solo en la tarjeta, así la página sigue desplazándose fuera de ella. */
   function bindDrag(card){
     if(!card) return;
-    let x0 = 0, y0 = 0, t0 = 0, dx = 0, dy = 0, drag = false, pid = null;
+    let x0 = 0, y0 = 0, dx = 0, dy = 0, drag = false, pid = null, armed = null, samples = [], grabTop = true;
     const like = card.querySelector(".fr-stamp.like"), nope = card.querySelector(".fr-stamp.nope"), up = card.querySelector(".fr-stamp.up");
     const next = deckEl.querySelector('.fr-card[data-depth="1"]');
-    const thrX = () => Math.min(140, (deckEl.clientWidth || 360) * .28), thrY = () => Math.min(150, (deckEl.clientHeight || 480) * .24);
+    const thrX = () => Math.min(130, (deckEl.clientWidth || 360) * .28), thrY = () => Math.min(140, (deckEl.clientHeight || 480) * .22);
+    const dirOf = (x, y) => {
+      const vert = -y > Math.abs(x);
+      return vert ? (-y > thrY() ? "up" : null) : x > thrX() ? "right" : x < -thrX() ? "left" : null;
+    };
+    /* pinta la tarjeta en (x, y): giro según el lado por donde se agarró, sellos y la tarjeta de atrás acercándose */
+    const paint = (x, y, rest) => {
+      card._pos = rest ? null : {x, y};
+      const rot = reduced() ? 0 : Math.max(-20, Math.min(20, x * .065 * (grabTop ? 1 : -.7)));
+      card.style.transform = rest ? "" : `translate3d(${x}px, ${y}px, 0) rotate(${rot}deg)`;
+      const px = Math.min(1, Math.abs(x) / thrX()), py = Math.min(1, Math.max(0, -y) / thrY());
+      const vert = -y > Math.abs(x);
+      const set = (s, p) => { s.style.opacity = p; s.style.setProperty("--p", p); };
+      set(like, !vert && x > 0 ? px : 0); set(nope, !vert && x < 0 ? px : 0); set(up, vert ? py : 0);
+      if(next){
+        const p = rest ? 0 : Math.max(px, py);
+        next.style.transition = "none";
+        next.style.transform = p ? `translate3d(0, ${14 - 14 * p}px, 0) scale(${.94 + .06 * p})` : "";
+        next.style.setProperty("--dim", (1 - p).toFixed(3));
+      }
+    };
+    card._paint = paint;
     card.addEventListener("pointerdown", e => {
       if(drag || st.busy || !e.isPrimary || (e.pointerType === "mouse" && e.button !== 0)) return;
       if(e.pointerType === "mouse") e.preventDefault();   // sin selección de texto al arrastrar
-      drag = true; pid = e.pointerId; x0 = e.clientX; y0 = e.clientY; t0 = performance.now(); dx = dy = 0;
+      stopSpring(card);
+      const p = card._pos || {x: 0, y: 0};   // se puede volver a agarrar mientras rebota, sin saltos
+      drag = true; pid = e.pointerId; x0 = e.clientX - p.x; y0 = e.clientY - p.y; dx = p.x; dy = p.y; armed = null;
+      samples = [{x: e.clientX, y: e.clientY, t: performance.now()}];
+      const r = card.getBoundingClientRect(); grabTop = e.clientY < r.top + r.height * .6;
       try{ card.setPointerCapture(pid); }catch(err){}
       card.style.transition = "none"; card.classList.add("dragging");
-      if(next) next.style.transition = "none";
     });
     card.addEventListener("pointermove", e => {
       if(!drag || e.pointerId !== pid) return;
       dx = e.clientX - x0; dy = e.clientY - y0;
-      const rot = reduced() ? 0 : Math.max(-22, Math.min(22, dx * .07));
-      card._pos = {x: dx, y: dy};
-      card.style.transform = `translate(${dx}px, ${dy}px) rotate(${rot}deg)`;
-      const px = Math.min(1, Math.abs(dx) / thrX()), py = Math.min(1, Math.max(0, -dy) / thrY());
-      const vert = -dy > Math.abs(dx);
-      like.style.opacity = !vert && dx > 0 ? px : 0;
-      nope.style.opacity = !vert && dx < 0 ? px : 0;
-      up.style.opacity = vert ? py : 0;
-      if(next){ const p = Math.max(px, py); next.style.transform = `translateY(${14 - 14 * p}px) scale(${.94 + .06 * p})`; }
+      const now = performance.now();
+      samples.push({x: e.clientX, y: e.clientY, t: now});
+      while(samples.length > 2 && now - samples[0].t > 90) samples.shift();
+      paint(dx, dy > 0 ? rubber(dy, (deckEl.clientHeight || 480) * .5) : dy);
+      /* al cruzar el punto de decisión: un toque háptico, como los controles de iOS */
+      const d = dirOf(dx, dy);
+      if(d !== armed){ if(d) haptic("selection"); armed = d; card.dataset.armed = d || ""; }
     });
-    const snapBack = () => {
-      card.style.transition = reduced() ? "transform .1s" : "transform .55s cubic-bezier(.34,1.56,.64,1)";
-      card.style.transform = ""; card._pos = null;
-      for(const s of [like, nope, up]){ s.style.transition = "opacity .25s"; s.style.opacity = 0; }
-      if(next){ next.style.transition = "transform .45s cubic-bezier(.2,.8,.2,1)"; next.style.transform = ""; }
+    const velocity = () => {
+      if(samples.length < 2) return {x: 0, y: 0};
+      const a = samples[0], b = samples[samples.length - 1], dt = Math.max(16, b.t - a.t) / 1000;
+      return {x: (b.x - a.x) / dt, y: (b.y - a.y) / dt};
+    };
+    const snapBack = v => {
+      card.dataset.armed = "";
+      const p = card._pos || {x: 0, y: 0};
+      /* la velocidad hacia abajo se amortigua como el arrastre elástico */
+      runSpring(card, p, {x: v.x, y: v.y > 0 ? v.y * .4 : v.y}, paint);
     };
     const end = e => {
       if(!drag || e.pointerId !== pid) return;
       drag = false; pid = null; card.classList.remove("dragging");
       try{ if(card.hasPointerCapture(e.pointerId)) card.releasePointerCapture(e.pointerId); }catch(err){}
+      const v = velocity();
       /* cancelado por el sistema (llamada, gesto del navegador) o captura perdida: nunca decide, solo vuelve */
-      if(e.type !== "pointerup"){ snapBack(); return; }
-      const dt = Math.max(1, performance.now() - t0), vx = dx / dt, vy = dy / dt;
+      if(e.type !== "pointerup"){ snapBack({x: 0, y: 0}); return; }
       const vert = -dy > Math.abs(dx);
       let dir = null;
-      if(vert && (-dy > thrY() || (vy < -.6 && -dy > 40))) dir = "up";
-      else if(!vert && (dx > thrX() || (vx > .6 && dx > 40))) dir = "right";
-      else if(!vert && (dx < -thrX() || (vx < -.6 && dx < -40))) dir = "left";
-      if(dir){ decide(dir, true); return; }
-      snapBack();   // un toque sin arrastrar no hace nada (evita decisiones accidentales)
+      if(vert && (-dy > thrY() || (v.y < -600 && -dy > 40))) dir = "up";
+      else if(!vert && (dx > thrX() || (v.x > 600 && dx > 40))) dir = "right";
+      else if(!vert && (dx < -thrX() || (v.x < -600 && dx < -40))) dir = "left";
+      /* lanzada hacia el lado contrario del umbral: gana el impulso, vuelve */
+      if(dir === "right" && v.x < -400 || dir === "left" && v.x > 400 || dir === "up" && v.y > 400) dir = null;
+      if(dir){ card._vel = v; decide(dir, true); return; }
+      snapBack(v);   // un toque sin arrastrar no hace nada (evita decisiones accidentales)
     };
     card.addEventListener("pointerup", end);
     card.addEventListener("pointercancel", end);
@@ -442,7 +506,7 @@ export function render(el){
       else if(act === "again"){ store.setSeen([]); buildDeck(); paintDeck(); deckEl.focus({preventScroll: true}); }
       return;
     }
-    if(e.target.closest("[data-dayfav]")){ const on = toggleFav(dq.id); buzz(); syncDayFav(); paintFavs(); toast(on ? t("Guardada en favoritas") : t("Quitada de favoritas"), "ok", null, {key: "frfav"}); return; }
+    if(e.target.closest("[data-dayfav]")){ const on = toggleFav(dq.id); syncDayFav(); paintFavs(); toast(on ? t("Guardada en favoritas") : t("Quitada de favoritas"), "ok", null, {key: "frfav"}); return; }
     if(e.target.closest("[data-dayshare]")) return openShare(dq);
     if(e.target.closest("[data-dayimg]")) return downloadImage(dq);
     const fs = e.target.closest("[data-fshare]"); if(fs) return openShare(byId.get(fs.dataset.fshare));
@@ -462,7 +526,7 @@ export function render(el){
     }
   };
   el.onchange = e => {
-    if(e.target.name === "frcat"){ st.cat = e.target.value; buildDeck(); deckEl.classList.add("enter"); paintDeck(); setTimeout(() => deckEl.classList.remove("enter"), 600); }
+    if(e.target.name === "frcat"){ haptic("selection"); st.cat = e.target.value; buildDeck(); deckEl.classList.add("enter"); paintDeck(); setTimeout(() => deckEl.classList.remove("enter"), 600); }
   };
 
   /* atajos: solo con el foco en el mazo o en sus botones, para no robarle a la página las flechas de desplazamiento */

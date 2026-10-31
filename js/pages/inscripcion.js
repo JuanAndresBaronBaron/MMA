@@ -28,29 +28,37 @@ function pintar(root){
   const D = leerDatos();
   if(!D){
     document.title = t("Página de inscripción") + " · AcademiaPro";
-    root.innerHTML = `<section class="insc-card insc-bad"><h1>${t("Este link no es válido")}</h1><p class="muted">${t("Pídele a la academia que te comparta su link de inscripción de nuevo.")}</p></section>`;
+    root.innerHTML = `<section class="insc-card insc-bad"><span class="insc-logo off" aria-hidden="true">?</span><h1>${t("Este link no es válido")}</h1><p class="muted">${t("Pídele a la academia que te comparta su link de inscripción de nuevo.")}</p></section>`;
     return;
   }
   document.title = `${t("Página de inscripción")} · ${D.n}`;
   if(D.c) document.documentElement.style.setProperty("--accent", D.c);
   const sel = (name, label, opts, req) => `<label class="insc-f"><span>${esc(label)}${req ? ' <b class="req">*</b>' : ""}</span><select name="${name}" ${req ? "required" : ""}><option value="">${t("Elige una opción")}</option>${opts.map(o => `<option>${esc(o)}</option>`).join("")}</select></label>`;
-  root.innerHTML = `<section class="insc-card">
-    <header class="insc-h"><span class="insc-badge">${t("Clase de prueba")}</span><h1>${esc(D.n)}</h1><p class="muted">${t("Déjanos tus datos y te escribimos para agendar tu primera clase.")}</p>
+  const ini = D.n.trim().split(/\s+/).slice(0, 2).map(w => w[0] || "").join("").toUpperCase();
+  root.innerHTML = `<div class="insc-card">
+    <header class="insc-h"><span class="insc-logo" aria-hidden="true">${esc(ini)}</span><span class="insc-badge">${t("Clase de prueba")}</span><h1>${esc(D.n)}</h1><p class="muted">${t("Déjanos tus datos y te escribimos para agendar tu primera clase.")}</p>
       ${D.d.length ? `<div class="insc-tags">${D.d.map(d => `<span class="tag">${esc(t(d))}</span>`).join("")}</div>` : ""}</header>
     <form class="insc-form" novalidate>
-      <label class="insc-f"><span>${t("Nombre completo")} <b class="req">*</b></span><input name="nombre" autocomplete="name" required maxlength="80"></label>
-      <div class="insc-2">
-        <label class="insc-f"><span>${t("Teléfono / WhatsApp")} <b class="req">*</b></span><input name="telefono" type="tel" inputmode="tel" autocomplete="tel" required maxlength="20" placeholder="300 123 4567"></label>
-        <label class="insc-f"><span>${t("Edad")}</span><input name="edad" type="number" inputmode="numeric" min="2" max="99"></label>
+      <h2 class="insc-sh">${t("Tus datos")}</h2>
+      <div class="insc-grp">
+        <label class="insc-f"><span>${t("Nombre completo")} <b class="req">*</b></span><input name="nombre" autocomplete="name" required maxlength="80" placeholder="${t("Ej: Laura Gómez")}"></label>
+        <div class="insc-2">
+          <label class="insc-f"><span>${t("Teléfono / WhatsApp")} <b class="req">*</b></span><input name="telefono" type="tel" inputmode="tel" autocomplete="tel" required maxlength="20" placeholder="300 123 4567"></label>
+          <label class="insc-f"><span>${t("Edad")}</span><input name="edad" type="number" inputmode="numeric" min="2" max="99" placeholder="-"></label>
+        </div>
       </div>
-      ${D.d.length ? sel("disciplina", t("¿Qué quieres entrenar?"), D.d.map(d => t(d)), false) : ""}
-      ${D.s.length > 1 ? sel("sede", t("Sede"), D.s, false) : ""}
-      ${sel("fuente", t("¿Cómo nos conociste?"), FUENTES.map(f => t(f)), false)}
-      <label class="insc-f"><span>${t("Mensaje")}</span><textarea name="mensaje" rows="3" maxlength="400" placeholder="${t("Ej: quiero empezar en las noches, nunca he entrenado")}"></textarea></label>
+      <div class="insc-grp">
+        ${D.d.length ? sel("disciplina", t("¿Qué quieres entrenar?"), D.d.map(d => t(d)), false) : ""}
+        ${D.s.length > 1 ? sel("sede", t("Sede"), D.s, false) : ""}
+        ${sel("fuente", t("¿Cómo nos conociste?"), FUENTES.map(f => t(f)), false)}
+      </div>
+      <div class="insc-grp">
+        <label class="insc-f"><span>${t("Mensaje")}</span><textarea name="mensaje" rows="3" maxlength="400" placeholder="${t("Ej: quiero empezar en las noches, nunca he entrenado")}"></textarea></label>
+      </div>
       <p class="insc-err" role="alert" hidden></p>
       <button type="submit" class="btn primary big block insc-go"><svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1.3-3.9A8 8 0 1 1 8 19z"/></svg>${t("Enviar por WhatsApp")}</button>
       <p class="muted small insc-nota">${t("Al enviar se abre WhatsApp con tus datos. Nada se guarda en esta página.")}</p>
-    </form></section>
+    </form></div>
     <p class="insc-pie muted small">${t("Hecho con AcademiaPro")}</p>`;
   const f = root.querySelector("form"), err = root.querySelector(".insc-err");
   f.onsubmit = e => {

@@ -78,4 +78,6 @@ export default {
   "Reintentar": "Retry",
   "Ir a Inicio": "Go to Home",
   "Horario de clases, asistencia por clase y modo kiosco": "Class schedule, per-class attendance and kiosk mode",
+  "Volver a {x}": "Back to {x}",
+  "Atrás": "Back",
 };

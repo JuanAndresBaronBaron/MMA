@@ -52,4 +52,6 @@ export default {
   "de {cupo} · {presentes}": "of {cupo} · {presentes}",
   "{n} presente guardado": "{n} attendee saved",
   "{n} presentes guardados": "{n} attendees saved",
+
+  "Vista": "View",
 };

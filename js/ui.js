@@ -107,7 +107,8 @@ export function rankLabel(disc, g){
 }
 
 /* ---------- avatar ---------- */
-const AV = ["#e11d48", "#2563eb", "#16a34a", "#d97706", "#7c3aed", "#0891b2", "#db2777", "#4f46e5"];
+/* tonos rudos (carbón, rojo sangre, acero, oliva, cobre, latón): sin morados ni rosados */
+const AV = ["#A3172A", "#3E5C76", "#556B2F", "#A4501A", "#4A5560", "#8C6A2F", "#3A3A38", "#2F5D5A"];
 export function avatar(al, size = 40, cls = ""){
   const f = al && S.foto(al.id);
   const col = AV[[...String(al?.id || "x")].reduce((a, c) => a + c.charCodeAt(0), 0) % AV.length];
@@ -160,6 +161,7 @@ export function toast(msg, kind = "ok", action, opts = {}){
   el._t = Date.now();
   if(action) el.querySelector("button").onclick = () => { action.fn(); el.remove(); };
   host.appendChild(el);
+  haptic(kind === "error" ? "error" : kind === "warn" ? "warning" : "success");
   requestAnimationFrame(() => el.classList.add("in"));
   setTimeout(() => { el.classList.remove("in"); setTimeout(() => el.remove(), 300); }, opts.ms || (action ? 6000 : 3200));
   return el;
@@ -169,9 +171,60 @@ export function dismissToasts(minAge = 600){
   for(const el of $$("#toasts .toast")) if(Date.now() - (el._t || 0) > minAge){ el.classList.remove("in"); setTimeout(() => el.remove(), 250); }
 }
 
+/* ---------- respuesta háptica ---------- */
+/* haptic("light" | "medium" | "selection" | "success" | "warning" | "error"): vibración mínima donde el aparato la tenga
+   (Android). En iPhone y en el computador no hace nada y nunca falla. Solo después de que la persona tocó algo. */
+const HAPTIC = {selection: 4, light: 8, medium: 14, heavy: 22, success: [8, 50, 12], warning: [14, 70, 14], error: [18, 45, 18, 45, 18]};
+let hapticLast = 0;
+export function haptic(kind = "light"){
+  try{
+    if(!navigator.vibrate || !matchMedia("(pointer:coarse)").matches) return;
+    if(navigator.userActivation && !navigator.userActivation.hasBeenActive) return;
+    if(matchMedia("(prefers-reduced-motion: reduce)").matches && kind === "selection") return;
+    const now = Date.now(); if(now - hapticLast < 40) return; hapticLast = now;
+    navigator.vibrate(HAPTIC[kind] ?? HAPTIC.light);
+  }catch(e){}
+}
+const phone = () => matchMedia("(max-width:760px)").matches;
+const reducedMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- presentación de tarjeta (iOS): la página de fondo se encoge mientras hay una hoja abierta en el celular ---------- */
+let presentN = 0, presentY = 0, presentTimer = 0, presentHash = "";
+const root = document.documentElement;
+function presentOn(){
+  presentN++;
+  const app = document.querySelector("body > .app");
+  if(!app || !phone()) return;
+  clearTimeout(presentTimer);
+  if(!root.classList.contains("presenting")){
+    presentY = window.scrollY; presentHash = location.hash;
+    app.style.setProperty("--sy", presentY + "px");
+    root.classList.add("presenting");
+  }
+  requestAnimationFrame(() => { if(presentN > 0 && root.classList.contains("presenting")) root.classList.add("presented"); });
+}
+function presentUnlock(restore){
+  clearTimeout(presentTimer);
+  if(!root.classList.contains("presenting")) return;
+  root.classList.remove("presented", "presenting");
+  document.querySelector("body > .app")?.style.removeProperty("--sy");
+  if(restore && presentHash === location.hash) window.scrollTo(0, presentY);
+}
+function presentOff(){
+  presentN = Math.max(0, presentN - 1);
+  if(presentN) return;
+  root.classList.remove("presented");
+  clearTimeout(presentTimer);
+  presentTimer = setTimeout(() => presentUnlock(true), reducedMotion() ? 0 : 460);
+}
+/* navegar con una hoja abierta (p. ej. desde «Más»): soltar ya, sin devolver el desplazamiento */
+window.addEventListener("hashchange", () => { if(root.classList.contains("presenting") && !presentN) presentUnlock(false); });
+
 /* ---------- modal ---------- */
 /* foco: entra al primer campo, Tab no sale del modal, el fondo queda inerte y al cerrar vuelve a donde estaba.
-   Si el formulario tiene cambios, un toque fuera no lo cierra (hay que usar Cancelar o Esc). */
+   Si el formulario tiene cambios, un toque fuera no lo cierra (hay que usar Cancelar o Esc).
+   En el celular se presenta como hoja inferior (asa, arrastrar para cerrar, página de fondo encogida); en el computador,
+   como panel centrado que entra con resorte. */
 let modalStack = [], modalN = 0;
 const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
 const focusables = root => [...root.querySelectorAll(FOCUSABLE)].filter(x => x.getClientRects().length && !x.closest("[inert]"));
@@ -186,20 +239,25 @@ function syncInert(){
 export function modal({title, body, foot, wide, onClose, cls = ""}){
   const hid = "mh" + (++modalN);
   const opener = document.activeElement;
+  const isPal = /\bpal\b/.test(cls);
   const el = h(`<div class="modal-back"><div class="modal ${wide ? "wide" : ""} ${cls}" role="dialog" aria-modal="true" aria-labelledby="${hid}" tabindex="-1">
+    ${isPal ? "" : `<div class="sheet-grab" aria-hidden="true"></div>`}
     <header class="modal-h"><h2 id="${hid}">${esc(title)}</h2><button class="icon-btn" data-close aria-label="${t("Cerrar")}">${icon("x")}</button></header>
     <div class="modal-b"></div>${foot !== false ? `<footer class="modal-f"></footer>` : ""}</div></div>`);
   const b = el.querySelector(".modal-b"), box = el.querySelector(".modal");
   if(typeof body === "string") b.innerHTML = body; else if(body) b.appendChild(body);
   if(foot && typeof foot === "string") el.querySelector(".modal-f").innerHTML = foot;
   let dirty = false, closed = false;
+  const presents = !isPal;
   el.addEventListener("input", () => { dirty = true; });
   el.addEventListener("change", () => { dirty = true; });
+  const nudge = () => { box.classList.remove("nudge"); void box.offsetWidth; box.classList.add("nudge"); haptic("warning"); };
   const close = () => {
     if(closed) return; closed = true;
     el.classList.remove("in"); el.classList.add("closing");
     modalStack = modalStack.filter(m => m !== api);
     syncInert();
+    if(presents) presentOff();
     setTimeout(() => {
       el.remove();
       /* devolver el foco a quien abrió el modal (si sigue en pantalla) */
@@ -207,21 +265,26 @@ export function modal({title, body, foot, wide, onClose, cls = ""}){
         if(opener && opener.isConnected && opener.focus) try{ opener.focus({preventScroll: true}); }catch(e){}
       }
       window.dispatchEvent(new Event("mma:modal"));
-    }, 200);
+    }, reducedMotion() ? 0 : 300);
     onClose && onClose();
   };
   el.addEventListener("click", e => {
     if(e.target.closest("[data-close]")) return close();
     if(e.target !== el) return;
     /* toque fuera: no perder lo escrito */
-    if(dirty && b.querySelector("form")){ box.classList.remove("nudge"); void box.offsetWidth; box.classList.add("nudge"); return; }
+    if(dirty && b.querySelector("form")) return nudge();
     close();
   });
   document.body.appendChild(el);
+  if(presents) presentOn();
   requestAnimationFrame(() => el.classList.add("in"));
   const api = {el, body: b, foot: el.querySelector(".modal-f"), close, get dirty(){ return dirty; }};
   modalStack.push(api);
   syncInert();
+  if(!isPal) dragToDismiss(box, () => {
+    if(dirty && b.querySelector("form")){ nudge(); return false; }
+    haptic("light"); close(); return true;
+  });
   setTimeout(() => {
     if(closed) return;
     const f = matchMedia("(pointer:fine)").matches && b.querySelector("input:not([type=hidden]):not([type=checkbox]):not([type=radio]),select,textarea");
@@ -229,6 +292,70 @@ export function modal({title, body, foot, wide, onClose, cls = ""}){
     if(f) f.focus(); else if(!box.contains(document.activeElement)) box.focus({preventScroll: true});
   }, 60);
   return api;
+}
+/* arrastrar hacia abajo para cerrar (celular): desde el asa o la cabecera, o desde el contenido si está arriba del todo.
+   Se cierra si se arrastra más de un tercio o con velocidad; si no, vuelve con resorte. */
+function dragToDismiss(box, onDismiss){
+  let y0 = null, x0 = 0, dy = 0, lastY = 0, lastT = 0, vel = 0, active = false, fromBody = false;
+  const body = box.querySelector(".modal-b");
+  const interactive = t => t.closest("input,textarea,select,[contenteditable],.chip-row,.seg,.tabs,[data-nodrag]");
+  const start = (tg, x, y, ts) => {
+    fromBody = !!tg.closest(".modal-b");
+    if(fromBody && (body.scrollTop > 0 || interactive(tg))) return false;
+    y0 = lastY = y; x0 = x; lastT = ts; dy = 0; vel = 0; active = false;
+    return true;
+  };
+  /* devuelve true cuando el gesto es nuestro (hay que evitar el desplazamiento) */
+  const move = (x, y, ts) => {
+    if(y0 === null) return false;
+    const d = y - y0;
+    if(!active){
+      if(Math.abs(x - x0) > Math.abs(d) || d < 4){ if(d < -4 || Math.abs(x - x0) > 8) y0 = null; return false; }
+      if(fromBody && body.scrollTop > 0){ y0 = null; return false; }
+      active = true; box.classList.add("dragging");
+    }
+    dy = Math.max(0, d);
+    const dt = Math.max(1, ts - lastT); vel = (y - lastY) / dt; lastY = y; lastT = ts;
+    box.style.transform = `translateY(${dy}px)`;
+    return true;
+  };
+  const end = () => {
+    if(y0 === null) return; y0 = null;
+    if(!active) return;
+    active = false;
+    box.classList.remove("dragging");
+    const far = dy > box.offsetHeight * 0.33 || (vel > 0.5 && dy > 24);
+    if(far){
+      box.style.transition = `transform ${Math.max(.16, Math.min(.32, (box.offsetHeight - dy) / 1600))}s cubic-bezier(.32,.72,0,1)`;
+      if(onDismiss() !== false){ box.style.transform = "translateY(100%)"; return; }
+    }
+    box.style.transition = "transform .5s var(--spring)";
+    box.style.transform = "";
+    setTimeout(() => { box.style.transition = ""; }, 520);
+  };
+  /* dedo */
+  box.addEventListener("touchstart", e => {
+    if(!phone() || e.touches.length !== 1) return;
+    const p = e.touches[0];
+    if(!start(e.target, p.clientX, p.clientY, e.timeStamp)) y0 = null;
+  }, {passive: true});
+  box.addEventListener("touchmove", e => {
+    const p = e.touches[0];
+    if(p && move(p.clientX, p.clientY, e.timeStamp)) e.preventDefault();
+  }, {passive: false});
+  box.addEventListener("touchend", end);
+  box.addEventListener("touchcancel", end);
+  /* ratón o lápiz: desde el asa o la cabecera (sin seleccionar texto) */
+  box.addEventListener("pointerdown", e => {
+    if(e.pointerType === "touch" || !phone() || e.button !== 0) return;
+    if(!e.target.closest(".sheet-grab,.modal-h") || e.target.closest("button,a,input,select,textarea")) return;
+    if(!start(e.target, e.clientX, e.clientY, e.timeStamp)) return;
+    e.preventDefault();
+    try{ box.setPointerCapture(e.pointerId); }catch(err){}
+  });
+  box.addEventListener("pointermove", e => { if(e.pointerType !== "touch") move(e.clientX, e.clientY, e.timeStamp); });
+  box.addEventListener("pointerup", e => { if(e.pointerType !== "touch") end(); });
+  box.addEventListener("pointercancel", e => { if(e.pointerType !== "touch") end(); });
 }
 document.addEventListener("keydown", e => {
   if(!modalStack.length) return;
@@ -242,19 +369,34 @@ document.addEventListener("keydown", e => {
   else if(e.shiftKey && (a === first || a === top.el.querySelector(".modal"))){ e.preventDefault(); last.focus(); }
   else if(!e.shiftKey && a === last){ e.preventDefault(); first.focus(); }
 });
-/* hoja inferior: en el celular sube desde abajo (se cierra arrastrando, con el fondo o Esc); en el computador es un modal */
+/* hoja inferior: en el celular sube desde abajo (se cierra arrastrando, con el fondo o Esc); en el computador es un panel centrado */
 export function sheet({title, body, onClose, cls = ""} = {}){
   const m = modal({title, body, foot: false, onClose, cls: "sheet " + cls});
-  const box = m.el.querySelector(".modal");
-  box.insertAdjacentHTML("afterbegin", `<div class="sheet-grab" aria-hidden="true"></div>`);
-  let y0 = null, dy = 0;
-  const head = box.querySelector(".sheet-grab"), hh = box.querySelector(".modal-h");
-  const start = e => { if(!matchMedia("(max-width:760px)").matches) return; y0 = e.touches[0].clientY; dy = 0; box.style.transition = "none"; };
-  const move = e => { if(y0 === null) return; dy = Math.max(0, e.touches[0].clientY - y0); box.style.transform = `translateY(${dy}px)`; };
-  const end = () => { if(y0 === null) return; y0 = null; box.style.transition = ""; box.style.transform = ""; if(dy > 80) m.close(); };
-  for(const z of [head, hh]){ z.addEventListener("touchstart", start, {passive: true}); z.addEventListener("touchmove", move, {passive: true}); z.addEventListener("touchend", end); }
   return {el: m.el, body: m.body, close: m.close};
 }
+
+/* ---------- control segmentado: el deslizador se mueve con resorte de la opción anterior a la nueva ---------- */
+const segFrom = new WeakMap();
+const segOn = seg => seg.querySelector("input:checked + span, :scope > button.on");
+function segRemember(e){ const seg = e.target.closest?.(".seg"); if(seg){ const on = segOn(seg); if(on) segFrom.set(seg, on.getBoundingClientRect()); } }
+document.addEventListener("pointerdown", segRemember, true);
+document.addEventListener("keydown", segRemember, true);
+document.addEventListener("change", e => {
+  const inp = e.target;
+  if(inp.classList?.contains("switch")) return haptic("light");
+  const seg = inp.type === "radio" && inp.closest?.(".seg");
+  if(!seg) return;
+  haptic("selection");
+  const from = segFrom.get(seg), span = inp.nextElementSibling;
+  segFrom.delete(seg);
+  if(!from || !span || reducedMotion()) return;
+  const to = span.getBoundingClientRect();
+  if(!to.width || Math.abs(from.top - to.top) > 4) return;
+  span.style.setProperty("--seg-dx", (from.left - to.left) + "px");
+  span.style.setProperty("--seg-sx", (from.width / to.width).toFixed(3));
+  span.classList.remove("seg-slide"); void span.offsetWidth; span.classList.add("seg-slide");
+  span.addEventListener("animationend", () => span.classList.remove("seg-slide"), {once: true});
+});
 
 /* compartir con el menú del sistema; si no se puede: descarga el archivo o copia el texto */
 export async function shareOrDownload({title, text, url, files, filename} = {}){
@@ -297,7 +439,7 @@ export function field(f, v){
   let input;
   if(f.type === "select") input = `<select ${attrs}>${(f.opts || []).map(o => { const [ov, ol] = Array.isArray(o) ? o : [o, o]; return `<option value="${esc(ov)}" ${String(ov) === String(val) ? "selected" : ""}>${esc(ol)}</option>`; }).join("")}</select>`;
   else if(f.type === "textarea") input = `<textarea ${attrs} rows="${f.rows || 3}">${esc(val)}</textarea>`;
-  else if(f.type === "check") return `<label class="check ${f.half ? "half" : ""}"><input type="checkbox" name="${esc(f.k)}" ${val === true || val === "true" ? "checked" : ""}><span>${esc(f.label)}</span></label>`;
+  else if(f.type === "check") return `<label class="check toggle ${f.half ? "half" : ""}"><input type="checkbox" class="switch" name="${esc(f.k)}" ${val === true || val === "true" ? "checked" : ""}><span>${esc(f.label)}</span></label>`;
   else if(f.type === "chips") return `<div class="field ${f.half ? "half" : ""}"><span class="lbl">${esc(f.label)}</span><div class="chips">${(f.opts || []).map(o => { const [ov, ol] = Array.isArray(o) ? o : [o, o]; return `<label class="chip"><input type="checkbox" name="${esc(f.k)}" value="${esc(ov)}" ${(val || []).includes(ov) ? "checked" : ""}><span>${esc(ol)}</span></label>`; }).join("") || `<span class="muted small">${esc(f.empty || t("Nada para elegir"))}</span>`}</div>${f.hint ? `<small class="hint">${esc(f.hint)}</small>` : ""}</div>`;
   else if(f.type === "seg") return `<div class="field ${f.half ? "half" : ""}"><span class="lbl">${esc(f.label)}</span><div class="seg">${(f.opts || []).map(o => { const [ov, ol] = Array.isArray(o) ? o : [o, o]; return `<label><input type="radio" name="${esc(f.k)}" value="${esc(ov)}" ${String(ov) === String(val) ? "checked" : ""}><span>${esc(ol)}</span></label>`; }).join("")}</div></div>`;
   else input = `<input type="${f.type || "text"}" ${attrs} value="${esc(val)}" ${f.list ? `list="${id}_l"` : ""}>${f.list ? `<datalist id="${id}_l">${f.list.map(o => `<option value="${esc(o)}">`).join("")}</datalist>` : ""}`;
@@ -345,4 +487,4 @@ export function emptyState({icon: ic = "info", title = "", text = "", cta = "", 
 export function empty(ic, title, txt, btn){
   return `<div class="empty">${icon(ic, "big")}<h3>${esc(title)}</h3><p>${esc(txt)}</p>${btn || ""}</div>`;
 }
-export function pill(k, txt){ return `<span class="pill ${k}">${esc(txt)}</span>`; }
+export function pill(k, txt){ return `<span class="pill ${k}" title="${esc(txt)}">${esc(txt)}</span>`; }

@@ -1,7 +1,7 @@
 /* #/certificado/:alumnoId/:discId — certificado imprimible (A4 horizontal) del último grado
    e imagen 1080x1350 para Instagram dibujada en canvas. */
 import * as S from "../store.js";
-import {icon, belt, rankLabel, emptyState, shareOrDownload, toast} from "../ui.js";
+import {icon, belt, avatar, rankLabel, emptyState, shareOrDownload, toast} from "../ui.js";
 import {esc, fmtDate, initials} from "../util.js";
 import {t} from "../i18n.js";
 
@@ -20,15 +20,9 @@ export function render(el, [alId, discId] = [], ctx){
   const acad = S.academy() || {};
   const prof = g.profesor || d.encargado || S.pref("profesor", "");
   el.innerHTML = `
-  <div class="cert-bar">
-    <a class="back" href="#/alumno/${al.id}">${icon("back")} ${esc(al.nombre)}</a>
-    <div class="cert-act">
-      ${h.length > 1 ? `<label class="cert-sel"><span class="sr">${t("Elegir grado")}</span><select data-g>${h.slice().reverse().map(x => `<option value="${x.id}" ${x.id === g.id ? "selected" : ""}>${esc(rankLabel(d, x))} · ${fmtDate(x.fecha)}</option>`).join("")}</select></label>` : ""}
-      <button class="btn primary" data-print>${icon("print")}<span>${t("Imprimir")}</span></button>
-      <button class="btn ghost" data-ig>${icon("camera")}<span>${t("Imagen para Instagram")}</span></button>
-    </div>
-  </div>
-  <div class="cert-wrap"><article class="cert" data-cert>
+  <a class="back cert-back" href="#/alumno/${al.id}">${icon("back")} ${esc(al.nombre)}</a>
+  <div class="cert-layout">
+  <div class="cert-stage"><div class="cert-wrap"><article class="cert" data-cert>
     <div class="cert-in">
       <header class="cert-top"><img class="cert-logo" src="${esc(acad.logo || "icons/icon-192.png")}" alt=""><b>${esc(acad.nombre || "")}</b></header>
       <h1>${t("Certificado de grado")}</h1>
@@ -43,8 +37,20 @@ export function render(el, [alId, discId] = [], ctx){
         <div><i></i><b>${esc(acad.nombre || "")}</b><span>${t("Academia")}</span></div>
       </footer>
     </div>
-  </article></div>
-  <p class="muted small cert-tip">${t("Al imprimir, elige tamaño A4 y orientación horizontal. Puedes guardarlo como PDF.")}</p>`;
+  </article></div></div>
+  <aside class="cert-side">
+    <section class="card flush cert-info">
+      <div class="li cert-who">${avatar(al, 44)}<div class="li-main"><b>${esc(al.nombre)}</b><span class="muted small">${esc(t(d.nombre))}</span></div></div>
+      ${h.length > 1 ? `<label class="row-inset cert-sel"><span class="sr">${t("Elegir grado")}</span><select data-g>${h.slice().reverse().map(x => `<option value="${x.id}" ${x.id === g.id ? "selected" : ""}>${esc(rankLabel(d, x))} · ${fmtDate(x.fecha)}</option>`).join("")}</select></label>`
+        : `<div class="row-inset"><span>${esc(rankLabel(d, g))}</span><span class="row-val">${fmtDate(g.fecha)}</span></div>`}
+    </section>
+    <div class="cert-act">
+      <button class="btn primary big" data-print>${icon("print")}<span>${t("Imprimir")}</span></button>
+      <button class="btn gray big" data-ig>${icon("camera")}<span>${t("Imagen para Instagram")}</span></button>
+    </div>
+    <p class="section-footer cert-tip">${t("Al imprimir, elige tamaño A4 y orientación horizontal. Puedes guardarlo como PDF.")}</p>
+  </aside>
+  </div>`;
   el.onchange = e => { if(e.target.matches("[data-g]")){ sel[k] = e.target.value; render(el, [alId, discId], ctx); } };
   el.onclick = async e => {
     if(e.target.closest("[data-print]")) return imprimir(el.querySelector("[data-cert]"));

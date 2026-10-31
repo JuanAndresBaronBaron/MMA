@@ -12,4 +12,6 @@ export default {
   "1.º": "1st",
   "2.º": "2nd",
   "3.º": "3rd",
+  "Disciplina": "Discipline",
+  "hoy": "today",
 };

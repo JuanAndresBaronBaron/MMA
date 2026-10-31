@@ -70,20 +70,25 @@ export function render(el, [id], ctx, query){
   const foto = S.foto(d.acad.id);
   const ticket = S.pref("reciboFmt", "a5") === "80";
   el.innerHTML = `
+  <a class="back no-print" href="${al ? `#/alumno/${al.id}` : "#/pagos"}">${icon("back")}${al ? esc(al.nombre.split(" ")[0]) : t("Pagos")}</a>
   <div class="rc-tools no-print">
-    <a class="btn ghost small" href="${al ? `#/alumno/${al.id}` : "#/pagos"}">${icon("back")}<span>${al ? esc(al.nombre.split(" ")[0]) : t("Pagos")}</span></a>
-    <div class="seg small" role="group" aria-label="${t("Tamaño")}"><button type="button" data-fmt="a5" class="${ticket ? "" : "on"}" aria-pressed="${!ticket}">A5</button><button type="button" data-fmt="80" class="${ticket ? "on" : ""}" aria-pressed="${ticket}">${t("Tirilla 80 mm")}</button></div>
+    <div class="seg small rc-seg" role="group" aria-label="${t("Tamaño")}"><button type="button" data-fmt="a5" class="${ticket ? "" : "on"}" aria-pressed="${!ticket}">A5</button><button type="button" data-fmt="80" class="${ticket ? "on" : ""}" aria-pressed="${ticket}">${t("Tirilla 80 mm")}</button></div>
     <span class="rc-sp"></span>
-    <button type="button" class="btn ghost small" data-wa>${icon("whatsapp")}<span>WhatsApp</span></button>
-    <button type="button" class="btn ghost small" data-share>${icon("share")}<span>${t("Imagen")}</span></button>
-    <button type="button" class="btn primary small" data-print>${icon("print")}<span>${t("Imprimir")}</span></button>
+    <button type="button" class="btn gray small" data-wa aria-label="WhatsApp">${icon("whatsapp")}<span>WhatsApp</span></button>
+    <button type="button" class="btn gray small" data-share aria-label="${t("Imagen")}">${icon("share")}<span>${t("Imagen")}</span></button>
+    <button type="button" class="btn primary small" data-print aria-label="${t("Imprimir")}">${icon("print")}<span>${t("Imprimir")}</span></button>
   </div>
   <article class="rc-paper ${ticket ? "ticket" : ""}" aria-label="${esc(t("Recibo N.º {n}", {n: d.num}))}">
     <header class="rc-head">
       <div class="rc-logo">${foto ? `<img src="${foto}" alt="">` : logo(44)}</div>
-      <div class="rc-acad"><b>${esc(d.acad.nombre || t("Mi academia"))}</b>${d.contacto.map(c => `<span>${esc(c)}</span>`).join("")}</div>
-      <div class="rc-num"><span>${t("Recibo N.º")}</span><b>${esc(d.num)}</b><span>${esc(d.fecha)}</span></div>
+      <div class="rc-acad"><b>${esc(d.acad.nombre || t("Mi academia"))}</b>${d.contacto.length ? `<span>${d.contacto.map(esc).join(" · ")}</span>` : ""}</div>
     </header>
+    <div class="rc-total">
+      <span>${t("Valor")}</span>
+      <b>${esc(d.monto)}</b>
+      ${d.letras ? `<p class="rc-letras">${esc(t("Son: {letras}", {letras: d.letras.charAt(0).toLowerCase() + d.letras.slice(1)}))}</p>` : ""}
+    </div>
+    <div class="rc-num"><span>${t("Recibo N.º")}</span><b>${esc(d.num)}</b><span>${esc(d.fecha)}</span></div>
     <dl class="rc-body">
       ${fila(t("Recibimos de"), al?.nombre || t("Alumno eliminado"))}
       ${fila(t("Acudiente"), al?.acudiente)}
@@ -93,8 +98,6 @@ export function render(el, [id], ctx, query){
       ${fila(t("Método"), t(p.metodo || ""))}
       ${fila(t("Nota"), p.nota)}
     </dl>
-    <div class="rc-total"><span>${t("Valor")}</span><b>${esc(d.monto)}</b></div>
-    ${d.letras ? `<p class="rc-letras">${esc(t("Son: {letras}", {letras: d.letras.charAt(0).toLowerCase() + d.letras.slice(1)}))}</p>` : ""}
     <footer class="rc-foot">
       <div class="rc-sign"><span class="rc-line"></span><span>${t("Recibido por")}${d.firma ? ": " + esc(d.firma) : ""}</span></div>
       <p class="rc-thanks">${t("¡Gracias por entrenar con nosotros!")}</p>
@@ -171,33 +174,33 @@ async function imagen(p, d, foto){
   const img = await cargarImg(foto);
   let tx = pad;
   if(img){ x.save(); x.beginPath(); x.arc(pad + 24, 54, 24, 0, Math.PI * 2); x.clip(); x.drawImage(img, pad, 30, 48, 48); x.restore(); tx = pad + 60; }
-  x.fillStyle = "#111827"; x.font = font(19, 800); x.textBaseline = "alphabetic";
+  x.fillStyle = "#1d1d1f"; x.font = font(19, 800); x.textBaseline = "alphabetic";
   x.fillText(String(d.acad.nombre || "").slice(0, 34), tx, 50);
-  x.fillStyle = "#6b7280"; x.font = font(12);
+  x.fillStyle = "#6e6e73"; x.font = font(12);
   d.contacto.slice(0, 2).forEach((s, i) => x.fillText(String(s).slice(0, 48), tx, 68 + i * 16));
-  x.textAlign = "right"; x.fillStyle = "#6b7280"; x.font = font(12, 600); x.fillText(t("Recibo N.º").toUpperCase(), W - pad, 40);
-  x.fillStyle = "#111827"; x.font = font(22, 800); x.fillText(d.num, W - pad, 66);
-  x.fillStyle = "#6b7280"; x.font = font(12); x.fillText(d.fecha, W - pad, 84);
+  x.textAlign = "right"; x.fillStyle = "#6e6e73"; x.font = font(12, 600); x.fillText(t("Recibo N.º").toUpperCase(), W - pad, 40);
+  x.fillStyle = "#1d1d1f"; x.font = font(22, 800); x.fillText(d.num, W - pad, 66);
+  x.fillStyle = "#6e6e73"; x.font = font(12); x.fillText(d.fecha, W - pad, 84);
   x.textAlign = "left";
   let y = 118;
-  x.strokeStyle = "#e5e7eb"; x.lineWidth = 1; x.beginPath(); x.moveTo(pad, y); x.lineTo(W - pad, y); x.stroke();
+  x.strokeStyle = "#d2d2d7"; x.lineWidth = 1; x.beginPath(); x.moveTo(pad, y); x.lineTo(W - pad, y); x.stroke();
   y += 28;
   filas.forEach(([lab], i) => {
-    x.fillStyle = "#6b7280"; x.font = font(13, 600); x.fillText(lab, pad, y);
-    x.fillStyle = "#111827"; x.font = font(15);
+    x.fillStyle = "#6e6e73"; x.font = font(13, 600); x.fillText(lab, pad, y);
+    x.fillStyle = "#1d1d1f"; x.font = font(15);
     lv[i].forEach((l, j) => x.fillText(l, pad + 130, y + j * 21));
     y += lv[i].length * 21 + 12;
   });
   y += 6;
-  x.fillStyle = "#f3f4f6"; x.beginPath(); x.roundRect ? x.roundRect(pad, y, W - pad * 2, 60, 12) : x.rect(pad, y, W - pad * 2, 60); x.fill();
-  x.fillStyle = "#374151"; x.font = font(14, 700); x.fillText(t("Valor").toUpperCase(), pad + 16, y + 36);
-  x.textAlign = "right"; x.fillStyle = "#111827"; x.font = font(26, 800); x.fillText(d.monto, W - pad - 16, y + 40); x.textAlign = "left";
+  x.fillStyle = "#f5f5f7"; x.beginPath(); x.roundRect ? x.roundRect(pad, y, W - pad * 2, 60, 12) : x.rect(pad, y, W - pad * 2, 60); x.fill();
+  x.fillStyle = "#3a3a3c"; x.font = font(14, 700); x.fillText(t("Valor").toUpperCase(), pad + 16, y + 36);
+  x.textAlign = "right"; x.fillStyle = "#1d1d1f"; x.font = font(26, 800); x.fillText(d.monto, W - pad - 16, y + 40); x.textAlign = "left";
   y += 84;
-  x.fillStyle = "#374151"; x.font = font(13, 500);
+  x.fillStyle = "#3a3a3c"; x.font = font(13, 500);
   lt.forEach((l, j) => x.fillText(l, pad, y + j * 18));
   y += lt.length * 18 + 52;
-  x.strokeStyle = "#9ca3af"; x.beginPath(); x.moveTo(pad, y); x.lineTo(pad + 220, y); x.stroke();
-  x.fillStyle = "#6b7280"; x.font = font(12); x.fillText(t("Recibido por") + (d.firma ? ": " + d.firma : ""), pad, y + 18);
+  x.strokeStyle = "#aeaeb2"; x.beginPath(); x.moveTo(pad, y); x.lineTo(pad + 220, y); x.stroke();
+  x.fillStyle = "#6e6e73"; x.font = font(12); x.fillText(t("Recibido por") + (d.firma ? ": " + d.firma : ""), pad, y + 18);
   x.textAlign = "right"; x.fillText("AcademiaPro", W - pad, y + 18);
   return new Promise((res, rej) => c.toBlob(b => b ? res(b) : rej(new Error("png")), "image/png"));
 }

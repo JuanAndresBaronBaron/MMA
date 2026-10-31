@@ -28,49 +28,55 @@ export function studentForm(al, opts = {}){
   const gearHtml = GEAR.map(g => `<div class="gear-row"><label class="check"><input type="checkbox" name="eq_${g.k}" ${eq[g.k]?.tiene ? "checked" : ""}><span>${esc(t(g.n))}</span></label>${g.talla ? `<input class="gear-size" name="eqt_${g.k}" placeholder="${esc(t("Talla"))}" list="sizes" value="${esc(eq[g.k]?.talla || "")}" aria-label="${esc(t("Talla") + " · " + t(g.n))}">` : ""}</div>`).join("");
   /* secciones plegables: se abren solas si ya tienen datos */
   const has = ks => ks.some(k => al[k] !== undefined && al[k] !== null && String(al[k]).trim() !== "");
-  const fold = (txt, ic, open, inner) => `<details class="fsec" ${open ? "open" : ""}><summary>${icon(ic)}<span>${esc(txt)}</span>${icon("chevron", "fsec-chev")}</summary><div class="fsec-b">${inner}</div></details>`;
+  const fold = (txt, ic, open, inner, col = "var(--system-gray)") => `<details class="fsec sf-group" ${open ? "open" : ""}><summary><span class="row-ic" style="--rc:${col}">${icon(ic)}</span><span>${esc(txt)}</span>${icon("chevron", "fsec-chev")}</summary><div class="fsec-b">${inner}</div></details>`;
   const sedeHtml = sedes.length > 1 ? field({k: "sedeId", label: t("Sede"), type: "select", opts: sedesOpts, req: true, half: true}, al.sedeId) : `<input type="hidden" name="sedeId" value="${esc(al.sedeId || "")}">`;
   const estadoHtml = !isNew ? field({k: "estado", label: t("Estado"), type: "select", opts: Object.entries(STATUS).map(([k, v]) => [k, t(v)]), half: true}, estadoEf(al)) : `<input type="hidden" name="estado" value="${esc(al.estado || "activo")}">`;
   const body = h(`<form class="form student-form" novalidate>
-    <div class="photo-pick">
+    <div class="photo-pick sf-photo">
       <button type="button" class="photo-btn" data-photo aria-label="${esc(t("Foto del alumno"))}">${photo ? `<img src="${photo}" alt="">` : icon("camera", "big")}<span class="photo-badge">${icon("camera")}</span></button>
       <div class="photo-txt"><b>${t("Foto del alumno")}</b><span class="muted small">${t("Toca para subir o tomar una foto. Se recorta en cuadrado.")}</span>
       <button type="button" class="btn-link danger small" data-nophoto ${photo ? "" : "hidden"}>${t("Quitar foto")}</button></div>
     </div>
-    ${field({k: "nombre", label: t("Nombre completo"), req: true, ph: t("Ej: Juan Pérez")}, al.nombre)}
-    ${field({k: "telefono", label: t("Teléfono / WhatsApp"), type: "tel", ph: "300 123 4567", hint: t("Celular de 10 cifras: se le pone +57 solo. De otro país, escríbelo con +.")}, al.telefono)}
-    ${sedeHtml}${estadoHtml}
-    <div class="frz" data-frz ${al.estado === "congelado" ? "" : "hidden"}>
-      ${field({k: "frzDesde", label: t("Congelado desde"), type: "date", half: true}, al.congelado?.desde || today())}
-      ${field({k: "frzHasta", label: t("Hasta (último día)"), type: "date", half: true, hint: t("Esos días no cuentan como deuda. Al terminar vuelve a activo solo.")}, al.congelado?.hasta || addDays(today(), 30))}
+    <div class="sf-group">
+      ${field({k: "nombre", label: t("Nombre completo"), req: true, ph: t("Ej: Juan Pérez")}, al.nombre)}
+      ${field({k: "telefono", label: t("Teléfono / WhatsApp"), type: "tel", ph: "300 123 4567", hint: t("Celular de 10 cifras: se le pone +57 solo. De otro país, escríbelo con +.")}, al.telefono)}
+      ${sedeHtml}${estadoHtml}
+      <div class="frz" data-frz ${al.estado === "congelado" ? "" : "hidden"}>
+        ${field({k: "frzDesde", label: t("Congelado desde"), type: "date", half: true}, al.congelado?.desde || today())}
+        ${field({k: "frzHasta", label: t("Hasta (último día)"), type: "date", half: true, hint: t("Esos días no cuentan como deuda. Al terminar vuelve a activo solo.")}, al.congelado?.hasta || addDays(today(), 30))}
+      </div>
     </div>
-    <div class="field" data-discs></div>
-    <div data-ranks class="ranks-init"></div>
-    ${field({k: "plan", label: t("Plan"), type: "select", opts: PLANS.map(p => [p.id, t(p.nombre)]), half: true}, al.plan)}
-    ${field({k: "valor", label: t("Valor del plan ({moneda})", {moneda: S.academy()?.moneda || "COP"}), type: "number", half: true, ph: vm ? "" : t("Ej: 150000")}, al.valor)}
-    ${!vm ? `<label class="check" data-vdef hidden><input type="checkbox" name="valorDef" checked><span>${t("Usar como precio por defecto")}</span></label>` : ""}
-    ${field({k: "fechaInicio", label: t("Fecha de ingreso"), type: "date", hint: t("Si no tiene pagos, el primer cobro vence este día.")}, al.fechaInicio)}
+    <div class="sf-group sf-discs">
+      <div class="field" data-discs></div>
+      <div data-ranks class="ranks-init"></div>
+    </div>
+    <div class="sf-group">
+      ${field({k: "plan", label: t("Plan"), type: "select", opts: PLANS.map(p => [p.id, t(p.nombre)]), half: true}, al.plan)}
+      ${field({k: "valor", label: t("Valor del plan ({moneda})", {moneda: S.academy()?.moneda || "COP"}), type: "number", half: true, ph: vm ? "" : t("Ej: 150000")}, al.valor)}
+      ${!vm ? `<label class="check toggle sf-row" data-vdef hidden><input type="checkbox" class="switch" name="valorDef" checked><span>${t("Usar como precio por defecto")}</span></label>` : ""}
+      ${field({k: "fechaInicio", label: t("Fecha de ingreso"), type: "date", hint: t("Si no tiene pagos, el primer cobro vence este día.")}, al.fechaInicio)}
+    </div>
     ${fold(t("Datos personales"), "users", has(["documento", "nacimiento", "genero", "talla"]), `
       ${field({k: "documento", label: t("Documento de identidad"), half: true}, al.documento)}
       ${field({k: "nacimiento", label: t("Fecha de nacimiento"), type: "date", half: true}, al.nacimiento)}
       ${field({k: "genero", label: t("Género"), type: "seg", opts: [["M", t("Masculino")], ["F", t("Femenino")], ["O", t("Otro")]]}, al.genero)}
-      ${field({k: "talla", label: t("Talla de ropa"), half: true, list: SIZES}, al.talla)}`)}
+      ${field({k: "talla", label: t("Talla de ropa"), half: true, list: SIZES}, al.talla)}`, "var(--system-blue)")}
     ${fold(t("Contacto y acudiente"), "phone", has(["email", "direccion", "acudiente", "acudienteTel"]), `
       ${field({k: "email", label: t("Correo"), type: "email", half: true}, al.email)}
       ${field({k: "direccion", label: t("Dirección"), half: true}, al.direccion)}
       ${field({k: "acudiente", label: t("Acudiente (menores)"), half: true}, al.acudiente)}
-      ${field({k: "acudienteTel", label: t("Teléfono del acudiente"), type: "tel", half: true}, al.acudienteTel)}`)}
+      ${field({k: "acudienteTel", label: t("Teléfono del acudiente"), type: "tel", half: true}, al.acudienteTel)}`, "var(--system-green)")}
     ${fold(t("Salud y emergencia"), "heart", has(["sangre", "eps", "peso", "estatura", "alergias", "lesiones", "emergencia", "emergenciaTel"]), `
-      ${field({k: "sangre", label: t("Tipo de sangre (RH)"), type: "select", opts: [["", "—"], ...BLOOD], half: true}, al.sangre)}
+      ${field({k: "sangre", label: t("Tipo de sangre (RH)"), type: "select", opts: [["", t("Sin registrar")], ...BLOOD], half: true}, al.sangre)}
       ${field({k: "eps", label: t("EPS / seguro médico"), half: true}, al.eps)}
       ${field({k: "peso", label: t("Peso (kg)"), type: "number", step: "0.1", half: true}, al.peso)}
       ${field({k: "estatura", label: t("Estatura (cm)"), type: "number", half: true}, al.estatura)}
       ${field({k: "alergias", label: t("Alergias"), half: true, ph: t("Ninguna")}, al.alergias)}
       ${field({k: "lesiones", label: t("Lesiones / condiciones médicas"), half: true}, al.lesiones)}
       ${field({k: "emergencia", label: t("Contacto de emergencia"), half: true}, al.emergencia)}
-      ${field({k: "emergenciaTel", label: t("Teléfono de emergencia"), type: "tel", half: true}, al.emergenciaTel)}`)}
-    ${fold(t("Equipo (para ofrecer productos)"), "bag", Object.values(eq).some(x => x?.tiene || x?.talla), `<div class="gear">${gearHtml}</div>`)}
-    ${fold(t("Notas"), "edit", has(["notas"]), field({k: "notas", label: t("Notas del profesor"), type: "textarea"}, al.notas))}
+      ${field({k: "emergenciaTel", label: t("Teléfono de emergencia"), type: "tel", half: true}, al.emergenciaTel)}`, "var(--system-red)")}
+    ${fold(t("Equipo (para ofrecer productos)"), "bag", Object.values(eq).some(x => x?.tiene || x?.talla), `<div class="gear">${gearHtml}</div>`, "var(--system-orange)")}
+    ${fold(t("Notas"), "edit", has(["notas"]), field({k: "notas", label: t("Notas del profesor"), type: "textarea"}, al.notas), "var(--system-indigo)")}
     <datalist id="sizes">${SIZES.map(s => `<option value="${s}">`).join("")}</datalist>
   </form>`);
 
@@ -120,8 +126,8 @@ export function studentForm(al, opts = {}){
   nop.onclick = () => { photo = null; photoChanged = true; pbtn.innerHTML = `${icon("camera", "big")}<span class="photo-badge">${icon("camera")}</span>`; nop.hidden = true; };
 
   const m = modal({title: isNew ? t("Nuevo alumno") : t("Editar alumno"), body, wide: true,
-    foot: isNew ? `<div class="sf-foot"><label class="check sf-pay"><input type="checkbox" data-paynow ${S.pref("sfPagar", false) ? "checked" : ""}><span>${t("Registrar primer pago")}</span></label>
-      <button type="button" class="btn-link" data-close>${t("Cancelar")}</button><button class="btn primary" data-save>${icon("check")} ${t("Agregar")}</button></div>`
+    foot: isNew ? `<div class="sf-foot"><label class="check toggle sf-pay"><input type="checkbox" class="switch" data-paynow ${S.pref("sfPagar", false) ? "checked" : ""}><span>${t("Registrar primer pago")}</span></label>
+      <button type="button" class="btn ghost" data-close>${t("Cancelar")}</button><button class="btn primary" data-save>${icon("check")} ${t("Agregar")}</button></div>`
       : `<button class="btn danger ghost left" data-del>${icon("trash")} ${t("Eliminar")}</button><button class="btn ghost" data-close>${t("Cancelar")}</button><button class="btn primary" data-save>${t("Guardar")}</button>`});
   const save = async pay => {
     const v = formValues(body);
@@ -382,20 +388,24 @@ export function disciplineModal(d, preset){
     ${field({k: "sedeIds", label: t("Se enseña en"), type: "chips", opts: S.sedes().map(s => [s.id, s.nombre]), empty: t("Crea una sede primero")}, d.sedeIds)}
     ${field({k: "sistema", label: t("Sistema de grados (plantilla)"), type: "select", opts: Object.entries(SYSTEMS).map(([k, s]) => [k, t(s.nombre)]), hint: t("Cambiar la plantilla reemplaza la lista de abajo.")}, d.sistema)}
     <p class="small muted" data-nota></p>
-    <div class="ranks-edit"><div class="re-head"><span>${t("Cinturón / nivel")}</span><span>${t("Color")}</span><span title="${esc(t("Grados o rayas máximas"))}">${t("Grados máx.")}</span><span title="${esc(t("Meses mínimos en este cinturón antes de pasar al siguiente"))}">${t("Meses mín.")}</span><span title="${esc(t("Meses mínimos entre grados"))}">${t("Meses/grado")}</span><span title="${esc(t("Clases mínimas en este cinturón antes de pasar al siguiente (vacío = sin mínimo)"))}">${t("Clases mín.")}</span><span></span></div><div data-ranks></div>
+    <div class="ranks-edit"><span class="lbl">${t("Cinturón / nivel")}</span><div data-ranks></div>
     <button type="button" class="btn ghost small" data-add>${icon("plus")} ${t("Agregar cinturón")}</button></div>
   </form>`);
   const list = body.querySelector("[data-ranks]");
   const nota = () => { body.querySelector("[data-nota]").textContent = t(SYSTEMS[body.querySelector("[name=sistema]").value]?.nota || ""); };
   const render = () => {
     list.innerHTML = d.ranks.map((r, i) => `<div class="re-row" data-i="${i}">
-      <input data-f="n" value="${esc(t(r.n))}" aria-label="${esc(t("Nombre"))}">
-      <input data-f="c" type="color" value="${esc(r.c)}" aria-label="${esc(t("Color"))}">
-      <input data-f="g" type="number" min="0" max="12" value="${r.g || 0}" aria-label="${esc(t("Grados máx."))}">
-      <input data-f="m" type="number" min="0" step="0.5" value="${r.m || 0}" aria-label="${esc(t("Meses mínimos"))}">
-      <input data-f="mg" type="number" min="0" step="0.5" value="${r.mg || 0}" aria-label="${esc(t("Meses por grado"))}">
-      <input data-f="cl" type="number" min="0" step="1" value="${r.cl ?? ""}" placeholder="—" aria-label="${esc(t("Clases mínimas"))}">
-      <span class="re-act"><button type="button" class="icon-btn" data-up title="${esc(t("Subir"))}">▲</button><button type="button" class="icon-btn" data-rm title="${esc(t("Quitar"))}">${icon("x")}</button></span>
+      <div class="re-top">
+        <input data-f="c" type="color" class="re-sw" value="${esc(r.c)}" aria-label="${esc(t("Color"))}">
+        <input data-f="n" class="re-name" value="${esc(t(r.n))}" aria-label="${esc(t("Nombre"))}">
+        <span class="re-act"><button type="button" class="icon-btn" data-up title="${esc(t("Subir"))}" aria-label="${esc(t("Subir"))}" ${i ? "" : "disabled"}>${icon("chevron", "re-up")}</button><button type="button" class="icon-btn" data-rm title="${esc(t("Quitar"))}" aria-label="${esc(t("Quitar"))}">${icon("x")}</button></span>
+      </div>
+      <div class="re-nums">
+        <label title="${esc(t("Grados o rayas máximas"))}"><span>${t("Grados máx.")}</span><input data-f="g" type="number" inputmode="numeric" min="0" max="12" value="${r.g || 0}"></label>
+        <label title="${esc(t("Meses mínimos en este cinturón antes de pasar al siguiente"))}"><span>${t("Meses mín.")}</span><input data-f="m" type="number" inputmode="decimal" min="0" step="0.5" value="${r.m || 0}"></label>
+        <label title="${esc(t("Meses mínimos entre grados"))}"><span>${t("Meses/grado")}</span><input data-f="mg" type="number" inputmode="decimal" min="0" step="0.5" value="${r.mg || 0}"></label>
+        <label title="${esc(t("Clases mínimas en este cinturón antes de pasar al siguiente (vacío = sin mínimo)"))}"><span>${t("Clases mín.")}</span><input data-f="cl" type="number" inputmode="numeric" min="0" step="1" value="${r.cl ?? ""}" placeholder="0"></label>
+      </div>
     </div>`).join("");
   };
   list.addEventListener("input", e => {

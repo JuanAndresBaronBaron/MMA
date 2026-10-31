@@ -95,6 +95,7 @@ export default {
   "30 días": "30 days",
   "¡Feliz cumpleaños, {nombre}! Todo el equipo de {academia} te desea un gran año.": "Happy birthday, {nombre}! Everyone at {academia} wishes you a great year.",
   "Felicitar a {nombre} por WhatsApp": "Congratulate {nombre} on WhatsApp",
+  "Vinieron (7 días)": "Attended (7 days)",
   /* datos de ejemplo (demo.js) */
   "Familiar": "Family member",
   "Arma tu horario de clases": "Set up your class schedule",

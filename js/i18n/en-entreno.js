@@ -276,4 +276,5 @@ export default {
   "Salió bien": "Went well",
   "Por mejorar": "To improve",
   "con {p}": "with {p}",
+  "Anterior": "Previous", "Cómo avanzar": "How to progress",
 };

@@ -62,4 +62,5 @@ export default {
   "Imprimir último recibo": "Print last receipt",
   "Tiquetera vencida": "Class pack expired",
   "Reportes": "Reports",
+  "Sin deuda": "Nothing owed",
 };

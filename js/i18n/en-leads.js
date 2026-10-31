@@ -137,4 +137,6 @@ export default {
   "1 número copiado": "1 number copied",
   "{n} números copiados": "{n} numbers copied",
   "No se pudo copiar": "Couldn't copy",
+  "Sugerido": "Suggested",
+  "Eliminar prospecto": "Delete lead",
 };

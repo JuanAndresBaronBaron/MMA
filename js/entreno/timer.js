@@ -1,7 +1,9 @@
-/* Temporizador de rounds a pantalla completa: verde = trabajo, rojo = descanso.
+/* Temporizador de rounds a pantalla completa, al estilo del temporizador del Reloj de iOS:
+   cifra enorme de trazo fino, anillo que se vacía y botones redondos (verde = empezar o seguir, naranja = pausa).
+   Fase: verde = trabajo, rojo = descanso, ámbar = prepárate.
    Pita con WebAudio (aviso a 10 s del final del round), vibra y mantiene la pantalla encendida (wakeLock).
    Usa la hora real (Date.now) para no atrasarse si el navegador frena los intervalos. */
-import {icon} from "../ui.js";
+import {icon, haptic} from "../ui.js";
 import {esc, h} from "../util.js";
 import {t} from "../i18n.js";
 
@@ -12,6 +14,7 @@ export const PRESETS = [
   {id: "tabata", n: 8, trabajo: 20, descanso: 10, t: "Tabata 8 × 20 s / 10"},
 ];
 const PREP = 10;
+const R = 46, C = 2 * Math.PI * R;   // anillo (viewBox 100 × 100)
 const mmss = s => { s = Math.max(0, Math.ceil(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`; };
 export const fmtRondas = c => `${c.n} × ${c.trabajo % 60 ? c.trabajo + " s" : c.trabajo / 60 + " min"} / ${c.descanso % 60 ? c.descanso + " s" : c.descanso / 60 + " min"}`;
 
@@ -21,14 +24,19 @@ export function abrir({titulo = "", cfg = null, onDone} = {}){
   abierto?.cerrar();
   let c = cfg || PRESETS[0], fases = [], i = 0, fin = 0, quedan = 0, pausa = false, iv = 0, lock = null, ac = null, avisado = false, termino = false, ultimo = 0;
   const el = h(`<div class="tm" role="dialog" aria-modal="true" aria-label="${esc(t("Temporizador"))}" data-f="setup">
-    <div class="tm-top"><span class="tm-tt">${esc(titulo || t("Temporizador"))}</span><button class="tm-x" data-x aria-label="${t("Cerrar")}">${icon("x")}</button></div>
+    <div class="tm-top"><button class="tm-x" data-x aria-label="${t("Cerrar")}">${icon("x")}</button><span class="tm-tt">${esc(titulo || t("Temporizador"))}</span><span class="tm-sp" aria-hidden="true"></span></div>
     <div class="tm-mid">
-      <span class="tm-ph" aria-live="polite"></span>
-      <b class="tm-time">0:00</b>
-      <span class="tm-rd"></span>
-      <div class="tm-pre">${cfg ? "" : PRESETS.map(p => `<button class="tm-chip ${p === c ? "on" : ""}" data-p="${p.id}">${esc(t(p.t))}</button>`).join("")}</div>
+      <div class="tm-dial">
+        <svg class="tm-ring" viewBox="0 0 100 100" aria-hidden="true"><circle class="tm-trk" cx="50" cy="50" r="${R}"/><circle class="tm-arc" cx="50" cy="50" r="${R}" stroke-dasharray="${C}" stroke-dashoffset="0"/></svg>
+        <div class="tm-in">
+          <span class="tm-ph" aria-live="polite"></span>
+          <b class="tm-time">0:00</b>
+          <span class="tm-rd"></span>
+        </div>
+      </div>
+      <div class="tm-pre" role="group" aria-label="${esc(t("Temporizador"))}">${cfg ? "" : PRESETS.map(p => `<button class="tm-chip ${p === c ? "on" : ""}" data-p="${p.id}" aria-pressed="${p === c}">${esc(t(p.t))}</button>`).join("")}</div>
     </div>
-    <div class="tm-bot"><button class="tm-btn ghost" data-skip>${t("Saltar")}</button><button class="tm-btn main" data-go>${icon("check")} ${t("Empezar")}</button></div>
+    <div class="tm-bot"><button class="tm-btn ghost" data-skip>${t("Saltar")}</button><button class="tm-btn main go" data-go>${t("Empezar")}</button></div>
   </div>`);
   const $ = s => el.querySelector(s);
   const armar = () => {
@@ -41,9 +49,17 @@ export function abrir({titulo = "", cfg = null, onDone} = {}){
     $(".tm-time").textContent = termino ? "0:00" : mmss(rest ?? (fz.s || c.trabajo));
     $(".tm-ph").textContent = termino ? t("¡Terminado!") : {prep: t("Prepárate"), work: t("Trabajo"), rest: t("Descanso")}[fz.f] || fmtRondas(c);
     $(".tm-rd").textContent = termino ? t("Buen trabajo") : fz.r ? t("Round {a} de {b}", {a: fz.r, b: c.n}) : fz.f ? t("Round {a} de {b}", {a: 1, b: c.n}) : "";
-    $("[data-go]").innerHTML = termino ? `${icon("check")} ${t("Cerrar")}` : !fases.length ? `${icon("check")} ${t("Empezar")}` : pausa ? t("Seguir") : t("Pausa");
+    const go = $("[data-go]");
+    go.textContent = termino ? t("Cerrar") : !fases.length ? t("Empezar") : pausa ? t("Seguir") : t("Pausa");
+    go.classList.toggle("go", !termino && (!fases.length || pausa));
+    go.classList.toggle("pause", !termino && !!fases.length && !pausa);
+    go.classList.toggle("done", termino);
     $("[data-skip]").hidden = !fases.length || termino;
     $(".tm-pre").hidden = !!fases.length;
+    /* anillo: lo que queda de la fase actual (lleno antes de empezar, vacío al terminar) */
+    const total = fz.s || 0, frac = termino ? 0 : !fases.length || !total ? 1 : Math.max(0, Math.min(1, (rest ?? total) / total));
+    el.classList.toggle("tm-paused", pausa && !!fases.length && !termino);
+    $(".tm-arc").style.strokeDashoffset = String(C * (1 - frac));
   };
   const beep = (f = 880, d = .18, n = 1) => {
     try{
@@ -64,6 +80,7 @@ export function abrir({titulo = "", cfg = null, onDone} = {}){
     if(!fz){ return terminar(); }
     fin = Date.now() + fz.s * 1000;
     if(pausa) quedan = fz.s * 1000;                     // saltar en pausa: la fase nueva arranca completa
+    el.classList.add("tm-jump"); requestAnimationFrame(() => requestAnimationFrame(() => el.classList.remove("tm-jump")));   // el anillo se rellena sin animar hacia atrás
     if(fz.f === "work"){ beep(1046, .45); vib([300]); }
     else if(fz.f === "rest"){ beep(523, .45); vib([150, 80, 150]); }
     pinta(fz.s);
@@ -88,13 +105,17 @@ export function abrir({titulo = "", cfg = null, onDone} = {}){
     pedirLock();
   };
   const cerrar = () => {
+    if(el.classList.contains("tm-out")) return;
     clearInterval(iv); iv = 0;
     try{ lock?.release(); }catch(e){} lock = null;
     try{ ac?.close(); }catch(e){}
     document.removeEventListener("visibilitychange", onVis);
     document.removeEventListener("keydown", onKey, true);
     window.removeEventListener("hashchange", cerrar);
-    el.remove(); document.body.classList.remove("tm-on");
+    /* sale hacia abajo como una pantalla presentada; se quita al terminar (o enseguida si no hay animación) */
+    el.classList.add("tm-out"); document.body.classList.remove("tm-on");
+    const quitar = () => el.remove();
+    el.addEventListener("animationend", quitar, {once: true}); setTimeout(quitar, 450);
     if(abierto === api) abierto = null;
   };
   const onKey = e => {
@@ -105,10 +126,11 @@ export function abrir({titulo = "", cfg = null, onDone} = {}){
     const tg = e.target;
     if(tg.closest("[data-x]")) return cerrar();
     const p = tg.closest("[data-p]");
-    if(p && !fases.length){ c = PRESETS.find(x => x.id === p.dataset.p); el.querySelectorAll("[data-p]").forEach(x => x.classList.toggle("on", x === p)); return pinta(); }
+    if(p && !fases.length){ haptic("selection"); c = PRESETS.find(x => x.id === p.dataset.p); el.querySelectorAll("[data-p]").forEach(x => { x.classList.toggle("on", x === p); x.setAttribute("aria-pressed", x === p); }); return pinta(); }
     if(tg.closest("[data-skip]") && fases.length && !termino) return entrar(i + 1);
     if(tg.closest("[data-go]")){
       if(termino) return cerrar();
+      haptic("medium");
       if(!fases.length) return empezar();
       pausa = !pausa;
       if(pausa) quedan = fin - Date.now(); else fin = Date.now() + quedan;

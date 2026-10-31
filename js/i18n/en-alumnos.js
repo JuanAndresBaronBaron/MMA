@@ -62,4 +62,6 @@ export default {
   "Mensaje masivo por WhatsApp": "Bulk WhatsApp message",
   "Mensaje masivo": "Bulk message",
   "El mensaje masivo no está disponible ahora": "Bulk messaging is not available right now",
+  "Índice alfabético": "Alphabetical index",
+  "Ir a la letra {l}": "Jump to {l}",
 };

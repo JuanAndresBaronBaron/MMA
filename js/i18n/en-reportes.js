@@ -49,4 +49,5 @@ export default {
   "Clase": "Class",
   "Alumno": "Student",
   "Teléfono": "Phone",
+  "de {monto} esperado": "of {monto} expected",
 };

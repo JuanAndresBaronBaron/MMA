@@ -1,6 +1,6 @@
 import * as S from "../store.js";
-import {icon, avatar, empty, pill, modal, toast} from "../ui.js";
-import {esc, money, today, fmtDate, MESES, addMonths, waLink, norm, csv, download, h} from "../util.js";
+import {icon, avatar, pill, modal, toast, emptyState, haptic} from "../ui.js";
+import {esc, money, today, fmtDate, MESES, addMonths, addDays, waLink, norm, csv, download, h} from "../util.js";
 import {paymentModal, quickPay} from "../forms.js";
 import {planById} from "../catalog.js";
 import {deuda, estadoPago, pillTxt, txtCuotas, tplCobro, msgCobro, diasRecordado, estadoEf, fmtNumRecibo} from "../cobros.js";
@@ -35,63 +35,103 @@ export function render(el){
     const msg = x.e.dias < 0 ? t("Hola {nombre}, te recordamos que tu mensualidad en {academia} venció el {fecha}. Valor: {valor}. ¡Gracias!", mv) : t("Hola {nombre}, te recordamos que tu mensualidad en {academia} vence el {fecha}. Valor: {valor}. ¡Gracias!", mv);
     return x.e.k !== "aldia" ? waLink(x.a.telefono || x.a.acudienteTel, msg) : null;
   };
-  /* fila en 2 líneas: avatar · nombre + valor / píldora + fecha · ✓ */
+  /* fila tipo Wallet: avatar · nombre + valor / estado + plan y fecha · acciones · ✓ */
   const row = x => {
     const w = wa(x), many = x.e.k === "vencido" && x.d.cuotas > 1, rt = x.e.k !== "aldia" ? recTxt(x.a) : "";
     const meta = [t(planById(x.a.plan).nombre), x.e.vence ? fmtDate(x.e.vence) : ""].filter(Boolean).join(" · ");
-    return `<div class="li pay-row">
-      <a href="#/alumno/${x.a.id}" class="pr-link">${avatar(x.a, 40)}
-        <b class="pr-name">${esc(x.a.nombre)}</b>
-        <b class="pr-amt amount ${many ? "err" : ""}" title="${many ? esc(t("Debe {cuotas}", {cuotas: txtCuotas(x.a, x.d.cuotas)})) : ""}">${money(x.e.k === "vencido" ? owed(x) : S.valorPlan(x.a), cur)}</b>
-        <span class="pr-meta">${pill(x.e.k, pillTxt(x.a, x.e, x.d))}<span class="pr-tiq" data-tiq="${x.a.id}" hidden></span><span class="muted small">${esc(meta)}${rt ? ` · <span class="pr-rec">${icon("whatsapp", "inline")}${esc(rt)}</span>` : ""}</span></span>
+    return `<div class="li pv-row">
+      <a href="#/alumno/${x.a.id}" class="pv-link">${avatar(x.a, 40)}
+        <b class="pv-name">${esc(x.a.nombre)}</b>
+        <b class="pv-amt amount ${many ? "err" : ""}" title="${many ? esc(t("Debe {cuotas}", {cuotas: txtCuotas(x.a, x.d.cuotas)})) : ""}">${money(x.e.k === "vencido" ? owed(x) : S.valorPlan(x.a), cur)}</b>
+        <span class="pv-meta">${pill(x.e.k, pillTxt(x.a, x.e, x.d))}<span class="pr-tiq" data-tiq="${x.a.id}" hidden></span></span>
+        <span class="pv-sub">${esc(meta)}${rt ? ` · <span class="pv-rec">${icon("whatsapp", "inline")}${esc(rt)}</span>` : ""}</span>
       </a>
-      <span class="li-act">${w ? `<a class="icon-btn wa hide-s" href="${esc(w)}" target="_blank" rel="noopener" data-wa="${x.a.id}" title="${t("Recordar por WhatsApp")}" aria-label="${t("Recordar por WhatsApp")}">${icon("whatsapp")}</a>` : ""}
-      ${x.ult ? `<a class="icon-btn hide-s" href="#/recibo/${x.ult.id}" title="${esc(t("Ver último recibo"))}" aria-label="${esc(t("Ver último recibo"))}">${icon("receipt")}</a>` : ""}
+      <span class="li-act pv-act">${w ? `<a class="icon-btn wa hide-s" href="${esc(w)}" target="_blank" rel="noopener" data-wa="${x.a.id}" title="${t("Recordar por WhatsApp")}" aria-label="${t("Recordar por WhatsApp")}">${icon("whatsapp")}</a>` : `<span class="icon-btn ghost-sp hide-s" aria-hidden="true"></span>`}
+      ${x.ult ? `<a class="icon-btn hide-s" href="#/recibo/${x.ult.id}" title="${esc(t("Ver último recibo"))}" aria-label="${esc(t("Ver último recibo"))}">${icon("receipt")}</a>` : `<span class="icon-btn ghost-sp hide-s" aria-hidden="true"></span>`}
       <button class="icon-btn hide-s" data-more="${x.a.id}" title="${t("Registrar otro pago")}" aria-label="${t("Registrar otro pago")}">${icon("plus")}</button>
-      <button class="icon-btn only-m pr-dots" data-menu="${x.a.id}" aria-label="${esc(t("Más acciones para {nombre}", {nombre: x.a.nombre}))}"><span aria-hidden="true">⋯</span></button>
+      <button class="icon-btn only-m pv-dots" data-menu="${x.a.id}" aria-label="${esc(t("Más acciones para {nombre}", {nombre: x.a.nombre}))}"><span aria-hidden="true">•••</span></button>
       <button class="paycheck ${x.e.k === "aldia" ? "on" : ""}" data-pay="${x.a.id}" title="${x.e.k === "aldia" ? t("Al día (toca para registrar el siguiente pago)") : t("Marcar como pagado")}" aria-label="${esc((x.e.k === "aldia" ? t("Al día (toca para registrar el siguiente pago)") : t("Marcar como pagado")) + ": " + x.a.nombre)}">${icon("check")}</button></span>
     </div>`;
   };
-  const group = (tt, arr, k) => arr.length ? `<h4 class="grp ${k}">${tt} <span>${arr.length}</span></h4><div class="list">${arr.map(row).join("")}</div>` : "";
+  const group = (tt, arr, k) => arr.length ? `<h3 class="section-header pv-h ${k}"><span><i class="pv-dot" aria-hidden="true"></i>${tt}</span><span class="pv-n">${arr.length}</span></h3><div class="card flush pv-list"><div class="list">${arr.map(row).join("")}</div></div>` : "";
   const conTel = venc.filter(x => x.a.telefono || x.a.acudienteTel);
-  const search = `<label class="search">${icon("search")}<input id="pq" type="search" placeholder="${st.tab === "hist" ? t("Buscar alumno o nota") : t("Buscar alumno")}" value="${esc(st.q)}" aria-label="${t("Buscar alumno")}"></label>`;
+  const search = `<label class="search pv-search">${icon("search")}<input id="pq" type="search" placeholder="${st.tab === "hist" ? t("Buscar alumno o nota") : t("Buscar alumno")}" value="${esc(st.q)}" aria-label="${t("Buscar alumno")}"></label>`;
+
+  /* historial: agrupado por día, como las transacciones de Wallet */
+  const hoy = today(), ayer = addDays(hoy, -1);
+  const diaTxt = f => f === hoy ? t("Hoy") : f === ayer ? t("Ayer") : fmtDate(f, true);
+  const dias = [];
+  for(const p of histList){ const last = dias[dias.length - 1]; if(last && last.f === p.fecha) last.ps.push(p); else dias.push({f: p.fecha, ps: [p]}); }
+  const txRow = p => { const a = S.get("alumnos", p.alumnoId); const sub = [t(p.concepto || ""), t(p.metodo || ""), p.hasta ? t("hasta {fecha}", {fecha: fmtDate(p.hasta)}) : "", p.nota || ""].filter(Boolean).join(" · ");
+    return `<div class="li pv-tx"><button type="button" class="li-link" data-editp="${p.id}">${a ? avatar(a, 40) : `<span class="li-ic">${icon("cash")}</span>`}<div class="li-main"><b>${esc(a?.nombre || t("Alumno eliminado"))}</b><span class="muted small">${esc(sub)}</span></div><b class="amount pv-tx-amt">${money(p.monto, cur)}</b></button><a class="icon-btn pv-rc" href="#/recibo/${p.id}" title="${esc(t("Ver recibo"))}" aria-label="${esc(t("Ver recibo") + (p.num ? " N.º " + fmtNumRecibo(p.num) : ""))}">${icon("receipt")}</a></div>`; };
+  const metodos = Object.entries(porMetodo).sort((a, b) => b[1] - a[1]);
+  const MC = ["--crimson", "--steel", "--olive", "--brass", "--burnt", "--gunmetal"];
+  const nEst = venc.length + pronto.length + ok.length;
+  const seg = (k, n) => n ? `<i class="pv-mseg ${k}" style="flex:${n}"></i>` : "";
 
   const tip = !S.pref("tipPagos") && !S.pref("qpUsado");
   el.innerHTML = `
-  <div class="kpis pay-kpis">
-    <div class="kpi"><span class="kpi-ic c2">${icon("cash")}</span><div><b>${money(total, cur)}</b><span>${t("Recaudado en {mes}", {mes: MESES[m - 1]})}</span></div></div>
-    <div class="kpi"><span class="kpi-ic c3">${icon("alert")}</span><div><b>${venc.length}</b><span>${t("Vencidos")} · ${t("deben {monto}", {monto: money(totalDeuda, cur)})}</span></div></div>
-    <div class="kpi"><span class="kpi-ic c4">${icon("clock")}</span><div><b>${pronto.length}</b><span>${tn(acad.avisoDias ?? 5, "Vencen en 1 día", "Vencen en {n} días")}</span></div></div>
-    <div class="kpi"><span class="kpi-ic c1">${icon("check")}</span><div><b>${ok.length}</b><span>${t("Al día")}</span></div></div>
-  </div>
-  <div class="pay-tabs">
-    <div class="tabs">
-      <button class="tab ${st.tab === "cobrar" ? "on" : ""}" data-tab="cobrar">${icon("check")} ${t("Control de pagos")}</button>
-      <button class="tab ${st.tab === "hist" ? "on" : ""}" data-tab="hist">${icon("list")} ${t("Historial del mes")}</button>
+  <section class="card pv-sum">
+    <div class="pv-sum-h">
+      <span class="pv-eyebrow">${t("Recaudado en {mes}", {mes: MESES[m - 1]})}</span>
+      <b class="pv-big amount">${money(total, cur)}</b>
+      <span class="pv-sum-s">${tn(delMes.length, "1 pago", "{n} pagos")}</span>
     </div>
-    <a class="btn ghost small pay-rep" href="#/reportes">${icon("chart")}<span>${t("Reportes")}</span></a>
+    ${nEst ? `<div class="pv-meter" role="img" aria-label="${esc(`${t("Vencidos")}: ${venc.length}, ${t("Por vencer")}: ${pronto.length}, ${t("Al día")}: ${ok.length}`)}">${seg("err", venc.length)}${seg("warn", pronto.length)}${seg("ok", ok.length)}</div>` : ""}
+    <div class="pv-stats">
+      <div class="pv-st err"><span class="pv-st-l"><i class="pv-dot" aria-hidden="true"></i>${t("Vencidos")}</span><b class="amount">${venc.length}</b><small class="${totalDeuda ? "" : "z"}">${t("deben {monto}", {monto: money(totalDeuda, cur)})}</small></div>
+      <div class="pv-st warn"><span class="pv-st-l"><i class="pv-dot" aria-hidden="true"></i>${t("Por vencer")}</span><b class="amount">${pronto.length}</b><small>${tn(acad.avisoDias ?? 5, "Vencen en 1 día", "Vencen en {n} días")}</small></div>
+      <div class="pv-st ok"><span class="pv-st-l"><i class="pv-dot" aria-hidden="true"></i>${t("Al día")}</span><b class="amount">${ok.length}</b><small>${t("Sin deuda")}</small></div>
+    </div>
+  </section>
+  <div class="pv-tabs">
+    <div class="seg pv-seg" role="tablist" aria-label="${t("Pagos")}">
+      <button type="button" role="tab" aria-selected="${st.tab === "cobrar"}" class="${st.tab === "cobrar" ? "on" : ""}" data-tab="cobrar">${t("Control de pagos")}</button>
+      <button type="button" role="tab" aria-selected="${st.tab === "hist"}" class="${st.tab === "hist" ? "on" : ""}" data-tab="hist">${t("Historial del mes")}</button>
+    </div>
+    <a class="btn gray small pv-rep" href="#/reportes" aria-label="${t("Reportes")}">${icon("chart")}<span>${t("Reportes")}</span></a>
   </div>
-  ${st.tab === "cobrar" ? `<section class="card">
-      <div class="toolbar pay-tools">${search}${conTel.length ? `<button class="btn ghost small" data-remind>${icon("whatsapp")}<span>${t("Recordar a todos los vencidos ({n})", {n: conTel.length})}</span></button>` : ""}</div>
-      ${tip ? `<div class="pay-tip" role="note">${icon("info")}<p>${t("Toca {check} para marcar que el alumno pagó su plan: se registra el pago y se corre la fecha del próximo cobro. Usa {plus} para un valor o período distinto.", {check: icon("check", "inline"), plus: icon("plus", "inline")})}</p><button type="button" class="icon-btn" data-tipx aria-label="${t("Entendido, ocultar")}">${icon("x")}</button></div>` : ""}
-      ${est.length ? group(t("Vencidos"), venc, "err") + group(t("Por vencer"), pronto, "warn") + group(t("Al día"), ok, "ok") : empty("users", q ? t("Sin resultados") : t("Sin alumnos activos"), q ? t("Prueba con otro nombre.") : t("Los alumnos activos con plan de pago aparecen aquí."))}
-    </section>`
-  : `<section class="card">
-      <div class="month-nav"><button class="icon-btn" data-m="-1" aria-label="${t("Mes anterior")}">${icon("back")}</button><b>${MESES[m - 1]} ${y}</b><button class="icon-btn" data-m="1" aria-label="${t("Mes siguiente")}">${icon("chevron")}</button>
-        <span class="grow"></span><button class="btn ghost small" data-csv>${icon("download")} CSV</button></div>
-      <div class="toolbar">${search}</div>
-      ${Object.keys(porMetodo).length ? `<div class="methods">${Object.entries(porMetodo).map(([k, v]) => `<span class="tag">${esc(t(k))}: <b>${money(v, cur)}</b></span>`).join("")}</div>` : ""}
-      ${histList.length ? `<div class="list">${histList.map(p => { const a = S.get("alumnos", p.alumnoId); return `<div class="li"><button type="button" class="li-link" data-editp="${p.id}">${a ? avatar(a, 36) : `<span class="li-ic">${icon("cash")}</span>`}<div class="li-main"><b>${esc(a?.nombre || t("Alumno eliminado"))}</b><span class="muted small">${fmtDate(p.fecha)} · ${esc(t(p.concepto || ""))} · ${esc(t(p.metodo || ""))}${p.hasta ? " · " + t("hasta {fecha}", {fecha: fmtDate(p.hasta)}) : ""}${p.nota ? " · " + esc(p.nota) : ""}</span></div><b class="amount">${money(p.monto, cur)}</b></button><a class="icon-btn" href="#/recibo/${p.id}" title="${esc(t("Ver recibo"))}" aria-label="${esc(t("Ver recibo") + (p.num ? " N.º " + fmtNumRecibo(p.num) : ""))}">${icon("receipt")}</a></div>`; }).join("")}</div>`
-        : delMes.length ? empty("search", t("Sin resultados"), t("Prueba con otro nombre.")) : empty("cash", t("Sin pagos este mes"), t("Los pagos registrados aparecen aquí."))}
-    </section>`}`;
+  ${st.tab === "cobrar" ? `
+    <div class="pv-tools">${search}${conTel.length ? `<button class="btn tinted pv-remind" data-remind>${icon("whatsapp")}<span>${t("Recordar a todos los vencidos ({n})", {n: conTel.length})}</span></button>` : ""}</div>
+    ${tip ? `<div class="pay-tip pv-tip" role="note"><span class="pv-tip-ic">${icon("info")}</span><p>${t("Toca {check} para marcar que el alumno pagó su plan: se registra el pago y se corre la fecha del próximo cobro. Usa {plus} para un valor o período distinto.", {check: icon("check", "inline"), plus: icon("plus", "inline")})}</p><button type="button" class="icon-btn gray" data-tipx aria-label="${t("Entendido, ocultar")}">${icon("x")}</button></div>` : ""}
+    ${est.length ? group(t("Vencidos"), venc, "err") + group(t("Por vencer"), pronto, "warn") + group(t("Al día"), ok, "ok")
+      : `<div class="card">${emptyState({icon: q ? "search" : "users", title: q ? t("Sin resultados") : t("Sin alumnos activos"), text: q ? t("Prueba con otro nombre.") : t("Los alumnos activos con plan de pago aparecen aquí."), tone: q ? "info" : "accent", cta: q ? "" : {label: t("Ir a Alumnos"), href: "#/alumnos"}})}</div>`}`
+  : `
+    <div class="pv-month">
+      <div class="pv-mnav" role="group" aria-label="${t("Mes")}"><button class="icon-btn" data-m="-1" aria-label="${t("Mes anterior")}">${icon("back")}</button><b aria-live="polite">${MESES[m - 1]} ${y}</b><button class="icon-btn" data-m="1" aria-label="${t("Mes siguiente")}">${icon("chevron")}</button></div>
+      <button class="btn gray small" data-csv aria-label="${esc(t("Descargar CSV"))}">${icon("download")}<span>CSV</span></button>
+    </div>
+    ${metodos.length ? `<section class="card pv-mix">
+      <div class="pv-mix-h"><span class="pv-eyebrow">${t("Por método de pago")}</span><b class="amount">${money(total, cur)}</b></div>
+      <div class="pv-mbar" aria-hidden="true">${metodos.map(([k, v], i) => `<i style="flex:${v};background:var(${MC[i % MC.length]})"></i>`).join("")}</div>
+      <ul class="pv-legend">${metodos.map(([k, v], i) => `<li><i style="background:var(${MC[i % MC.length]})" aria-hidden="true"></i><span>${esc(t(k))}</span><b class="amount">${money(v, cur)}</b><em>${total ? Math.round(v / total * 100) : 0} %</em></li>`).join("")}</ul>
+    </section>` : ""}
+    ${delMes.length ? `<div class="pv-tools">${search}</div>` : ""}
+    ${histList.length ? dias.map(d => `<h3 class="section-header pv-day"><span>${esc(diaTxt(d.f))}</span><span class="amount">${money(d.ps.reduce((s, p) => s + (Number(p.monto) || 0), 0), cur)}</span></h3><div class="card flush pv-list"><div class="list">${d.ps.map(txRow).join("")}</div></div>`).join("")
+      : `<div class="card">${delMes.length ? emptyState({icon: "search", title: t("Sin resultados"), text: t("Prueba con otro nombre."), tone: "info"}) : emptyState({icon: "cash", title: t("Sin pagos este mes"), text: t("Los pagos registrados aparecen aquí."), tone: "ok"})}</div>`}`}`;
 
   el.onclick = e => {
     const tg = e.target;
-    const tb = tg.closest("[data-tab]"); if(tb){ st.tab = tb.dataset.tab; render(el); return; }
+    const tb = tg.closest("[data-tab]");
+    if(tb){
+      if(tb.dataset.tab === st.tab) return;
+      const from = el.querySelector(".pv-seg > button.on")?.getBoundingClientRect();
+      st.tab = tb.dataset.tab; haptic("selection"); render(el);
+      const on = el.querySelector(".pv-seg > button.on");
+      if(on && from && !matchMedia("(prefers-reduced-motion: reduce)").matches){
+        const to = on.getBoundingClientRect();
+        on.style.setProperty("--seg-dx", (from.left - to.left) + "px");
+        on.style.setProperty("--seg-sx", (from.width / to.width).toFixed(3));
+        on.classList.add("seg-slide");
+        on.addEventListener("animationend", () => on.classList.remove("seg-slide"), {once: true});
+      }
+      on?.focus({preventScroll: true});
+      return;
+    }
     if(tg.closest("[data-tipx]")){ S.setPref("tipPagos", true); tg.closest(".pay-tip").remove(); return; }
     if(tg.closest("a[href^='#/recibo/']")) return;
-    const mm = tg.closest("[data-m]"); if(mm){ st.mes = addMonths(mes + "-01", +mm.dataset.m).slice(0, 7); if(st.mes === today().slice(0, 7)) st.mes = null; render(el); return; }
-    const p = tg.closest("[data-pay]"); if(p){ const a = S.get("alumnos", p.dataset.pay); p.classList.contains("on") ? paymentModal(a) : quickPay(a); return; }
+    const mm = tg.closest("[data-m]"); if(mm){ st.mes = addMonths(mes + "-01", +mm.dataset.m).slice(0, 7); if(st.mes === today().slice(0, 7)) st.mes = null; haptic("selection"); render(el); el.querySelector(`[data-m="${mm.dataset.m}"]`)?.focus({preventScroll: true}); return; }
+    const p = tg.closest("[data-pay]"); if(p){ const a = S.get("alumnos", p.dataset.pay); haptic("light"); p.classList.contains("on") ? paymentModal(a) : quickPay(a); return; }
     const mo = tg.closest("[data-more]"); if(mo){ paymentModal(S.get("alumnos", mo.dataset.more)); return; }
     const w = tg.closest("[data-wa]"); if(w){ S.put("alumnos", {id: w.dataset.wa, recordado: today()}); return; }
     const mn = tg.closest("[data-menu]"); if(mn){ const x = est.find(x => x.a.id === mn.dataset.menu); if(x) rowMenu(x, wa(x)); return; }
@@ -103,7 +143,11 @@ export function render(el){
       download(`pagos-${mes}.csv`, csv(rows), "text/csv;charset=utf-8");
     }
   };
-  el.onkeydown = null;
+  el.onkeydown = e => {
+    /* flechas en el control segmentado, como en iOS/macOS */
+    const tb = e.target.closest?.(".pv-seg > [data-tab]");
+    if(tb && (e.key === "ArrowLeft" || e.key === "ArrowRight")){ e.preventDefault(); const k = st.tab === "cobrar" ? "hist" : "cobrar"; el.querySelector(`[data-tab="${k}"]`)?.click(); }
+  };
   /* saldo de tiquetera (si el módulo de clases está) */
   const tiqs = el.querySelectorAll("[data-tiq]");
   if(tiqs.length) import("../clases.js").then(C => {

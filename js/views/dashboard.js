@@ -2,6 +2,7 @@ import * as S from "../store.js";
 import * as Sync from "../sync.js";
 import * as UI from "../ui.js";
 import {icon, avatar, belt, pill, rankLabel, toast, confirmDlg} from "../ui.js";
+const haptic = k => { try{ UI.haptic && UI.haptic(k); }catch(e){} };
 import {esc, money, today, fmtDate, MESES, parseISO, waLink, addMonths, addDays, fmtMonth, relDays, daysBetween} from "../util.js";
 import {studentForm, quickPay} from "../forms.js";
 import {GEAR} from "../catalog.js";
@@ -52,17 +53,19 @@ export function render(el, params, ctx){
   const demoBtn = !demo ? `<button type="button" class="btn ghost" data-demo>${icon("users")} ${t("Probar con datos de ejemplo")}</button>` : "";
   /* con datos de ejemplo, primeros pasos queda en una línea (se abre con un toque) */
   const setupMini = demo && !S.pref("setupOpen", false);
-  const setup = !showSetup ? "" : setupMini ? `<button type="button" class="setup-mini" data-setup-open aria-expanded="false">${icon("star")}<span>${t("Primeros pasos · {a}/{b}", {a: nOk, b: steps.length})}</span><span class="setup-mini-bar" aria-hidden="true"><i style="width:${Math.round(nOk / steps.length * 100)}%"></i></span>${icon("chevron")}</button>`
+  const pctSetup = Math.round(nOk / steps.length * 100);
+  const setupMiniRow = showSetup && setupMini ? `<button type="button" class="row-inset dash-note setup-mini" data-setup-open aria-expanded="false"><span class="row-ic" style="--rc:var(--chip-brass)">${icon("star")}</span><span class="dash-note-t">${t("Primeros pasos · {a}/{b}", {a: nOk, b: steps.length})}</span><span class="setup-mini-bar" aria-hidden="true"><i style="width:${pctSetup}%"></i></span>${icon("chevron", "dash-note-go")}</button>` : "";
+  const setup = !showSetup || setupMini ? ""
   : `<section class="card setup" aria-labelledby="setupH">
-    <header class="card-h"><h3 id="setupH">${icon("star")} ${t("Primeros pasos")}</h3>${demo ? `<button type="button" class="btn-link" data-setup-close>${t("Contraer")}</button>` : ""}<button type="button" class="icon-btn" data-setup-hide aria-label="${t("Ocultar primeros pasos")}" title="${t("Ocultar")}">${icon("x")}</button></header>
-    <div class="setup-prog"><div class="setup-bar"><span style="width:${Math.round(nOk / steps.length * 100)}%"></span></div><span class="muted small">${t("{a} de {b} listos", {a: nOk, b: steps.length})}</span></div>
+    <header class="card-h"><h3 id="setupH">${icon("star")} ${t("Primeros pasos")}</h3>${demo ? `<button type="button" class="btn-link" data-setup-close>${t("Contraer")}</button>` : ""}<button type="button" class="icon-btn gray" data-setup-hide aria-label="${t("Ocultar primeros pasos")}" title="${t("Ocultar")}">${icon("x")}</button></header>
+    <div class="setup-prog"><div class="setup-bar"><span style="width:${pctSetup}%"></span></div><span class="muted small">${t("{a} de {b} listos", {a: nOk, b: steps.length})}</span></div>
     <ol class="setup-list">${steps.map((s, i) => {
-      const inner = `<span class="setup-ck" aria-hidden="true">${s.ok ? icon("check") : i + 1}</span><span class="setup-tx"><b>${esc(s.txt)}</b><span class="muted small">${esc(s.sub)}</span></span>${s.ok ? `<span class="dash-sr">${t("Hecho")}</span>` : icon("chevron", "setup-go")}`;
+      const inner = `<span class="setup-ck tnum" aria-hidden="true">${s.ok ? icon("check") : i + 1}</span><span class="setup-tx"><b>${esc(s.txt)}</b><span class="muted small">${esc(s.sub)}</span></span>${s.ok ? `<span class="dash-sr">${t("Hecho")}</span>` : icon("chevron", "setup-go")}`;
       return `<li class="${s.ok ? "done" : ""}">${s.act ? `<button type="button" class="setup-i" ${s.act}>${inner}</button>` : `<a class="setup-i" href="${s.href}">${inner}</a>`}</li>`;
     }).join("")}</ol>
     ${demoBtn ? `<div class="setup-demo"><p class="muted small">${t("¿Quieres ver cómo se ve con una academia llena? Carga alumnos ficticios y quítalos cuando quieras.")}</p>${demoBtn}</div>` : ""}
   </section>`;
-  const demoBar = demo ? `<div class="demo-bar" role="status">${icon("info")}<span>${t("Estás viendo datos de ejemplo")}</span><button type="button" class="btn-link" data-undemo>${t("Quitar")}</button></div>` : "";
+  const demoBar = demo ? `<div class="row-inset dash-note demo-bar" role="status"><span class="row-ic" style="--rc:var(--chip-steel)">${icon("info")}</span><span class="dash-note-t">${t("Estás viendo datos de ejemplo")}</span><button type="button" class="btn small tinted" data-undemo>${t("Quitar")}</button></div>` : "";
 
   /* ---------- cobros ---------- */
   const est = activos.map(a => ({a, e: estadoPago(a, acad.avisoDias ?? 5)}));
@@ -75,17 +78,23 @@ export function render(el, params, ctx){
   /* ---------- encabezado ---------- */
   let fecha = hoy;
   try{ fecha = new Date().toLocaleDateString(locale(), {weekday: "long", day: "numeric", month: "long"}); }catch(e){}
-  const head = `<header class="dash-h">
-    <div class="dash-hi"><h2>${t("Hola, {academia}", {academia: esc(acad.nombre)})}</h2>
-      <p class="muted"><span class="dash-date">${esc(fecha)}</span>${todos.length ? ` · ${hoyN ? `<a href="#/pagos" class="warn-t">${tn(hoyN, "1 cobro vence hoy", "{n} cobros vencen hoy")}</a>` : t("Ningún cobro vence hoy")}` : ""}</p></div>
-    ${todos.length ? `<div class="dash-h-act"><a class="btn primary" href="#/asistencia">${icon("calendar")} ${t("Pasar lista")}</a><button type="button" class="btn ghost dash-new" data-new>${icon("plus")} ${t("Nuevo alumno")}</button></div>` : ""}
-  </header>`;
+  /* la fecha va como antetítulo sobre el título grande del shell (como Fitness / Salud) */
+  const eyebrow = () => {
+    const lt = document.querySelector(".lt-wrap"), h = lt && lt.querySelector("#title");
+    if(!h) return null;
+    document.getElementById("dashEyebrow")?.remove();
+    const p = document.createElement("p");
+    p.id = "dashEyebrow"; p.className = "dash-eyebrow"; p.textContent = fecha;
+    h.before(p);
+    return () => p.remove();
+  };
+  const done = unsub => { const off = eyebrow(); return () => { off && off(); unsub && unsub(); }; };
 
   if(!todos.length){
-    el.innerHTML = head + (setup || `<section class="card">${emptyS({icon: "users", title: t("Bienvenido a {academia}", {academia: acad.nombre}), text: t("Empieza agregando a tus alumnos. Puedes subir su foto, registrar su cinturón actual y su plan de pago."),
+    el.innerHTML = (setup || `<section class="card">${emptyS({icon: "users", title: t("Bienvenido a {academia}", {academia: acad.nombre}), text: t("Empieza agregando a tus alumnos. Puedes subir su foto, registrar su cinturón actual y su plan de pago."),
       cta: `<div class="row gap wrap dash-empty-cta"><button type="button" class="btn primary" data-new>${icon("plus")} ${t("Agregar primer alumno")}</button>${demoBtn}</div>`})}</section>`);
     bind();
-    return watchSync();
+    return done(watchSync());
   }
 
   /* ---------- promociones ---------- */
@@ -138,7 +147,7 @@ export function render(el, params, ctx){
   const prevCorte = addMonths(hoy, -1);
   const prev = sum(pagos.filter(p => (p.fecha || "").startsWith(prevYm) && p.fecha <= prevCorte));
   const altas = activos.filter(a => (a.fechaInicio || "").startsWith(ym)).length;
-  const delta = (v, txt, title) => `<small class="kpi-sub delta ${v > 0 ? "up" : v < 0 ? "down" : ""}" title="${esc(title || "")}">${v > 0 ? "▲" : v < 0 ? "▼" : "="} ${txt}</small>`;
+  const delta = (v, txt, title) => `<small class="kpi-sub delta ${v > 0 ? "up" : v < 0 ? "down" : ""}" title="${esc(title || "")}"><span aria-hidden="true">${v > 0 ? "↑" : v < 0 ? "↓" : "="}</span> ${txt}</small>`;
   const recSub = prev ? delta(pct(mes, prev), t("{p}% vs. {mes}", {p: Math.abs(pct(mes, prev)), mes: MESES[mesP].slice(0, 3)}), t("Comparado con los mismos días de {mes}", {mes: MESES[mesP]})) : `<small class="kpi-sub">${esc(money(mes, cur))}</small>`;
 
   /* ---------- ingresos 6 meses ---------- */
@@ -158,14 +167,16 @@ export function render(el, params, ctx){
       <div class="li-act">${waA(waLink(x.a.telefono || x.a.acudienteTel, msg), t("Recordar a {nombre} por WhatsApp", {nombre: x.a.nombre}))}<button type="button" class="icon-btn ok" data-pay="${x.a.id}" aria-label="${esc(t("Marcar pago de {nombre}", {nombre: x.a.nombre}))}" title="${t("Marcar como pagado")}">${icon("check")}</button></div></div>`;
   };
 
-  const kpi = (ic, c, val, label, sub, attrs = "", tag = "div") => `<${tag} class="kpi" ${attrs}><span class="kpi-ic ${c}">${icon(ic)}</span><div><b title="${esc(String(val).replace(/<[^>]+>/g, ""))}">${val}</b><span>${label}</span>${sub || ""}</div></${tag}>`;
+  /* baldosa tipo Salud: ficha de color + etiqueta arriba, cifra grande tabular, nota abajo */
+  const KC = {c1: "steel", c2: "olive", c3: "crimson", c4: "brass", c5: "burnt", c6: "gunmetal"};
+  const kpi = (ic, c, val, label, sub, attrs = "", tag = "div") => `<${tag} class="dstat ${c}" style="--rc:var(--chip-${KC[c]})" ${attrs}><span class="dstat-h"><span class="row-ic" aria-hidden="true">${icon(ic)}</span><span class="dstat-l">${label}</span>${icon("chevron", "dstat-go")}</span><b class="dstat-v" title="${esc(String(val).replace(/<[^>]+>/g, ""))}">${val}</b>${sub || `<small class="kpi-sub">&nbsp;</small>`}</${tag}>`;
 
   const cCobros = `<section class="card">
-      <header class="card-h"><h3>${icon("cash")} ${t("Cobros pendientes")}</h3><a class="btn-link" href="#/pagos">${t("Ver todos")}</a></header>
+      <header class="card-h"><h3 style="--sc:var(--ok)">${icon("cash")} ${t("Cobros pendientes")}</h3><a class="btn-link" href="#/pagos">${t("Ver todos")}</a></header>
       ${venc.length + pronto.length ? `<div class="list">${[...venc, ...pronto].slice(0, 8).map(payRow).join("")}</div>` : emptyS({icon: "check", tone: "ok", title: t("Todo al día"), text: t("No hay pagos vencidos ni por vencer esta semana.")})}
     </section>`;
   const cIngresos = `<section class="card">
-      <header class="card-h"><h3>${icon("cash")} ${t("Ingresos últimos 6 meses")}</h3>${prom ? `<span class="muted small">${t("Promedio {v}", {v: esc(moneyC(prom, cur))})}</span>` : ""}</header>
+      <header class="card-h"><h3 style="--sc:var(--accent2)">${icon("cash")} ${t("Ingresos últimos 6 meses")}</h3>${prom ? `<span class="muted small">${t("Promedio {v}", {v: esc(moneyC(prom, cur))})}</span>` : ""}</header>
       <div class="dchart" role="img" aria-label="${esc(months.map((m, i) => `${fmtMonth(m)}: ${money(inc[i], cur)}`).join(", "))}">
         <div class="dc-plot"><div class="dc-area">
           ${prom ? `<div class="dc-avg" style="bottom:${(prom / maxInc * 100).toFixed(1)}%"></div>` : ""}
@@ -179,11 +190,11 @@ export function render(el, params, ctx){
     ...GEAR.filter(g => !["gi", "bucal"].includes(g.k)).map(g => ({k: g.k, n: activos.filter(a => !a.equipo?.[g.k]?.tiene).length, txt: t("sin {equipo}", {equipo: t(g.n).toLowerCase()})}))]
     .filter(o => o.n > 0).sort((a, b) => b.n - a.n);
   const cOpps = !opps.length ? "" : `<section class="card">
-      <header class="card-h"><h3>${icon("bag")} ${t("Oportunidades de venta")}</h3><a class="btn-link" href="#/tienda">${t("Ver todos")}</a></header>
+      <header class="card-h"><h3 style="--sc:var(--gold)">${icon("bag")} ${t("Oportunidades de venta")}</h3><a class="btn-link" href="#/tienda">${t("Ver todos")}</a></header>
       <div class="opps dash-opps">${opps.slice(0, 3).map(o => `<a href="#/tienda/${o.k}" class="opp"><b>${o.n}</b><span>${esc(o.txt)}</span></a>`).join("")}</div>
     </section>`;
   const cAus = !ausentes.length ? "" : `<section class="card warn-card" id="dashRet">
-      <header class="card-h"><h3>${icon("clock")} ${t("Hace tiempo no vienen")}</h3><span class="count-b">${ausentes.length}</span></header>
+      <header class="card-h"><h3 style="--sc:var(--warn)">${icon("clock")} ${t("Hace tiempo no vienen")}</h3><span class="count-b">${ausentes.length}</span></header>
       <div class="list">${ausentes.slice(0, 8).map(x => {
         const msg = t("Hola {nombre}, te extrañamos en {academia}. ¿Todo bien? Te esperamos en la próxima clase.", {nombre: nom1(x.a), academia: acad.nombre});
         return `<div class="li"><a class="li-link" href="#/alumno/${x.a.id}">${avatar(x.a, 38)}<div class="li-main"><b>${esc(x.a.nombre)}</b><span class="muted small">${x.u ? tn(x.d, "Última clase hace 1 día", "Última clase hace {n} días") : t("Sin asistencias registradas")}</span></div></a>
@@ -192,18 +203,18 @@ export function render(el, params, ctx){
       ${ausentes.length > 8 ? `<p class="muted small dash-more">${tn(ausentes.length - 8, "y 1 más", "y {n} más")}</p>` : ""}
     </section>`;
   const cListos = !listos.length ? "" : `<section class="card">
-      <header class="card-h"><h3>${icon("belt")} ${t("Listos para promoción")}</h3><a class="btn-link" href="#/grados">${t("Ver grados")}</a></header>
+      <header class="card-h"><h3 style="--sc:var(--gold)">${icon("belt")} ${t("Listos para promoción")}</h3><a class="btn-link" href="#/grados">${t("Ver grados")}</a></header>
       <div class="list">${listos.slice(0, 8).map(x => {
         const g = S.rangoActual(x.a.id, x.d.id);
         return `<a class="li" href="#/alumno/${x.a.id}">${avatar(x.a, 38)}<div class="li-main"><b>${esc(x.a.nombre)}</b><span class="muted small"><span class="dot" style="background:${x.d.color}"></span>${esc(t(x.d.nombre))}</span><span class="small dash-next">${x.n.tipo === "grado" ? t("Siguiente: {grado}", {grado: esc(x.n.txt)}) : t("Próximo cinturón: {cinturon}", {cinturon: esc(x.n.txt)})}</span></div><span class="li-belt">${belt(x.d, g.rank, g.grado, {w: 74, h: 14})}</span></a>`;
       }).join("")}</div>
     </section>`;
   const cRapidas = !rapidas.length ? "" : `<section class="card warn-card">
-      <header class="card-h"><h3>${icon("alert")} ${t("Promociones antes de tiempo")}</h3>${rapidas.length > 3 ? `<a class="btn-link" href="#/grados">${t("Ver todos ({n})", {n: rapidas.length})}</a>` : `<span class="muted small">${t("último año")}</span>`}</header>
+      <header class="card-h"><h3 style="--sc:var(--warn)">${icon("alert")} ${t("Promociones antes de tiempo")}</h3>${rapidas.length > 3 ? `<a class="btn-link" href="#/grados">${t("Ver todos ({n})", {n: rapidas.length})}</a>` : `<span class="muted small">${t("último año")}</span>`}</header>
       <div class="list">${rapidas.slice(0, 3).map(x => `<a class="li" href="#/alumno/${x.a.id}">${avatar(x.a, 38)}<div class="li-main"><b>${esc(x.a.nombre)} · ${esc(rankLabel(x.d, x.g))}</b><span class="muted small">${esc(x.avisos[0].txt)}</span></div><span class="muted small">${fmtDate(x.g.fecha)}</span></a>`).join("")}</div>
     </section>`;
   const cCumple = !cumple.length ? "" : `<section class="card">
-      <header class="card-h"><h3>${icon("cake")} ${t("Próximos cumpleaños")}</h3><span class="muted small">${t("30 días")}</span></header>
+      <header class="card-h"><h3 style="--sc:var(--accent2)">${icon("cake")} ${t("Próximos cumpleaños")}</h3><span class="muted small">${t("30 días")}</span></header>
       <div class="list">${cumple.slice(0, 8).map(x => {
         const msg = t("¡Feliz cumpleaños, {nombre}! Todo el equipo de {academia} te desea un gran año.", {nombre: nom1(x.a), academia: acad.nombre});
         return `<div class="li ${x.dd === 0 ? "bday-hoy" : ""}"><a class="li-link" href="#/alumno/${x.a.id}">${avatar(x.a, 38)}<div class="li-main"><b>${esc(x.a.nombre)}</b><span class="muted small">${t("{dia} de {mes}", {dia: x.b.getDate(), mes: MESES[x.b.getMonth()]})} · ${t("cumple {edad}", {edad: x.edad})}</span></div></a>
@@ -211,7 +222,7 @@ export function render(el, params, ctx){
       }).join("")}</div>
     </section>`;
   const cDist = !discs.length ? "" : `<section class="card">
-      <header class="card-h"><h3>${icon("trophy")} ${t("Alumnos por cinturón")}</h3><a class="btn-link" href="#/ranking">${t("Ranking")}</a></header>
+      <header class="card-h"><h3 style="--sc:var(--gold)">${icon("trophy")} ${t("Alumnos por cinturón")}</h3><a class="btn-link" href="#/ranking">${t("Ranking")}</a></header>
       ${discs.map(d => {
         const counts = d.ranks.map(() => 0);
         for(const a of activos) if((a.disciplinaIds || []).includes(d.id)){ const g = S.rangoActual(a.id, d.id); if(g) counts[g.rank]++; }
@@ -231,26 +242,52 @@ export function render(el, params, ctx){
   const nuevosL = leads.filter(l => (l.etapa || "nuevo") === "nuevo").length;
   const lStat = (n, txt, href) => `<a class="dl-st" href="${href}"><b>${n}</b><span>${esc(txt)}</span></a>`;
   const cLeads = `<section class="card">
-      <header class="card-h"><h3>${icon("userPlus")} ${t("Prospectos")}</h3><a class="btn-link" href="#/leads">${t("Ver todos")}</a></header>
-      ${leads.length ? `<div class="dl-stats">${lStat(nuevosL, t("nuevos por contactar"), "#/leads")}${lStat(pruebasHoy.length, t("pruebas hoy"), "#/leads")}${lStat(conv === null ? "—" : conv + "%", t("conversión 90 días"), "#/leads")}</div>
+      <header class="card-h"><h3 style="--sc:var(--info)">${icon("userPlus")} ${t("Prospectos")}</h3><a class="btn-link" href="#/leads">${t("Ver todos")}</a></header>
+      ${leads.length ? `<div class="dl-stats">${lStat(nuevosL, t("nuevos por contactar"), "#/leads")}${lStat(pruebasHoy.length, t("pruebas hoy"), "#/leads")}${lStat(conv === null ? "–" : conv + "%", t("conversión 90 días"), "#/leads")}</div>
         ${pruebasHoy.length ? `<div class="list">${pruebasHoy.slice(0, 4).map(l => `<a class="li" href="#/leads?lead=${l.id}"><span class="li-ic">${icon("calendar")}</span><div class="li-main"><b>${esc(l.nombre)}</b><span class="muted small">${t("Clase de prueba hoy")}${l.claseId && S.get("clases", l.claseId) ? " · " + esc(S.get("clases", l.claseId).hora || "") : ""}</span></div>${icon("chevron")}</a>`).join("")}</div>` : ""}`
       : `<p class="muted small dash-p">${t("Anota a cada persona que pregunta por clases y la app te recuerda cuándo escribirle.")}</p><a class="btn ghost small" href="#/leads?nuevo=1">${icon("plus")} ${t("Nuevo prospecto")}</a>`}
     </section>`;
 
   /* ---------- cumpleaños de hoy: aviso arriba ---------- */
   const cumpleHoy = cumple.filter(x => x.dd === 0);
-  const bdayBar = !cumpleHoy.length ? "" : `<div class="dash-bday" role="status">${icon("cake")}<span>${cumpleHoy.length === 1 ? t("Hoy cumple {nombre} ({edad})", {nombre: esc(cumpleHoy[0].a.nombre), edad: cumpleHoy[0].edad}) : t("Hoy cumplen {nombres}", {nombres: esc(cumpleHoy.map(x => nom1(x.a)).join(", "))})}</span>
+  const bdayBar = !cumpleHoy.length ? "" : `<div class="row-inset dash-note dash-bday" role="status"><span class="row-ic" style="--rc:var(--chip-crimson)">${icon("cake")}</span><span class="dash-note-t">${cumpleHoy.length === 1 ? t("Hoy cumple {nombre} ({edad})", {nombre: esc(cumpleHoy[0].a.nombre), edad: cumpleHoy[0].edad}) : t("Hoy cumplen {nombres}", {nombres: esc(cumpleHoy.map(x => nom1(x.a)).join(", "))})}</span>
     ${cumpleHoy.length === 1 ? waA(waLink(cumpleHoy[0].a.telefono || cumpleHoy[0].a.acudienteTel, t("¡Feliz cumpleaños, {nombre}! Todo el equipo de {academia} te desea un gran año.", {nombre: nom1(cumpleHoy[0].a), academia: acad.nombre})), t("Felicitar a {nombre} por WhatsApp", {nombre: cumpleHoy[0].a.nombre})) : ""}</div>`;
 
   let incRows = null;
   const slot = k => `<div class="dash-slot" data-slot="${k}"></div>`;
-  el.innerHTML = `${head}${demoBar}${bdayBar}${setup}${slot("install")}
-  <div class="kpis dash-kpis">
+  /* ---------- héroe de hoy: anillos (cobrado / al día / asistencia 7 días) ---------- */
+  let rowMes = null;
+  try{ if(typeof C.ingresos12 === "function"){ const r = C.ingresos12(); rowMes = r && r[r.length - 1]; } }catch(e){ rowMes = null; }
+  const cob = rowMes ? rowMes.cobrado || 0 : mes, esp = rowMes ? rowMes.esperado || 0 : mes + porCobrar;
+  const alDia = activos.length - venc.length;
+  const ids7 = new Set(), desde7 = addDays(hoy, -6), actIds = new Set(activos.map(a => a.id));
+  for(const r of asisAcad) if(r.fecha >= desde7 && r.fecha <= hoy) for(const id of r.presentes || []) if(actIds.has(id)) ids7.add(id);
+  const P = (a, b) => b ? Math.round(a / b * 100) : 0;
+  const rings = [
+    {k: "cob", c: "var(--system-red)", tc: "accent", p: P(cob, esp), l: t("Cobrado"), v: esc(moneyC(cob, cur)), of: esp ? esc(moneyC(esp, cur)) : "", href: "#/pagos"},
+    {k: "dia", c: "var(--system-green)", tc: "ok", p: P(alDia, activos.length), l: t("Al día"), v: alDia, of: activos.length, href: "#/pagos"},
+    {k: "asis", c: "var(--system-cyan)", tc: "info", p: asisAcad.length ? P(ids7.size, activos.length) : 0, l: t("Vinieron (7 días)"), v: asisAcad.length ? ids7.size : "–", of: asisAcad.length ? activos.length : "", href: "#/asistencia"},
+  ];
+  const R0 = [52, 37, 22];
+  const ringSvg = `<svg class="dh-rings" viewBox="0 0 120 120" aria-hidden="true"><g transform="rotate(-90 60 60)">${rings.map((r, i) => `<circle class="dr-track" cx="60" cy="60" r="${R0[i]}" style="--rc:${r.c}"/><circle class="dr-val ${r.p ? "" : "zero"}" cx="60" cy="60" r="${R0[i]}" pathLength="100" style="--rc:${r.c};--off:${100 - Math.min(100, r.p)};--d:${i * 120}ms"/>`).join("")}</g></svg>`;
+  const hero = `<section class="card dash-hero" aria-labelledby="dhT">
+    <div class="dh-top"><div class="dh-hi"><h2 id="dhT">${t("Hola, {academia}", {academia: esc(acad.nombre)})}</h2>
+      <p>${hoyN ? `<a href="#/pagos" class="dh-due">${icon("clock")}${tn(hoyN, "1 cobro vence hoy", "{n} cobros vencen hoy")}</a>` : t("Ningún cobro vence hoy")}</p></div>
+      <div class="dh-act"><a class="btn primary" href="#/asistencia">${icon("calendar")} ${t("Pasar lista")}</a><button type="button" class="btn gray dash-new" data-new>${icon("plus")} ${t("Nuevo alumno")}</button></div></div>
+    <div class="dh-body" role="img" aria-label="${esc(rings.map(r => `${r.l}: ${String(r.v).replace(/<[^>]+>/g, "")}${r.of !== "" ? " / " + String(r.of).replace(/<[^>]+>/g, "") : ""}`).join(", "))}">
+      ${ringSvg}
+      <ul class="dh-leg">${rings.map(r => `<li class="${r.tc}"><span class="dh-l">${r.l}</span><b class="dh-v">${r.v}${r.of !== "" ? `<small>/${r.of}</small>` : ""}</b><span class="dh-p">${r.of !== "" ? r.p + "%" : t("Aún no tomas asistencia")}</span></li>`).join("")}</ul>
+    </div>
+  </section>`;
+  const notes = [demoBar, bdayBar, setupMiniRow].filter(Boolean).join("");
+
+  el.innerHTML = `${hero}${notes ? `<div class="grouped dash-notes">${notes}</div>` : ""}${setup}${slot("install")}
+  <div class="dash-kpis">
     ${kpi("users", "c1", activos.length, t("Alumnos activos"), altas ? delta(altas, t("{n} este mes", {n: altas})) : `<small class="kpi-sub">${t("Sin altas este mes")}</small>`, `href="#/alumnos"`, "a")}
     ${kpi("cash", "c2", esc(moneyC(mes, cur)), t("Recaudado en {mes}", {mes: MESES[mesN]}), recSub, `href="#/pagos"`, "a")}
     ${kpi("alert", "c3", venc.length, t("Pagos vencidos"), porCobrar ? `<small class="kpi-sub err-t">${t("{v} por cobrar", {v: esc(moneyC(porCobrar, cur))})}</small>` : "", `href="#/pagos"`, "a")}
     ${kpi("belt", "c4", listos.length, t("Listos para promoción"), "", `href="#/grados"`, "a")}
-    ${kpi("clock", "c5", asisAcad.length ? ausentes.length : "—", t("Sin venir +{n} días", {n: AUS}), asisAcad.length ? "" : `<small class="kpi-sub">${t("Aún no tomas asistencia")}</small>`, ausentes.length ? `type="button" data-goto="dashRet"` : `href="#/asistencia"`, ausentes.length ? "button" : "a")}
+    ${kpi("clock", "c5", asisAcad.length ? ausentes.length : "–", t("Sin venir +{n} días", {n: AUS}), asisAcad.length ? "" : `<small class="kpi-sub">${t("Aún no tomas asistencia")}</small>`, ausentes.length ? `type="button" data-goto="dashRet"` : `href="#/asistencia"`, ausentes.length ? "button" : "a")}
     ${kpi("userPlus", "c6", leads30, t("Prospectos (30 días)"), pruebasHoy.length ? `<small class="kpi-sub ok-t">${tn(pruebasHoy.length, "1 prueba hoy", "{n} pruebas hoy")}</small>` : "", `href="#/leads"`, "a")}
   </div>
   <div class="dash-cols">
@@ -260,7 +297,7 @@ export function render(el, params, ctx){
   <button type="button" class="fab only-m" data-new aria-label="${t("Nuevo alumno")}">${icon("plus")}</button>`;
   bind();
   tarjetas();
-  return watchSync();
+  return done(watchSync());
 
   /* ---------- tarjetas de otros módulos: cada una se carga aparte y, si su módulo falta, no sale ---------- */
   function poner(k, html, after){
@@ -285,7 +322,7 @@ export function render(el, params, ctx){
     const hoyCl = m.clasesHoy(hoy, sede), prox = m.proximaClase(sede), ahora = new Date();
     const hm = d => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
     return `<section class="card dash-cl">
-      <header class="card-h"><h3>${icon("clock")} ${t("Clases de hoy")}</h3><a class="btn-link" href="#/horario">${t("Horario")}</a></header>
+      <header class="card-h"><h3 style="--sc:var(--info)">${icon("clock")} ${t("Clases de hoy")}</h3><a class="btn-link" href="#/horario">${t("Horario")}</a></header>
       ${hoyCl.length ? `<div class="list">${hoyCl.map(x => {
         const n = m.presentesClase(hoy, x.clase), pasada = x.fin <= ahora, esProx = prox && prox.clase.id === x.clase.id;
         const cuando = esProx ? (prox.enMin <= 0 ? t("ahora") : prox.enMin < 60 ? t("en {n} min", {n: prox.enMin}) : "") : "";
@@ -299,7 +336,7 @@ export function render(el, params, ctx){
     const lista = m.listaRiesgo(20, sede).filter(x => x.nivel !== "bajo");
     if(!lista.length) return "";
     return `<section class="card">
-      <header class="card-h"><h3>${icon("alert")} ${t("En riesgo de irse")}</h3><span class="count-b">${lista.length}</span></header>
+      <header class="card-h"><h3 style="--sc:var(--err)">${icon("alert")} ${t("En riesgo de irse")}</h3><span class="count-b">${lista.length}</span></header>
       <div class="list">${lista.slice(0, 5).map(x => `<div class="li"><a class="li-link" href="#/alumno/${x.al.id}">${avatar(x.al, 38)}<div class="li-main"><b>${esc(x.al.nombre)}</b><span class="muted small">${esc(x.motivos.slice(0, 2).join(" · "))}</span></div></a>
         <div class="li-act"><span class="risk ${x.nivel}" title="${t("Riesgo")}">${x.score}</span>${waA(waLink(x.al.telefono || x.al.acudienteTel, x.script), t("Escribir a {nombre} por WhatsApp", {nombre: x.al.nombre}))}</div></div>`).join("")}</div>
       ${lista.length > 5 ? `<button type="button" class="btn-link dash-more" data-dif="riesgo">${icon("whatsapp", "inline")} ${t("Escribirles a todos ({n})", {n: lista.length})}</button>` : ""}
@@ -309,7 +346,7 @@ export function render(el, params, ctx){
     const x = m.tdsActual && m.tdsActual({fecha: new Date(), pin: acad.tds || null});
     if(!x) return "";
     return `<section class="card dash-tds">
-      <header class="card-h"><h3>${icon("target")} ${t("Técnica de la semana")}</h3>${x.arte ? `<span class="tag">${esc(String(x.arte).toUpperCase())}</span>` : ""}</header>
+      <header class="card-h"><h3 style="--sc:var(--accent2)">${icon("target")} ${t("Técnica de la semana")}</h3>${x.arte ? `<span class="tag">${esc(String(x.arte).toUpperCase())}</span>` : ""}</header>
       <b class="dash-tds-f">${esc(x.foco || "")}</b>
       ${Array.isArray(x.claves) && x.claves.length ? `<ul class="dash-tds-k">${x.claves.slice(0, 3).map(k => `<li>${esc(k)}</li>`).join("")}</ul>` : ""}
       ${x.reto ? `<p class="muted small dash-p">${icon("flame", "inline")} ${esc(x.reto)}</p>` : ""}
@@ -327,7 +364,7 @@ export function render(el, params, ctx){
     const last = rows[n - 1], tot = rows.reduce((s, r) => s + (r.cobrado || 0), 0);
     const pctR = last.esperado ? Math.round(last.cobrado / last.esperado * 100) : null;
     return `<section class="card dash-inc">
-      <header class="card-h"><h3>${icon("chart")} ${t("Ingresos 12 meses")}</h3><a class="btn-link" href="#/reportes">${t("Reportes")}</a></header>
+      <header class="card-h"><h3 style="--sc:var(--accent2)">${icon("chart")} ${t("Ingresos 12 meses")}</h3><a class="btn-link" href="#/reportes">${t("Reportes")}</a></header>
       <div class="dash-inc-n"><div><b>${esc(moneyC(last.cobrado, cur))}</b><span class="muted small">${t("cobrado este mes")}${pctR !== null ? ` · ${t("{p}% de lo esperado", {p: pctR})}` : ""}</span></div><div><b>${esc(moneyC(tot, cur))}</b><span class="muted small">${t("en 12 meses")}</span></div></div>
       <div class="spark" role="img" aria-label="${esc(rows.map(r => `${fmtMonth(r.ym)}: ${money(r.cobrado, cur)} / ${money(r.esperado, cur)}`).join(", "))}">
         <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
@@ -349,11 +386,11 @@ export function render(el, params, ctx){
       const tg = e.target;
       const p = tg.closest("[data-pay]"); if(p){ e.preventDefault(); quickPay(S.get("alumnos", p.dataset.pay)); return; }
       if(tg.closest("[data-new]")){ studentForm(null); return; }
-      if(tg.closest("[data-setup-open]")){ S.setPref("setupOpen", true); rerender(); return; }
+      if(tg.closest("[data-setup-open]")){ haptic("selection"); S.setPref("setupOpen", true); rerender(); return; }
       if(tg.closest("[data-setup-close]")){ S.setPref("setupOpen", false); rerender(); return; }
       const df = tg.closest("[data-dif]"); if(df){ import("../difusion.js").then(m => m.openDifusion({segmento: df.dataset.dif})).catch(() => {}); return; }
-      const sp = tg.closest("[data-sp]"); if(sp){ tip(sp); return; }
-      const g = tg.closest("[data-goto]"); if(g){ document.getElementById(g.dataset.goto)?.scrollIntoView({behavior: "smooth", block: "start"}); return; }
+      const sp = tg.closest("[data-sp]"); if(sp){ haptic("selection"); tip(sp); return; }
+      const g = tg.closest("[data-goto]"); if(g){ haptic("light"); const smooth = !matchMedia("(prefers-reduced-motion: reduce)").matches; document.getElementById(g.dataset.goto)?.scrollIntoView({behavior: smooth ? "smooth" : "auto", block: "start"}); return; }
       if(tg.closest("[data-setup-hide]")){ S.setPref(hideKey, true); rerender(); toast(t("Primeros pasos ocultos"), "ok", {label: t("Deshacer"), fn: () => { S.setPref(hideKey, false); rerender(); }}); return; }
       if(tg.closest("[data-demo]")){
         const n = loadDemo();

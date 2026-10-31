@@ -1,28 +1,48 @@
-/* Página pública de inscripción (inscripcion.html) */
-.insc-body{min-height:100vh;background:radial-gradient(120% 60% at 50% 0,color-mix(in srgb,var(--accent) 16%,var(--bg)),var(--bg) 70%)}
-.insc{max-width:560px;margin:0 auto;padding:max(24px,env(safe-area-inset-top)) 16px max(24px,env(safe-area-inset-bottom))}
+/* Página pública de inscripción (inscripcion.html): formulario agrupado al estilo de iOS (tokens de css/app.css) */
+.insc-body{min-height:100vh;background:var(--bg)}
+.insc{max-width:540px;margin:0 auto;padding:max(28px,env(safe-area-inset-top)) var(--gutter) max(28px,env(safe-area-inset-bottom))}
 .insc .boot{position:static;min-height:60vh;display:grid;place-items:center}
-.insc-card{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px 18px;box-shadow:var(--shadow)}
-.insc-h{text-align:center;margin-bottom:18px}
-.insc-h h1{font-size:26px;font-weight:800;letter-spacing:-.02em;margin:10px 0 6px;overflow-wrap:anywhere}
-.insc-h p{margin:0 auto;max-width:36ch}
-.insc-badge{display:inline-block;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--accent2);background:var(--accent-bg);padding:4px 10px;border-radius:999px}
-.insc-tags{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:12px}
-.insc-form{display:flex;flex-direction:column;gap:14px}
-.insc-2{display:grid;grid-template-columns:minmax(0,1fr) 110px;gap:12px}
-.insc-f{display:flex;flex-direction:column;gap:6px;min-width:0}
-.insc-f > span{font-size:13.5px;font-weight:650}
-.insc-f .req{color:var(--accent2)}
-.insc-f input,.insc-f select,.insc-f textarea{width:100%;min-width:0;background:var(--surface2);border:1px solid var(--line2);border-radius:12px;padding:12px 13px;font-size:16px;outline:none}
-.insc-f input:focus,.insc-f select:focus,.insc-f textarea:focus{border-color:var(--accent)}
-.insc-f textarea{resize:vertical}
-.insc-err{margin:0;color:var(--err);font-weight:650;font-size:14px}
-.insc-go{min-height:52px;font-size:16px}
+.insc-card{animation:insc-up var(--dur-slow) var(--ease-out-ios) both}
+@keyframes insc-up{from{opacity:0;transform:translateY(12px)}}
+.insc-h{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;margin-bottom:8px}
+.insc-logo{width:76px;height:76px;border-radius:18px;display:grid;place-items:center;color:#fff;font:800 28px/1 var(--font-display);letter-spacing:-.02em;margin-bottom:6px;
+  background:linear-gradient(160deg,#2E2E2C,#7A0F1C);box-shadow:var(--shadow-2),inset 0 0 0 .5px rgba(255,255,255,.12)}
+.insc-logo.off{background:linear-gradient(160deg,#4A5560,#1F252B)}
+.insc-h h1{font:800 var(--fs-title1)/var(--lh-title1) var(--font-display);letter-spacing:var(--tr-title1);margin:0;overflow-wrap:anywhere}
+.insc-h p{margin:0 auto;max-width:34ch;font-size:var(--fs-callout);line-height:var(--lh-callout)}
+.insc-badge{display:inline-block;font-size:var(--fs-caption);font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--accent2);background:var(--accent-bg);padding:4px 10px;border-radius:999px}
+.insc-tags{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:6px}
+.insc-tags .tag{background:var(--surface);color:var(--text);box-shadow:var(--shadow-sm)}
+.insc-form{display:flex;flex-direction:column;gap:20px}
+.insc-sh{margin:18px 0 -13px;padding:0 18px;font-size:var(--fs-footnote);line-height:var(--lh-footnote);font-weight:400;text-transform:uppercase;letter-spacing:.02em;color:var(--muted)}
+/* grupo: celdas con la etiqueta pequeña arriba y el campo sin borde, separadas por una línea fina */
+.insc-grp{background:var(--surface);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow-sm)}
+.insc-2{display:grid;grid-template-columns:minmax(0,1fr) 112px;position:relative}
+.insc-2 > .insc-f + .insc-f{border-left:.5px solid var(--separator)}
+.insc-f{position:relative;display:flex;flex-direction:column;gap:2px;min-width:0;padding:10px 16px 8px;cursor:text;transition:background-color var(--dur-fast) var(--ease-std)}
+.insc-grp > * + *::before{content:"";position:absolute;top:0;left:16px;right:0;border-top:.5px solid var(--separator)}
+.insc-f > span{font-size:var(--fs-footnote);line-height:var(--lh-footnote);font-weight:500;color:var(--muted)}
+.insc-f .req{color:var(--accent2);font-weight:600}
+.insc-f input,.insc-f select,.insc-f textarea{width:100%;min-width:0;background:transparent;border:0;border-radius:0;padding:2px 0 4px;font-size:var(--fs-body);line-height:var(--lh-body);color:var(--text);outline:none;box-shadow:none}
+.insc-f input::placeholder,.insc-f textarea::placeholder{color:var(--muted);opacity:.7}
+.insc-f select{appearance:none;-webkit-appearance:none;padding-right:22px;cursor:pointer;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='14' viewBox='0 0 10 14' fill='none' stroke='%238e8e93' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m2 5 3-3 3 3M2 9l3 3 3-3'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 2px center}
+.insc-f select option{background:var(--bg-elevated);color:var(--text)}
+.insc-f textarea{resize:vertical;min-height:66px}
+/* foco: anillo suave alrededor de la fila, como los campos de la app */
+.insc-f:focus-within{box-shadow:inset 0 0 0 2px color-mix(in srgb,var(--focus) 55%,transparent);border-radius:var(--radius-md)}
+.insc-err{margin:-6px 0;padding:10px 14px;border-radius:var(--radius-md);background:var(--err-bg);color:var(--err);font-weight:600;font-size:var(--fs-subhead);animation:insc-nudge .36s var(--ease-std)}
+@keyframes insc-nudge{20%{transform:translateX(-6px)}40%{transform:translateX(5px)}60%{transform:translateX(-3px)}80%{transform:translateX(2px)}}
+.insc-go{margin-top:4px}
 .insc-go .ic{width:20px;height:20px}
-.insc-nota{text-align:center;margin:0}
-.insc-pie{text-align:center;margin-top:16px}
-.insc-bad{text-align:center}
-.insc-bad h1{font-size:22px;margin-bottom:8px}
+.insc-nota{text-align:center;margin:-8px 12px 0;font-size:var(--fs-footnote);line-height:var(--lh-footnote)}
+.insc-pie{text-align:center;margin-top:24px;font-size:var(--fs-caption)}
+.insc-bad{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;margin-top:16vh}
+.insc-bad h1{font:800 var(--fs-title2)/var(--lh-title2) var(--font-display);letter-spacing:var(--tr-title2);margin:0}
+.insc-bad p{margin:0;max-width:34ch}
 @media (max-width:380px){
   .insc-2{grid-template-columns:minmax(0,1fr)}
+  .insc-2 > .insc-f + .insc-f{border-left:0}
+  .insc-2 > .insc-f + .insc-f::before{content:"";position:absolute;top:0;left:16px;right:0;border-top:.5px solid var(--separator)}
 }
+@media (prefers-reduced-motion:reduce){ .insc-card,.insc-err{animation:none} }

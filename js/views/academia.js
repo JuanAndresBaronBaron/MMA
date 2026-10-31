@@ -14,42 +14,67 @@ export function render(el){
   const nAc = id => S.inAcad("alumnos", id).length;
   const nDisc = did => S.alumnos({sede: ""}).filter(x => estadoEf(x) === "activo" && (x.disciplinaIds || []).includes(did)).length;
 
-  el.innerHTML = `
-  <section class="card acad-card">
-    <div class="acad-h"><div><h2>${esc(a.nombre)}</h2><span class="muted">${esc(a.ciudad || "")}${a.ciudad ? " · " : ""}${esc(cur)} · ${t("Mensualidad base {valor}", {valor: money(a.valorMensual || 0, cur)})}</span></div>
-      <button class="btn ghost" data-edit-acad>${icon("edit")} ${t("Editar")}</button></div>
-    ${a.lema ? `<p class="muted">${esc(a.lema)}</p>` : ""}
-  </section>
+  const ini = String(a.nombre || "").trim().split(/\s+/).slice(0, 2).map(w => w[0] || "").join("").toUpperCase() || "A";
+  const nActivos = S.alumnos({sede: ""}).filter(x => estadoEf(x) === "activo").length;
+  const ic = (n, rc) => `<span class="row-ic" style="--rc:var(--chip-${rc})">${icon(n)}</span>`;
+  const add = (attr, label) => `<button type="button" class="row-inset ac-add" ${attr}><span class="ac-plus">${icon("plus")}</span><span>${esc(label)}</span></button>`;
 
-  <section class="card">
-    <header class="card-h"><h3>${icon("map")} ${t("Sedes")} <span class="count-b">${sedes.length}</span></h3><button class="btn small primary" data-new-sede>${icon("plus")} ${t("Sede")}</button></header>
-    <div class="cards-grid">${sedes.map(s => `<button class="mini-card" data-sede="${s.id}">
-      <b>${esc(s.nombre)}</b><span class="muted small">${esc([s.direccion, s.ciudad].filter(Boolean).join(", ") || t("Sin dirección"))}</span>
-      <span class="small">${tn(nAl(s.id), "1 alumno activo", "{n} alumnos activos")}${s.encargado ? " · " + esc(s.encargado) : ""}</span>
-      <div class="mini-tags">${S.discsOfSede(s.id).map(d => `<span class="tag" style="--dc:${d.color}"><span class="dot" style="background:${d.color}"></span>${esc(t(d.nombre))}</span>`).join("") || `<span class="muted small">${t("Sin disciplinas")}</span>`}</div>
-      ${s.horario ? `<pre class="small muted sched">${esc(s.horario)}</pre>` : ""}
-    </button>`).join("")}</div>
-  </section>
+  const perfil = `
+    <section class="grouped ac-grp">
+      <button type="button" class="row-inset chev ac-me" data-edit-acad aria-label="${t("Editar")}: ${esc(a.nombre)}">
+        <span class="ac-logo" aria-hidden="true">${esc(ini)}</span>
+        <span class="ac-me-t"><b>${esc(a.nombre)}</b><span>${esc(a.ciudad || "")}${a.ciudad ? " · " : ""}${esc(cur)} · ${t("Mensualidad base {valor}", {valor: money(a.valorMensual || 0, cur)})}</span>${a.lema ? `<span class="ac-lema">${esc(a.lema)}</span>` : ""}</span>
+      </button>
+    </section>
+    <div class="ac-stats">
+      <div class="ac-stat"><b class="tnum">${sedes.length}</b><span>${t("Sedes")}</span></div>
+      <div class="ac-stat"><b class="tnum">${discs.length}</b><span>${t("Disciplinas")}</span></div>
+      <div class="ac-stat"><b class="tnum">${nActivos}</b><span>${t("Alumnos activos")}</span></div>
+    </div>`;
 
-  <section class="card hz-acad">
-    <header class="card-h"><h3>${icon("clock")} ${t("Horario de clases")} <span class="count-b">${clases.length}</span></h3><a class="btn small ghost" href="#/horario">${clases.length ? t("Ver horario") : t("Crear horario")}</a></header>
-    ${clases.length ? `<div class="list">${sedes.map(s => { const n = clases.filter(c => c.sedeId === s.id).length; return `<a class="li" href="#/horario" data-hz-sede="${s.id}">${icon("map")}<div class="li-main"><b>${esc(s.nombre)}</b><span class="muted small">${n ? tn(n, "1 clase por semana", "{n} clases por semana") : t("Sin clases en el horario")}</span></div>${icon("chevron", "muted")}</a>`; }).join("")}</div>`
-    : `<p class="muted small">${t("Arma el horario semanal de cada sede: la asistencia abre sola la clase que está empezando y puedes usar el modo kiosco para que los alumnos se registren al llegar.")}</p>`}
-  </section>
+  const sedesH = `
+    <h3 class="section-header">${t("Sedes")}</h3>
+    <section class="grouped ac-grp">
+      ${sedes.map(s => `<button type="button" class="row-inset chev ac-row" data-sede="${s.id}">${ic("map", "crimson")}
+        <span class="ac-main"><b>${esc(s.nombre)}</b>
+          <span class="ac-sub">${esc([s.direccion, s.ciudad].filter(Boolean).join(", ") || t("Sin dirección"))}</span>
+          <span class="ac-sub">${tn(nAl(s.id), "1 alumno activo", "{n} alumnos activos")}${s.encargado ? " · " + esc(s.encargado) : ""}</span>
+          <span class="ac-dots">${S.discsOfSede(s.id).map(d => `<span class="ac-dt"><span class="dot" style="background:${esc(d.color)}"></span>${esc(t(d.nombre))}</span>`).join("") || `<span class="ac-sub">${t("Sin disciplinas")}</span>`}</span>
+          ${s.horario ? `<pre class="ac-sub sched">${esc(s.horario)}</pre>` : ""}
+        </span></button>`).join("")}
+      ${add("data-new-sede", t("Agregar sede"))}
+    </section>`;
 
-  <section class="card">
-    <header class="card-h"><h3>${icon("belt")} ${t("Disciplinas y sistemas de grados")} <span class="count-b">${discs.length}</span></h3><button class="btn small primary" data-new-disc>${icon("plus")} ${t("Disciplina")}</button></header>
-    <p class="muted small">${t("Cada disciplina tiene su lista de cinturones o niveles, cuántos grados lleva cada uno y el tiempo mínimo recomendado. La app usa esos tiempos para avisar cuando una promoción llega demasiado pronto.")}</p>
-    <div class="list">${discs.map(d => `<button class="li" data-disc="${d.id}"><span class="dot big" style="background:${d.color}"></span>
-      <div class="li-main"><b>${esc(t(d.nombre))}</b><span class="muted small">${tn(d.ranks.length, "1 cinturón/nivel", "{n} cinturones/niveles")} · ${tn(nDisc(d.id), "1 alumno", "{n} alumnos")} · ${(d.sedeIds || []).map(id => esc(S.get("sedes", id)?.nombre || "")).filter(Boolean).join(", ") || t("sin sede")}</span></div>
-      <span class="belt-strip hide-s">${d.ranks.map((r, i) => belt(d, i, 0, {w: 26, h: 10})).join("")}</span>${icon("chevron", "muted")}</button>`).join("")}</div>
-  </section>
+  const horario = `
+    <h3 class="section-header hz-acad">${t("Horario de clases")}${clases.length ? `<a class="btn-link" href="#/horario">${t("Ver horario")}</a>` : ""}</h3>
+    <section class="grouped ac-grp hz-acad">
+      ${clases.length ? sedes.map(s => { const n = clases.filter(c => c.sedeId === s.id).length; return `<a class="row-inset ac-row" href="#/horario" data-hz-sede="${s.id}">${ic("clock", "burnt")}<span class="ac-main"><b>${esc(s.nombre)}</b><span class="ac-sub ac-hz-s">${n ? tn(n, "1 clase por semana", "{n} clases por semana") : t("Sin clases en el horario")}</span></span><span class="row-val ac-hz-v">${n ? tn(n, "1 clase por semana", "{n} clases por semana") : t("Sin clases en el horario")}</span></a>`; }).join("")
+        : `<a class="row-inset ac-row" href="#/horario">${ic("clock", "burnt")}<span class="ac-main"><b>${t("Crear horario")}</b></span></a>`}
+    </section>
+    ${clases.length ? "" : `<p class="section-footer">${t("Arma el horario semanal de cada sede: la asistencia abre sola la clase que está empezando y puedes usar el modo kiosco para que los alumnos se registren al llegar.")}</p>`}`;
 
-  <section class="card">
-    <header class="card-h"><h3>${icon("building")} ${t("Academias")}</h3><button class="btn small ghost" data-new-acad>${icon("plus")} ${t("Otra academia")}</button></header>
-    <p class="muted small">${t("Si manejas más de una academia (marcas distintas), cada una tiene sus propias sedes, alumnos y pagos.")}</p>
-    <div class="list">${S.academies().map(x => `<button class="li" data-acad="${x.id}">${icon(x.id === a.id ? "check" : "building")}<div class="li-main"><b>${esc(x.nombre)}</b><span class="muted small">${tn(nAc(x.id), "1 alumno", "{n} alumnos")}</span></div>${x.id === a.id ? `<span class="tag">${t("Actual")}</span>` : `<span class="btn-link">${t("Abrir")}</span>`}</button>`).join("")}</div>
-  </section>`;
+  const discH = `
+    <h3 class="section-header">${t("Disciplinas y sistemas de grados")}</h3>
+    <section class="grouped ac-grp">
+      ${discs.map(d => `<button type="button" class="row-inset chev ac-row" data-disc="${d.id}"><span class="ac-disc" style="--dc:${esc(d.color)}" aria-hidden="true"></span>
+        <span class="ac-main"><b>${esc(t(d.nombre))}</b><span class="ac-sub">${tn(d.ranks.length, "1 cinturón/nivel", "{n} cinturones/niveles")} · ${tn(nDisc(d.id), "1 alumno", "{n} alumnos")} · ${(d.sedeIds || []).map(id => esc(S.get("sedes", id)?.nombre || "")).filter(Boolean).join(", ") || t("sin sede")}</span></span>
+        <span class="belt-strip hide-s">${d.ranks.slice(0, 9).map((r, i) => belt(d, i, 0, {w: 22, h: 9})).join("")}</span></button>`).join("")}
+      ${add("data-new-disc", t("Agregar disciplina"))}
+    </section>
+    <p class="section-footer">${t("Cada disciplina tiene su lista de cinturones o niveles, cuántos grados lleva cada uno y el tiempo mínimo recomendado. La app usa esos tiempos para avisar cuando una promoción llega demasiado pronto.")}</p>`;
+
+  const acads = `
+    <h3 class="section-header">${t("Academias")}</h3>
+    <section class="grouped ac-grp">
+      ${S.academies().map(x => { const on = x.id === a.id; return `<button type="button" class="row-inset ac-row ${on ? "" : "chev"}" data-acad="${x.id}" ${on ? 'aria-current="true"' : ""}>${ic("building", on ? "crimson" : "graphite")}<span class="ac-main"><b>${esc(x.nombre)}</b><span class="ac-sub">${tn(nAc(x.id), "1 alumno", "{n} alumnos")}</span></span>${on ? `<span class="ac-cur">${icon("check")}<span class="ld-sr">${t("Actual")}</span></span>` : ""}</button>`; }).join("")}
+      ${add("data-new-acad", t("Otra academia"))}
+    </section>
+    <p class="section-footer">${t("Si manejas más de una academia (marcas distintas), cada una tiene sus propias sedes, alumnos y pagos.")}</p>`;
+
+  el.innerHTML = `<div class="aj ac">
+    <div class="aj-col">${perfil}${sedesH}${horario}</div>
+    <div class="aj-col">${discH}${acads}</div>
+  </div>`;
 
   el.onclick = e => {
     const tg = e.target;

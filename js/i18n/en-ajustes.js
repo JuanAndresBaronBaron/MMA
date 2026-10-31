@@ -1,5 +1,6 @@
 /* Traducciones al inglés: ajustes. Clave = texto en español tal como aparece en t("…"). */
 export default {
+  "Cuenta y sincronización": "Account and sync",
   "nunca": "never",
   "Cuenta de Google": "Google account",
   "Sincronizado · última vez {fecha}": "Synced · last sync {fecha}",
@@ -64,4 +65,5 @@ export default {
   "Busca alumnos, pagos, técnicas y acciones desde cualquier pantalla con Ctrl+K (o Cmd+K en Mac) o la lupa de arriba.": "Search students, payments, techniques and actions from any screen with Ctrl+K (Cmd+K on Mac) or the magnifier at the top.",
   "Abrir buscador": "Open search",
   "Ver atajos": "See shortcuts",
+  "Datos de ejemplo": "Sample data",
 };

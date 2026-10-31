@@ -1,5 +1,5 @@
 import * as S from "../store.js";
-import {icon, avatar, belt, emptyState, toast} from "../ui.js";
+import {icon, avatar, belt, emptyState, toast, haptic} from "../ui.js";
 import {esc, today, fmtDate, addDays, norm, parseISO, waLink} from "../util.js";
 import {t, tn, locale} from "../i18n.js";
 import {estadoPago, estadoEf} from "../cobros.js";
@@ -61,7 +61,7 @@ export function render(el, params, ctx, query){
   const als = todos.filter(a => !q || norm(a.nombre).includes(q))
     .sort((x, y) => (frec.get(y.id) || 0) - (frec.get(x.id) || 0) || x.nombre.localeCompare(y.nombre, locale()));
   const vistaPref = S.pref("asisVista", "");
-  const lista = vistaPref ? vistaPref === "lista" : todos.length > 12;
+  const lista = vistaPref ? vistaPref === "lista" : true;
   const nPres = als.filter(a => pres.has(a.id)).length;
   const lesion = new Set(S.inAcad("notas").filter(n => n.tipo === "lesion" && n.activa !== false && n.alumnoId).map(n => n.alumnoId));
   const tiq = new Map(todos.map(a => [a.id, saldoTiquetera(a)]));
@@ -75,11 +75,12 @@ export function render(el, params, ctx, query){
     if(lesion.has(a.id)) out.push(`<span class="att-bd info" title="${t("Lesión activa")}" aria-label="${t("Lesión activa")}">${icon("alert")}</span>`);
     return out.length ? `<span class="att-bds">${out.join("")}</span>` : "";
   };
+  /* lista (por defecto): filas tipo Recordatorios con el círculo a la izquierda; cuadrícula: fichas grandes */
   const card = a => {
     const g = S.rangoActual(a.id, d.id), on = pres.has(a.id);
     return `<button class="att ${on ? "on" : ""}" data-a="${a.id}" aria-pressed="${on}">
-      ${avatar(a, lista ? 36 : 52)}<b>${esc(a.nombre)}</b>${g ? belt(d, g.rank, g.grado, {w: 64, h: 12}) : ""}
-      ${badges(a)}<span class="att-check">${icon("check")}</span></button>`;
+      <span class="att-check" aria-hidden="true">${icon("check")}</span>${avatar(a, lista ? 40 : 56)}<b>${esc(a.nombre)}</b>${g ? belt(d, g.rank, g.grado, {w: lista ? 56 : 64, h: lista ? 10 : 12}) : ""}
+      ${badges(a)}</button>`;
   };
   const chipClase = x => {
     const on = cl?.id === x.clase.id, n = (S.asistenciaDe(fecha, x.clase.sedeId, x.clase.disciplinaId, x.clase.id)?.presentes || []).length;
@@ -88,38 +89,43 @@ export function render(el, params, ctx, query){
   };
   const extra = cl && !delDia.find(x => x.clase.id === cl.id) ? [{clase: cl, disc: S.get("disciplinas", cl.disciplinaId), inicio: new Date(`${fecha}T${cl.hora}`), fin: new Date(new Date(`${fecha}T${cl.hora}`).getTime() + durDe(cl) * 6e4)}] : [];
   const chips = [...delDia, ...extra].filter(x => x.disc);
-  const cupo = cl?.cupo || 0, n = pres.size;
+  const cupo = cl?.cupo || 0, n = pres.size, total = cupo || todos.length;
   const hoyTxt = esHoy ? t("Hoy") : fecha === addDays(today(), -1) ? t("Ayer") : "";
+  const vista = `<div class="seg small icons att-vista" data-lista role="radiogroup" aria-label="${t("Vista")}">
+      <label title="${t("Ver como lista")}"><input type="radio" name="aVista" value="lista" ${lista ? "checked" : ""} aria-label="${t("Ver como lista")}"><span>${icon("list")}</span></label>
+      <label title="${t("Ver como cuadrícula")}"><input type="radio" name="aVista" value="grid" ${!lista ? "checked" : ""} aria-label="${t("Ver como cuadrícula")}"><span>${icon("grid")}</span></label></div>`;
 
   el.innerHTML = `
-  <section class="card att-card">
+  <div class="att-wrap ${hist.length ? "con-hist" : ""}">
+  <div class="att-main">
     <div class="att-top">
       <label class="att-date" title="${t("Cambiar fecha")}">${icon("calendar")}<span>${hoyTxt ? `<b>${hoyTxt}</b> · ` : ""}${esc(fmtDia(fecha))}</span><input type="date" id="aFecha" value="${fecha}" max="${addDays(today(), 7)}" aria-label="${t("Fecha")}"></label>
       <div class="att-qd">${!esHoy ? `<button class="chip-b" data-hoy>${t("Hoy")}</button>` : ""}${fecha !== addDays(today(), -1) ? `<button class="chip-b" data-ayer>${t("Ayer")}</button>` : ""}</div>
       ${!S.curSede() && ss.length > 1 ? `<select id="aSede" aria-label="${t("Sede")}">${ss.map(s => `<option value="${s.id}" ${s.id === st.sede ? "selected" : ""}>${esc(s.nombre)}</option>`).join("")}</select>` : ""}
-      <a class="btn ghost small att-kiosk" href="#/kiosko">${icon("tablet")}<span>${t("Modo kiosco")}</span></a>
+      <a class="icon-btn gray att-kiosk" href="#/kiosko" title="${t("Modo kiosco")}">${icon("tablet")}<span>${t("Modo kiosco")}</span></a>
     </div>
     ${chips.length ? `<div class="chip-row att-cls" role="group" aria-label="${t("Clases del día")}">${chips.map(chipClase).join("")}<button class="att-cl libre ${!cl ? "on" : ""}" data-libre aria-pressed="${!cl}"><b>${icon("list")}</b><span>${t("Sin horario")}</span></button></div>` : ""}
     ${!cl ? `<div class="att-libre">${chips.length ? "" : `<span class="muted small">${t("Sin clases en el horario este día")} · <a class="btn-link" href="#/horario">${t("Armar horario")}</a></span>`}
       <select id="aDisc" aria-label="${t("Disciplina")}">${discs.map(x => `<option value="${x.id}" ${x.id === st.disc ? "selected" : ""}>${esc(t(x.nombre))}</option>`).join("")}</select></div>`
-    : `<p class="att-info small muted">${esc(t(d.nombre))} · ${esc(cl.hora)}–${esc(hhmm(new Date(new Date(`${fecha}T${cl.hora}`).getTime() + durDe(cl) * 6e4)))}${cl.instructor ? " · " + esc(cl.instructor) : ""}${cupo ? " · " + t("Cupo {n}", {n: cupo}) : ""}</p>`}
-    ${fecha !== today() ? `<p class="att-otro small">${icon("calendar")} ${t("Registrando el {fecha}", {fecha: fmtDate(fecha, true)})} · <button class="btn-link" data-hoy>${t("Volver a hoy")}</button></p>` : ""}
+    : `<p class="att-info" style="--dc:${esc(d.color || "#888")}">${esc(t(d.nombre))} · <span class="tnum">${esc(cl.hora)}-${esc(hhmm(new Date(new Date(`${fecha}T${cl.hora}`).getTime() + durDe(cl) * 6e4)))}</span>${cl.instructor ? " · " + esc(cl.instructor) : ""}${cupo ? " · " + t("Cupo {n}", {n: cupo}) : ""}</p>`}
+    ${fecha !== today() ? `<p class="att-otro">${icon("calendar")}<span>${t("Registrando el {fecha}", {fecha: fmtDate(fecha, true)})}</span><button class="btn-link" data-hoy>${t("Volver a hoy")}</button></p>` : ""}
     ${todos.length ? `<div class="toolbar att-tools"><label class="search">${icon("search")}<input id="aq" type="search" placeholder="${t("Buscar")}" value="${esc(st.q)}" aria-label="${t("Buscar")}"></label>
-      ${als.length && nPres < als.length ? `<button class="btn ghost small" data-all>${icon("check")}<span>${t("Marcar todos")}</span></button>` : ""}
-      ${nPres ? `<button class="btn ghost small" data-none>${icon("x")}<span>${t("Desmarcar todos")}</span></button>` : ""}
-      <button class="icon-btn" data-lista aria-pressed="${lista}" aria-label="${lista ? t("Ver como cuadrícula") : t("Ver como lista")}" title="${lista ? t("Ver como cuadrícula") : t("Ver como lista")}">${icon(lista ? "grid" : "list")}</button></div>` : ""}
-    ${als.length ? `<div class="att-grid ${lista ? "att-list" : ""}">${als.map(card).join("")}</div>`
-    : todos.length ? `<p class="muted center">${t("Nadie coincide con la búsqueda.")}</p>`
-    : emptyState({icon: "users", title: t("Sin alumnos"), text: t("No hay alumnos activos de esta disciplina en la sede."), cta: {label: t("Agregar alumno"), href: "#/alumnos?new=1&volver=asistencia", icon: "plus"}})}
-    ${todos.length ? `<div class="att-foot ${cupo && n > cupo ? "lleno" : ""}"><div class="att-count" aria-live="polite">${cuentaTxt(n, cupo)}</div><a class="btn primary" href="#/inicio" data-listo>${icon("check")}<span>${t("Listo")}</span></a></div>` : ""}
-  </section>
-  ${hist.length ? `<section class="card"><header class="card-h"><h3>${icon("calendar")} ${t("Últimas clases")}</h3></header><div class="list">${hist.map(r => {
+      <div class="att-acts">${als.length && nPres < als.length ? `<button class="btn tinted small" data-all>${icon("check")}<span>${t("Marcar todos")}</span></button>` : ""}
+      ${nPres ? `<button class="btn plain small" data-none><span>${t("Desmarcar todos")}</span></button>` : ""}
+      ${vista}</div></div>` : ""}
+    ${als.length ? `<div class="att-card ${lista ? "card flush" : ""}"><div class="att-grid ${lista ? "att-list" : ""}">${als.map(card).join("")}</div></div>`
+    : todos.length ? `<div class="card att-card"><p class="muted center att-nada">${t("Nadie coincide con la búsqueda.")}</p></div>`
+    : `<div class="card att-card">${emptyState({icon: "users", title: t("Sin alumnos"), text: t("No hay alumnos activos de esta disciplina en la sede."), cta: {label: t("Agregar alumno"), href: "#/alumnos?new=1&volver=asistencia", icon: "plus"}})}</div>`}
+    ${todos.length ? `<div class="att-foot ${cupo && n > cupo ? "lleno" : ""}">${anillo(n, total)}<div class="att-count" aria-live="polite">${cuentaTxt(n, cupo)}</div><a class="btn primary" href="#/inicio" data-listo>${icon("check")}<span>${t("Listo")}</span></a></div>` : ""}
+  </div>
+  ${hist.length ? `<aside class="att-side"><h2 class="section-header">${t("Últimas clases")}</h2><section class="card flush att-hist"><div class="list">${hist.map(r => {
     const c = r.claseId && S.get("clases", r.claseId), dd = S.get("disciplinas", r.disciplinaId), ps = (r.presentes || []).map(id => S.get("alumnos", id)).filter(Boolean);
     const on = r.fecha === fecha && (r.claseId || "") === (claseId || "") && r.disciplinaId === st.disc;
-    return `<button class="li att-h ${on ? "on" : ""}" data-go="${r.fecha}" data-gocl="${esc(r.claseId || "")}" data-godisc="${esc(r.disciplinaId)}"><span class="att-h-d"><b>${esc(fmtDia(r.fecha).split(" ")[0])}</b><span>${esc(r.fecha.slice(8))}</span></span>
-      <div class="li-main"><b>${esc(c ? nombreClase(c, dd) : t(dd?.nombre || ""))}${c ? ` <span class="muted small">${esc(c.hora)}</span>` : ""}</b><span class="att-stack">${ps.slice(0, 5).map(a => avatar(a, 24)).join("")}${ps.length > 5 ? `<i>+${ps.length - 5}</i>` : ""}</span></div>
-      <span class="tag">${tn(ps.length, "{n} presente", "{n} presentes")}</span></button>`;
-  }).join("")}</div></section>` : ""}`;
+    return `<button class="li att-h ${on ? "on" : ""}" data-go="${r.fecha}" data-gocl="${esc(r.claseId || "")}" data-godisc="${esc(r.disciplinaId)}" aria-current="${on ? "true" : "false"}"><span class="att-h-d"><b>${esc(fmtDia(r.fecha).split(" ")[0])}</b><span>${esc(String(+r.fecha.slice(8)))}</span></span>
+      <div class="li-main"><b><i class="att-dot" style="--dc:${esc(dd?.color || "#888")}"></i><span class="att-hnm">${esc(c ? nombreClase(c, dd) : t(dd?.nombre || ""))}</span>${c ? `<span class="muted small tnum">${esc(c.hora)}</span>` : ""}</b><span class="att-stack">${ps.slice(0, 5).map(a => avatar(a, 24)).join("")}${ps.length > 5 ? `<i>+${ps.length - 5}</i>` : ""}</span></div>
+      <span class="att-hn tnum">${tn(ps.length, "{n} presente", "{n} presentes")}</span></button>`;
+  }).join("")}</div></section></aside>` : ""}
+  </div>`;
 
   /* lo que se guarde sigue en el día que se ve, aunque sea ya mañana */
   const fijarDia = () => { if(!st.fecha && clase.fecha !== today()) st.fecha = clase.fecha; if(st.modo === "auto" && cl){ st.modo = "clase"; st.clase = cl.id; } };
@@ -142,7 +148,8 @@ export function render(el, params, ctx, query){
       const k = S.marcarAsistencia(clase, id, on).presentes.length;
       const c = el.querySelector(".att-count"); if(c) c.innerHTML = cuentaTxt(k, cupo);
       el.querySelector(".att-foot")?.classList.toggle("lleno", !!cupo && k > cupo);
-      navigator.vibrate?.(10);
+      const rv = el.querySelector(".att-ring .v"); if(rv){ rv.style.strokeDashoffset = 100 - pct(k, total); rv.style.opacity = k ? 1 : 0; }
+      haptic(on ? "light" : "selection");
       /* tiquetera casi agotada: ofrecer el mensaje de renovación */
       const al = S.get("alumnos", id), s = on && al && saldoTiquetera(al);
       if(s && (s.saldo <= 2 || s.vencida)){
@@ -159,9 +166,9 @@ export function render(el, params, ctx, query){
     if(tg.closest("[data-ayer]")){ setFecha(addDays(today(), -1)); render(el); return; }
     if(tg.closest("[data-all]")) return masivo(als.filter(a => !pres.has(a.id)).map(a => a.id), true);
     if(tg.closest("[data-none]")) return masivo(als.filter(a => pres.has(a.id)).map(a => a.id), false);
-    if(tg.closest("[data-lista]")){ S.setPref("asisVista", lista ? "grid" : "lista"); render(el); }
     if(tg.closest("[data-listo]")) toast(tn(n, "{n} presente guardado", "{n} presentes guardados"), "ok", null, {key: "asis"});
   };
+  el.onchange = e => { if(e.target.name === "aVista"){ S.setPref("asisVista", e.target.value); setTimeout(() => { if(el.querySelector(".att-vista")) render(el); }, 240); } };
   const fi = el.querySelector("#aFecha");
   fi.onchange = e => { if(e.target.value) setFecha(e.target.value); render(el); };
   fi.onclick = () => { try{ fi.showPicker?.(); }catch(e){} };
@@ -171,6 +178,9 @@ export function render(el, params, ctx, query){
   if(aq){ aq.oninput = e => { st.q = e.target.value; st.f = true; render(el); };
     if(st.f){ st.f = false; aq.focus(); aq.setSelectionRange(st.q.length, st.q.length); } }
 }
+/* anillo tipo Fitness: presentes sobre el cupo (o sobre los alumnos de la disciplina) */
+const pct = (n, total) => total ? Math.min(100, Math.round(n / total * 100)) : 0;
+const anillo = (n, total) => `<svg class="att-ring" viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="16" pathLength="100"/><circle class="v" cx="20" cy="20" r="16" pathLength="100" style="stroke-dashoffset:${100 - pct(n, total)};opacity:${n ? 1 : 0}"/></svg>`;
 const cuentaTxt = (n, cupo) => `<b>${n}</b><span>${cupo ? t("de {cupo} · {presentes}", {cupo, presentes: tn(n, "presente", "presentes")}) : tn(n, "presente", "presentes")}</span>`;
 /* hoy se guarda como "" para que siga siendo "hoy" mañana. Cambiar de día vuelve a elegir la clase sola */
 const setFecha = v => { st.fecha = !v || v === today() ? "" : v; st.dia = ""; st.modo = "auto"; st.clase = ""; };

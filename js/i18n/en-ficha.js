@@ -30,4 +30,5 @@ export default {
   "semanas seguidas": "weeks in a row",
   "Venció el {fecha}": "Was due on {fecha}",
   "Próximo pago: {fecha}": "Next payment: {fecha}",
+  "dominado": "mastered",
 };

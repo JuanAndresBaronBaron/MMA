@@ -128,50 +128,58 @@ export function render(el, params, ctx, q){
     const p = pendiente(l), dias = daysBetween(fechaLead(l), hoy), c = claseDe(l);
     const dd = l.prueba ? daysBetween(hoy, l.prueba) : null;
     return `<button type="button" class="ld-card ${p ? (p.tarde ? "late" : "due") : ""}" data-lead="${l.id}">
-      <b class="ld-n">${esc(l.nombre)}</b>
-      <span class="ld-meta"><span class="tag">${esc(fuenteTxt(l.fuente))}</span><span>${dias <= 0 ? t("hoy") : tn(dias, "hace 1 día", "hace {n} días")}</span></span>
-      ${l.prueba ? `<span class="ld-trial ${dd === 0 ? "hoy" : ""}">${icon("calendar")}${dd === 0 ? t("Prueba hoy") : esc(cap(fechaCorta(l.prueba)))}${c ? ` · ${esc(c.hora || "")}` : ""}${l.etapa === "prueba" && dd < 0 ? ` · ${l.asistioPrueba ? t("asistió") : t("¿asistió?")}` : ""}</span>` : ""}
-      ${l.etapa === "perdido" && l.motivoPerdido ? `<span class="muted small">${esc(t(l.motivoPerdido))}</span>` : ""}
-      ${p ? `<span class="ld-due">${icon("whatsapp")}${esc(tplNombre(p.k))}${p.tarde ? ` · ${t("atrasado")}` : ""}</span>` : ""}
+      <span class="ld-flag" aria-hidden="true"></span>
+      <span class="ld-body">
+        <span class="ld-top"><b class="ld-n">${esc(l.nombre)}</b><span class="ld-when">${dias <= 0 ? t("hoy") : tn(dias, "hace 1 día", "hace {n} días")}</span></span>
+        <span class="ld-meta">${esc(fuenteTxt(l.fuente))}<span class="ld-when2"> · ${dias <= 0 ? t("hoy") : tn(dias, "hace 1 día", "hace {n} días")}</span>${l.etapa === "perdido" && l.motivoPerdido ? ` · ${esc(t(l.motivoPerdido))}` : ""}</span>
+        ${l.prueba ? `<span class="ld-trial ${dd === 0 ? "hoy" : ""}">${icon("calendar")}<span>${dd === 0 ? t("Prueba hoy") : esc(cap(fechaCorta(l.prueba)))}${c ? ` · ${esc(c.hora || "")}` : ""}${l.etapa === "prueba" && dd < 0 ? ` · ${l.asistioPrueba ? t("asistió") : t("¿asistió?")}` : ""}</span></span>` : ""}
+        ${p ? `<span class="ld-due">${icon("whatsapp")}<span>${esc(tplNombre(p.k))}${p.tarde ? ` · ${t("atrasado")}` : ""}</span></span>` : ""}
+      </span>
     </button>`;
   };
+  const kpi = (ic, sc, label, val, title = "") => `<div class="ld-k"><span class="stat-l" style="--sc:${sc}">${icon(ic)}<span>${label}</span></span><b class="stat-v" ${title ? `title="${title}"` : ""}>${val}</b></div>`;
 
   el.innerHTML = `
   <div class="ld-head">
-    <div><h2>${t("Prospectos")}</h2><span class="muted small">${t("Personas interesadas, clases de prueba y seguimiento")}</span></div>
+    <p class="ld-sub">${t("Personas interesadas, clases de prueba y seguimiento")}</p>
     <div class="ld-act">
-      <button type="button" class="btn ghost small" data-link>${icon("link")}<span>${t("Link de inscripción")}</span></button>
-      <button type="button" class="btn ghost small" data-paste>${icon("whatsapp")}<span>${t("Pegar desde WhatsApp")}</span></button>
-      <button type="button" class="btn ghost small" data-tpls>${icon("edit")}<span>${t("Mensajes")}</span></button>
-      ${leads.length ? `<button type="button" class="btn ghost small" data-dif>${icon("users")}<span>${t("Mensaje masivo")}</span></button>` : ""}
-      <button type="button" class="btn primary small" data-nuevo>${icon("plus")}<span>${t("Nuevo prospecto")}</span></button>
+      <button type="button" class="btn tinted small" data-link>${icon("link")}<span>${t("Link de inscripción")}</span></button>
+      <button type="button" class="btn tinted small" data-paste>${icon("whatsapp")}<span>${t("Pegar desde WhatsApp")}</span></button>
+      <button type="button" class="btn tinted small" data-tpls>${icon("edit")}<span>${t("Mensajes")}</span></button>
+      ${leads.length ? `<button type="button" class="btn tinted small" data-dif>${icon("users")}<span>${t("Mensaje masivo")}</span></button>` : ""}
+      <button type="button" class="btn primary small ld-new" data-nuevo>${icon("plus")}<span>${t("Nuevo prospecto")}</span></button>
     </div>
   </div>
   ${!all.length ? `<section class="card">${emptyState({icon: "userPlus", title: t("Aún no tienes prospectos"), text: t("Anota a cada persona que pregunta por clases. La app te recuerda cuándo escribirle y te dice cuántos se inscriben."),
     cta: [{label: t("Agregar prospecto"), attr: "data-nuevo", icon: "plus"}, {label: t("Link de inscripción"), attr: "data-link", icon: "link", kind: "ghost"}]})}</section>` : `
-  <div class="kpis ld-kpis">
-    <div class="kpi"><span class="kpi-ic c1">${icon("userPlus")}</span><div><b>${n30}</b><span>${t("Prospectos (30 días)")}</span></div></div>
-    <div class="kpi"><span class="kpi-ic c4">${icon("calendar")}</span><div><b>${pruebas.length}<small class="ld-of"> / ${asistio}</small></b><span>${t("Pruebas agendadas / asistieron")}</span></div></div>
-    <div class="kpi"><span class="kpi-ic c2">${icon("check")}</span><div><b>${conv === null ? "—" : conv + "%"}</b><span>${t("Conversión (90 días)")}</span></div></div>
-    <div class="kpi"><span class="kpi-ic c3">${icon("star")}</span><div><b title="${top ? esc(fuenteTxt(top[0])) : ""}">${top ? esc(fuenteTxt(top[0])) : "—"}</b><span>${t("Mejor fuente")}</span></div></div>
+  <div class="ld-kpis">
+    ${kpi("userPlus", "var(--info)", t("Prospectos (30 días)"), n30)}
+    ${kpi("calendar", "var(--warn)", t("Pruebas agendadas / asistieron"), `${pruebas.length}<small> / ${asistio}</small>`)}
+    ${kpi("check", "var(--ok)", t("Conversión (90 días)"), conv === null ? "-" : conv + "<small>%</small>")}
+    ${kpi("star", "var(--accent2)", t("Mejor fuente"), top ? esc(fuenteTxt(top[0])) : "-", top ? esc(fuenteTxt(top[0])) : "")}
   </div>
   <div class="toolbar ld-tools"><label class="search">${icon("search")}<input id="ldq" type="search" placeholder="${t("Buscar por nombre o teléfono")}" value="${esc(st.q)}" aria-label="${t("Buscar")}"></label>
-    ${atrasados ? `<span class="ld-late-b" role="status">${icon("alert")} ${tn(atrasados, "1 seguimiento atrasado", "{n} seguimientos atrasados")}</span>` : ""}</div>
-  <div class="chip-row ld-stages" role="tablist" aria-label="${t("Etapa")}">${ETAPAS.map(([k]) => `<button type="button" role="tab" class="ld-st ${k === st.etapa ? "on" : ""}" aria-selected="${k === st.etapa}" data-etapa="${k}">${esc(etapaTxt(k))}<i>${porEtapa(k).length}</i></button>`).join("")}</div>
+    ${atrasados ? `<span class="ld-late-b" role="status">${icon("alert")}<span>${tn(atrasados, "1 seguimiento atrasado", "{n} seguimientos atrasados")}</span></span>` : ""}</div>
+  <div class="ld-stages-w"><div class="seg ld-stages" role="radiogroup" aria-label="${t("Etapa")}">${ETAPAS.map(([k]) => `<label><input type="radio" name="ldEtapa" value="${k}" data-etapa="${k}" ${k === st.etapa ? "checked" : ""}><span>${esc(etapaTxt(k))}<i>${porEtapa(k).length}</i></span></label>`).join("")}</div></div>
   <div class="ld-board">${ETAPAS.map(([k]) => { const ls = porEtapa(k); return `<section class="ld-col ${k === st.etapa ? "on" : ""}" data-col="${k}" aria-label="${esc(etapaTxt(k))}">
-    <h3 class="ld-col-h"><span class="ld-dot ${k}"></span>${esc(etapaTxt(k))}<span class="count-b">${ls.length}</span></h3>
-    <div class="ld-cards">${ls.map(card).join("") || `<p class="ld-nada muted small">${k === "nuevo" ? t("Nadie nuevo. Agrega a quien pregunte por clases.") : t("Nadie en esta etapa")}</p>`}</div></section>`; }).join("")}</div>`}
+    <h3 class="ld-col-h"><span class="ld-dot ${k}"></span>${esc(etapaTxt(k))}<span class="ld-cnt tnum">${ls.length}</span></h3>
+    <div class="ld-cards">${ls.map(card).join("") || `<p class="ld-nada">${k === "nuevo" ? t("Nadie nuevo. Agrega a quien pregunte por clases.") : t("Nadie en esta etapa")}</p>`}</div></section>`; }).join("")}</div>`}
   <button type="button" class="fab only-m" data-nuevo aria-label="${t("Nuevo prospecto")}">${icon("plus")}</button>`;
 
   el.onclick = e => {
     const tg = e.target;
     const c = tg.closest("[data-lead]"); if(c) return detalle(c.dataset.lead);
-    const et = tg.closest("[data-etapa]"); if(et){ st.etapa = et.dataset.etapa; S.setPref("leadsEtapa", st.etapa); for(const b of el.querySelectorAll("[data-etapa]")){ const on = b === et; b.classList.toggle("on", on); b.setAttribute("aria-selected", on); } for(const col of el.querySelectorAll("[data-col]")) col.classList.toggle("on", col.dataset.col === st.etapa); return; }
     if(tg.closest("[data-nuevo]")) return leadForm(null);
     if(tg.closest("[data-link]")) return linkSheet();
     if(tg.closest("[data-paste]")) return pegar();
     if(tg.closest("[data-tpls]")) return plantillasSheet();
     if(tg.closest("[data-dif]")) import("../difusion.js").then(m => m.openDifusion({segmento: "leads"})).catch(() => toast(t("Esta sección no está disponible"), "warn"));
+  };
+  /* filtro de etapa (control segmentado en el celular; en el computador se ven todas las columnas) */
+  el.onchange = e => {
+    const et = e.target.closest?.("[data-etapa]"); if(!et || !et.checked) return;
+    st.etapa = et.dataset.etapa; S.setPref("leadsEtapa", st.etapa);
+    for(const col of el.querySelectorAll("[data-col]")) col.classList.toggle("on", col.dataset.col === st.etapa);
   };
   const qi = el.querySelector("#ldq");
   if(qi) qi.oninput = () => { st.q = qi.value; render(el, params, ctx, q); const n = el.querySelector("#ldq"); n.focus(); n.setSelectionRange(n.value.length, n.value.length); };
@@ -227,27 +235,32 @@ function detalle(id){
     const segs = [...(l.seguimientos || [])].reverse();
     const dd = l.prueba ? daysBetween(hoy, l.prueba) : null;
     const tipoTxt = {whatsapp: t("WhatsApp"), llamada: t("Llamada"), visita: t("Visita")};
-    const wa = k => `<a class="btn ${p && p.k === k ? "primary" : "ghost"} small" target="_blank" rel="noopener" data-wa="${k}" href="${esc(waUrl(l.telefono, mensaje(k, l)))}">${icon("whatsapp")}<span>${esc(tplNombre(k))}</span></a>`;
+    const wa = k => { const sug = p && p.k === k; return `<a class="row-inset ld-wa-r ${sug ? "sug" : ""}" target="_blank" rel="noopener" data-wa="${k}" href="${esc(waUrl(l.telefono, mensaje(k, l)))}"><span class="row-ic ld-wa-ic">${icon("whatsapp")}</span><span class="ld-r-l">${esc(tplNombre(k))}</span>${sug ? `<span class="badge accent">${t("Sugerido")}</span>` : ""}</a>`; };
     const opciones = l.prueba ? ["bienvenida", "recordatorio", "dia1", "dia3"] : ["contacto", "dia3"];
+    const ini = String(l.nombre || "").trim().split(/\s+/).slice(0, 2).map(w => w[0] || "").join("").toUpperCase() || "?";
     box.innerHTML = `
-      <div class="ld-det-h"><div class="ld-tags">
-        <span class="tag">${esc(fuenteTxt(l.fuente))}</span>${d ? `<span class="tag"><span class="dot" style="background:${esc(d.color || "#888")}"></span>${esc(t(d.nombre))}</span>` : ""}${s && S.sedes().length > 1 ? `<span class="tag">${icon("map")}${esc(s.nombre)}</span>` : ""}${l.edad ? `<span class="tag">${tn(l.edad, "1 año", "{n} años")}</span>` : ""}
-      </div>
-      <p class="muted small">${l.telefono ? `<a href="tel:${esc(l.telefono)}">${icon("phone", "inline")} ${esc(l.telefono)}</a> · ` : ""}${t("Llegó el {fecha}", {fecha: esc(fmtDate(fechaLead(l)))})}${l.email ? ` · ${esc(l.email)}` : ""}</p>
-      ${l.nota ? `<p class="ld-nota">${esc(l.nota)}</p>` : ""}</div>
-      <div class="seg ld-seg" role="radiogroup" aria-label="${t("Etapa")}">${ETAPAS.map(([k]) => `<label><input type="radio" name="ldEt" value="${k}" ${k === l.etapa ? "checked" : ""}><span>${esc(etapaTxt(k))}</span></label>`).join("")}</div>
-      ${p ? `<div class="ld-next ${p.tarde ? "late" : ""}">${icon(p.tarde ? "alert" : "clock")}<div><b>${t("Toca: {paso}", {paso: esc(tplNombre(p.k))})}</b><span class="muted small">${p.tarde ? t("Atrasado desde el {fecha}", {fecha: esc(fmtDate(p.fecha))}) : t("Para hoy")}</span></div></div>` : ""}
-      <section class="ld-blk"><h4>${icon("calendar")} ${t("Clase de prueba")}</h4>
-        ${l.prueba ? `<p><b>${esc(cap(fechaLarga(l.prueba)))}</b>${c ? ` · ${esc(claseTxt(c))}` : ""} <span class="muted small">(${esc(dd === 0 ? t("hoy") : dd === 1 ? t("mañana") : dd > 0 ? t("en {n} días", {n: dd}) : t("hace {n} días", {n: -dd}))})</span></p>
-          <div class="row gap wrap">${dd <= 0 ? `<label class="check"><input type="checkbox" data-asistio ${l.asistioPrueba ? "checked" : ""}><span>${t("Asistió a la prueba")}</span></label>` : ""}<button type="button" class="btn-link" data-agendar>${t("Cambiar fecha")}</button></div>`
-        : `<button type="button" class="btn ghost small" data-agendar>${icon("plus")} ${t("Agendar clase de prueba")}</button>`}
-      </section>
-      <section class="ld-blk"><h4>${icon("whatsapp")} ${t("Escribirle")}</h4><div class="ld-wa">${opciones.map(wa).join("")}</div>
-        <div class="row gap wrap ld-log"><button type="button" class="btn-link" data-log="llamada">${icon("phone", "inline")} ${t("Registrar llamada")}</button><button type="button" class="btn-link" data-log="visita">${icon("map", "inline")} ${t("Registrar visita")}</button></div></section>
-      ${l.etapa === "inscrito" && l.alumnoId && S.get("alumnos", l.alumnoId) ? `<a class="btn ok block" href="#/alumno/${l.alumnoId}" data-ir>${icon("users")} ${t("Ver alumno")}</a>`
-        : l.etapa !== "inscrito" ? `<div class="ld-conv"><button type="button" class="btn primary" data-convertir>${icon("userPlus")} ${t("Convertir a alumno")}</button>${l.etapa !== "perdido" ? `<button type="button" class="btn ghost" data-perdido>${t("Marcar como perdido")}</button>` : ""}</div>` : ""}
-      ${segs.length ? `<section class="ld-blk"><h4>${icon("list")} ${t("Historial")}</h4><ol class="ld-tl">${segs.map(x => `<li><span class="ld-tl-d">${esc(fmtDate(x.fecha))}</span><b>${esc(tipoTxt[x.tipo] || x.tipo)}${x.msg ? ` · ${esc(tplNombre(x.msg))}` : ""}</b>${x.nota ? `<span class="muted small">${esc(x.nota)}</span>` : ""}</li>`).join("")}</ol></section>` : ""}
-      <div class="ld-det-f"><button type="button" class="btn ghost small" data-editar>${icon("edit")} ${t("Editar")}</button><button type="button" class="btn danger ghost small" data-borrar>${icon("trash")} ${t("Eliminar")}</button></div>`;
+      <div class="ld-det-h">
+        <span class="ld-av" aria-hidden="true">${esc(ini)}</span>
+        <div class="ld-tags">
+          <span class="tag">${esc(fuenteTxt(l.fuente))}</span>${d ? `<span class="tag"><span class="dot" style="background:${esc(d.color || "#888")}"></span>${esc(t(d.nombre))}</span>` : ""}${s && S.sedes().length > 1 ? `<span class="tag">${icon("map")}${esc(s.nombre)}</span>` : ""}${l.edad ? `<span class="tag">${tn(l.edad, "1 año", "{n} años")}</span>` : ""}
+        </div>
+        <p class="ld-info">${t("Llegó el {fecha}", {fecha: esc(fmtDate(fechaLead(l)))})}${l.email ? ` · ${esc(l.email)}` : ""}</p>
+        ${l.telefono ? `<div class="ld-qa"><a class="ld-qa-b" href="tel:${esc(l.telefono)}">${icon("phone")}<span>${t("Llamar")}</span></a><a class="ld-qa-b" target="_blank" rel="noopener" data-wa="${p ? p.k : opciones[0]}" href="${esc(waUrl(l.telefono, mensaje(p ? p.k : opciones[0], l)))}">${icon("whatsapp")}<span>${t("WhatsApp")}</span></a><button type="button" class="ld-qa-b" data-editar>${icon("edit")}<span>${t("Editar")}</span></button></div>` : ""}
+        ${l.nota ? `<p class="ld-nota">${esc(l.nota)}</p>` : ""}</div>
+      <div class="ld-seg-w"><div class="seg ld-seg" role="radiogroup" aria-label="${t("Etapa")}">${ETAPAS.map(([k]) => `<label><input type="radio" name="ldEt" value="${k}" ${k === l.etapa ? "checked" : ""}><span>${esc(etapaTxt(k))}</span></label>`).join("")}</div></div>
+      ${p ? `<div class="ld-next ${p.tarde ? "late" : ""}"><span class="row-ic">${icon(p.tarde ? "alert" : "clock")}</span><div><b>${t("Toca: {paso}", {paso: esc(tplNombre(p.k))})}</b><span>${p.tarde ? t("Atrasado desde el {fecha}", {fecha: esc(fmtDate(p.fecha))}) : t("Para hoy")}</span></div></div>` : ""}
+      <section class="ld-blk"><h4 class="section-header">${t("Clase de prueba")}</h4><div class="ld-grp">
+        ${l.prueba ? `<div class="row-inset"><span class="row-ic" style="--rc:var(--chip-burnt)">${icon("calendar")}</span><span class="ld-r-l"><b>${esc(cap(fechaLarga(l.prueba)))}</b><span class="ld-r-s">${c ? `${esc(claseTxt(c))} · ` : ""}${esc(dd === 0 ? t("hoy") : dd === 1 ? t("mañana") : dd > 0 ? t("en {n} días", {n: dd}) : t("hace {n} días", {n: -dd}))}</span></span><button type="button" class="btn-link" data-agendar>${t("Cambiar fecha")}</button></div>
+          ${dd <= 0 ? `<label class="row-inset check ld-sw"><input type="checkbox" class="switch" data-asistio ${l.asistioPrueba ? "checked" : ""}><span>${t("Asistió a la prueba")}</span></label>` : ""}`
+        : `<button type="button" class="row-inset ld-add" data-agendar><span class="row-ic" style="--rc:var(--chip-burnt)">${icon("plus")}</span><span class="ld-r-l">${t("Agendar clase de prueba")}</span></button>`}
+      </div></section>
+      <section class="ld-blk"><h4 class="section-header">${t("Escribirle")}</h4><div class="ld-grp ld-wa">${opciones.map(wa).join("")}
+        <button type="button" class="row-inset ld-log" data-log="llamada"><span class="row-ic" style="--rc:var(--chip-steel)">${icon("phone")}</span><span class="ld-r-l">${t("Registrar llamada")}</span></button>
+        <button type="button" class="row-inset ld-log" data-log="visita"><span class="row-ic" style="--rc:var(--chip-gunmetal)">${icon("map")}</span><span class="ld-r-l">${t("Registrar visita")}</span></button></div></section>
+      ${l.etapa === "inscrito" && l.alumnoId && S.get("alumnos", l.alumnoId) ? `<a class="btn primary big block" href="#/alumno/${l.alumnoId}" data-ir>${icon("users")} ${t("Ver alumno")}</a>`
+        : l.etapa !== "inscrito" ? `<div class="ld-conv"><button type="button" class="btn primary big" data-convertir>${icon("userPlus")} ${t("Convertir a alumno")}</button>${l.etapa !== "perdido" ? `<button type="button" class="btn gray big" data-perdido>${t("Marcar como perdido")}</button>` : ""}</div>` : ""}
+      ${segs.length ? `<section class="ld-blk"><h4 class="section-header">${t("Historial")}</h4><ol class="ld-tl ld-grp">${segs.map(x => `<li><span class="ld-tl-dot ${esc(x.tipo)}" aria-hidden="true"></span><div><b>${esc(tipoTxt[x.tipo] || x.tipo)}${x.msg ? ` · ${esc(tplNombre(x.msg))}` : ""}</b>${x.nota ? `<span class="ld-r-s">${esc(x.nota)}</span>` : ""}</div><span class="ld-tl-d">${esc(fmtDate(x.fecha))}</span></li>`).join("")}</ol></section>` : ""}
+      <div class="ld-grp ld-det-f">${l.telefono ? "" : `<button type="button" class="row-inset ld-center" data-editar>${t("Editar")}</button>`}<button type="button" class="row-inset ld-center ld-red" data-borrar>${t("Eliminar prospecto")}</button></div>`;
   }
   box.addEventListener("click", async e => {
     const tg = e.target;
@@ -361,8 +374,8 @@ async function linkSheet(){
     box.innerHTML = `<p class="muted">${t("Comparte este link en Instagram, Facebook o en un afiche. Quien lo llene te escribe por WhatsApp con sus datos y tú los pegas aquí.")}</p>
       ${field({k: "ldWa", label: t("WhatsApp de la academia"), type: "tel", req: true, ph: "300 123 4567", hint: w ? "" : t("Escribe el número donde quieres recibir las inscripciones.")}, w)}
       ${w ? `<div class="ld-url"><input readonly value="${esc(url)}" aria-label="${t("Link de inscripción")}"><button type="button" class="btn primary small" data-copy>${icon("copy")} ${t("Copiar")}</button></div>
-      <div class="row gap wrap"><button type="button" class="btn ghost small" data-share>${icon("share")} ${t("Compartir")}</button><a class="btn ghost small" href="${esc(url)}" target="_blank" rel="noopener">${icon("link")} ${t("Abrir")}</a>${qr ? `<button type="button" class="btn ghost small" data-poster>${icon("print")} ${t("Imprimir afiche con QR")}</button>` : ""}</div>
-      ${qr ? `<div class="ld-qr">${qr(url, {size: 180, margin: 2})}</div>` : ""}` : ""}`;
+      ${qr ? `<div class="ld-qr">${qr(url, {size: 180, margin: 2})}</div>` : ""}
+      <div class="ld-grp"><button type="button" class="row-inset" data-share><span class="row-ic" style="--rc:var(--chip-steel)">${icon("share")}</span><span class="ld-r-l">${t("Compartir")}</span></button><a class="row-inset" href="${esc(url)}" target="_blank" rel="noopener"><span class="row-ic" style="--rc:var(--chip-gunmetal)">${icon("link")}</span><span class="ld-r-l">${t("Abrir")}</span></a>${qr ? `<button type="button" class="row-inset" data-poster><span class="row-ic" style="--rc:var(--chip-crimson)">${icon("print")}</span><span class="ld-r-l">${t("Imprimir afiche con QR")}</span></button>` : ""}</div>` : ""}`;
     const wi = box.querySelector("[name=ldWa]");
     wi.setAttribute("inputmode", "tel");
     wi.onchange = () => { S.put("academias", {id: a.id, whatsapp: wi.value.trim()}); paint(); };
