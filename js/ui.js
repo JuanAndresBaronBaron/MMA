@@ -130,7 +130,9 @@ function compress(file, size = 360){
 /* ---------- avisos ---------- */
 export function toast(msg, kind = "ok", action){
   let host = $("#toasts");
-  const el = h(`<div class="toast ${kind}" role="status">${icon(kind === "error" ? "alert" : kind === "warn" ? "alert" : "check")}<span>${esc(msg)}</span>${action ? `<button class="btn-link">${esc(action.label)}</button>` : ""}</div>`);
+  if(!host){ host = h(`<div id="toasts" class="toasts" role="status" aria-live="polite"></div>`); document.body.appendChild(host); }
+  else if(host.closest("[inert]")) document.body.appendChild(host);   // nunca dentro del fondo inerte de un modal
+  const el = h(`<div class="toast ${kind}">${icon(kind === "error" ? "alert" : kind === "warn" ? "alert" : "check")}<span>${esc(msg)}</span>${action ? `<button class="btn-link">${esc(action.label)}</button>` : ""}</div>`);
   if(action) el.querySelector("button").onclick = () => { action.fn(); el.remove(); };
   host.appendChild(el);
   requestAnimationFrame(() => el.classList.add("in"));
@@ -138,24 +140,78 @@ export function toast(msg, kind = "ok", action){
 }
 
 /* ---------- modal ---------- */
-let modalStack = [];
+/* foco: entra al primer campo, Tab no sale del modal, el fondo queda inerte y al cerrar vuelve a donde estaba.
+   Si el formulario tiene cambios, un toque fuera no lo cierra (hay que usar Cancelar o Esc). */
+let modalStack = [], modalN = 0;
+const FOCUSABLE = 'a[href],button:not([disabled]),input:not([disabled]):not([type=hidden]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])';
+const focusables = root => [...root.querySelectorAll(FOCUSABLE)].filter(x => x.getClientRects().length && !x.closest("[inert]"));
+/* el fondo (app, bienvenida y modales de abajo) inerte mientras haya un modal arriba */
+function syncInert(){
+  const top = modalStack[modalStack.length - 1];
+  for(const el of $$("body > .app, body > .welcome, body > .modal-back")){
+    const off = !!top && el !== top.el;
+    if(off) el.setAttribute("inert", ""); else el.removeAttribute("inert");
+  }
+}
 export function modal({title, body, foot, wide, onClose, cls = ""}){
-  const el = h(`<div class="modal-back"><div class="modal ${wide ? "wide" : ""} ${cls}" role="dialog" aria-modal="true" aria-label="${esc(title)}">
-    <header class="modal-h"><h2>${esc(title)}</h2><button class="icon-btn" data-close aria-label="${t("Cerrar")}">${icon("x")}</button></header>
+  const hid = "mh" + (++modalN);
+  const opener = document.activeElement;
+  const el = h(`<div class="modal-back"><div class="modal ${wide ? "wide" : ""} ${cls}" role="dialog" aria-modal="true" aria-labelledby="${hid}" tabindex="-1">
+    <header class="modal-h"><h2 id="${hid}">${esc(title)}</h2><button class="icon-btn" data-close aria-label="${t("Cerrar")}">${icon("x")}</button></header>
     <div class="modal-b"></div>${foot !== false ? `<footer class="modal-f"></footer>` : ""}</div></div>`);
-  const b = el.querySelector(".modal-b");
+  const b = el.querySelector(".modal-b"), box = el.querySelector(".modal");
   if(typeof body === "string") b.innerHTML = body; else if(body) b.appendChild(body);
   if(foot && typeof foot === "string") el.querySelector(".modal-f").innerHTML = foot;
-  const close = () => { el.classList.remove("in"); el.classList.add("closing"); setTimeout(() => { el.remove(); window.dispatchEvent(new Event("mma:modal")); }, 200); modalStack = modalStack.filter(m => m !== api); onClose && onClose(); };
-  el.addEventListener("click", e => { if(e.target === el || e.target.closest("[data-close]")) close(); });
+  let dirty = false, closed = false;
+  el.addEventListener("input", () => { dirty = true; });
+  el.addEventListener("change", () => { dirty = true; });
+  const close = () => {
+    if(closed) return; closed = true;
+    el.classList.remove("in"); el.classList.add("closing");
+    modalStack = modalStack.filter(m => m !== api);
+    syncInert();
+    setTimeout(() => {
+      el.remove();
+      /* devolver el foco a quien abrió el modal (si sigue en pantalla) */
+      if(!modalStack.length || modalStack[modalStack.length - 1].el.contains(opener)){
+        if(opener && opener.isConnected && opener.focus) try{ opener.focus({preventScroll: true}); }catch(e){}
+      }
+      window.dispatchEvent(new Event("mma:modal"));
+    }, 200);
+    onClose && onClose();
+  };
+  el.addEventListener("click", e => {
+    if(e.target.closest("[data-close]")) return close();
+    if(e.target !== el) return;
+    /* toque fuera: no perder lo escrito */
+    if(dirty && b.querySelector("form")){ box.classList.remove("nudge"); void box.offsetWidth; box.classList.add("nudge"); return; }
+    close();
+  });
   document.body.appendChild(el);
   requestAnimationFrame(() => el.classList.add("in"));
-  const api = {el, body: b, foot: el.querySelector(".modal-f"), close};
+  const api = {el, body: b, foot: el.querySelector(".modal-f"), close, get dirty(){ return dirty; }};
   modalStack.push(api);
-  setTimeout(() => { const f = b.querySelector("input:not([type=hidden]):not([type=checkbox]),select,textarea"); if(f && matchMedia("(pointer:fine)").matches) f.focus(); }, 60);
+  syncInert();
+  setTimeout(() => {
+    if(closed) return;
+    const f = matchMedia("(pointer:fine)").matches && b.querySelector("input:not([type=hidden]):not([type=checkbox]):not([type=radio]),select,textarea");
+    /* en pantallas táctiles no se abre el teclado solo: el foco va al diálogo */
+    if(f) f.focus(); else if(!box.contains(document.activeElement)) box.focus({preventScroll: true});
+  }, 60);
   return api;
 }
-document.addEventListener("keydown", e => { if(e.key === "Escape" && modalStack.length) modalStack[modalStack.length - 1].close(); });
+document.addEventListener("keydown", e => {
+  if(!modalStack.length) return;
+  const top = modalStack[modalStack.length - 1];
+  if(e.key === "Escape"){ e.preventDefault(); top.close(); return; }
+  if(e.key !== "Tab") return;
+  const fs = focusables(top.el);
+  if(!fs.length){ e.preventDefault(); top.el.querySelector(".modal").focus(); return; }
+  const a = document.activeElement, first = fs[0], last = fs[fs.length - 1];
+  if(!top.el.contains(a)){ e.preventDefault(); (e.shiftKey ? last : first).focus(); }
+  else if(e.shiftKey && (a === first || a === top.el.querySelector(".modal"))){ e.preventDefault(); last.focus(); }
+  else if(!e.shiftKey && a === last){ e.preventDefault(); first.focus(); }
+});
 export function confirmDlg(msg, {ok = t("Eliminar"), danger = true, title = t("¿Seguro?")} = {}){
   return new Promise(res => {
     let done = false;
@@ -211,6 +267,15 @@ export function formModal({title, fields, values = {}, save = t("Guardar"), onSa
   return m;
 }
 
+/* estado vacío con icono en círculo de color y una acción concreta.
+   cta: html, o {label, href} para un enlace, o {label, attr: "data-new"} para un botón; tone: accent|ok|info|warn */
+export function emptyState({icon: ic = "info", title = "", text = "", cta = "", tone = "accent", cls = ""} = {}){
+  const one = c => !c ? "" : typeof c === "string" ? c
+    : c.href ? `<a class="btn ${c.kind || "primary"}" href="${esc(c.href)}">${c.icon ? icon(c.icon) : ""}<span>${esc(c.label)}</span></a>`
+    : `<button type="button" class="btn ${c.kind || "primary"}" ${c.attr || ""}>${c.icon ? icon(c.icon) : ""}<span>${esc(c.label)}</span></button>`;
+  const ctas = (Array.isArray(cta) ? cta : [cta]).map(one).join("");
+  return `<div class="empty-st ${esc(tone)} ${cls}"><span class="empty-ic">${icon(ic)}</span>${title ? `<h3>${esc(title)}</h3>` : ""}${text ? `<p>${esc(text)}</p>` : ""}${ctas ? `<div class="empty-cta">${ctas}</div>` : ""}</div>`;
+}
 export function empty(ic, title, txt, btn){
   return `<div class="empty">${icon(ic, "big")}<h3>${esc(title)}</h3><p>${esc(txt)}</p>${btn || ""}</div>`;
 }

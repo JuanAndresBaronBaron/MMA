@@ -5,6 +5,8 @@ import {promotionModal} from "../forms.js";
 import {t} from "../i18n.js";
 
 const st = {disc: ""};
+/* etiqueta corta de disciplina (BJJ, MMA, MT) en vez de solo un punto de color */
+const tag = d => `<span class="disc-tag" style="--c:${d.color}">${esc(S.discCorto(d))}</span>`;
 
 export function render(el){
   const discs = S.discsOfSede(S.curSede());
@@ -33,8 +35,11 @@ export function render(el){
   const cand = (x, desde) => {
     const g = S.rangoActual(x.a.id, x.d.id);
     const pct = x.n.min ? clamp(x.n.meses / x.n.min * 100, 0, 100) : 100;
+    /* el rango siguiente va en su propia línea, en negrita y con el color del cinturón (antes se cortaba con …) */
+    const bc = S.rankDef(x.d, x.n.tipo === "grado" ? g.rank : g.rank + 1).c;
     return `<div class="li"><a class="li-link" href="#/alumno/${x.a.id}">${avatar(x.a, 40)}<div class="li-main"><b>${esc(x.a.nombre)}</b>
-      <span class="muted small"><span class="dot" style="background:${x.d.color}"></span>${esc(rankLabel(x.d, g))} → <b>${esc(x.n.txt)}</b> · ${desde ? t("desde {fecha}", {fecha: fmtDate(x.n.fecha)}) + " · " : ""}${fmtDuration(x.n.tipo === "grado" ? g.fecha : S.inicioCinturon(S.gradosDe(x.a.id, x.d.id)).fecha)}</span>
+      <span class="muted small">${tag(x.d)}${esc(rankLabel(x.d, g))} · ${desde ? t("desde {fecha}", {fecha: fmtDate(x.n.fecha)}) + " · " : ""}${fmtDuration(x.n.tipo === "grado" ? g.fecha : S.inicioCinturon(S.gradosDe(x.a.id, x.d.id)).fecha)}</span>
+      <span class="next-rank small" style="--bc:${esc(bc)}"><i aria-hidden="true"></i>→ ${esc(x.n.txt)}</span>
       <div class="progress thin"><span style="width:${pct}%"></span></div></div></a>
       <span class="li-belt hide-s">${belt(x.d, g.rank, g.grado, {w: 80, h: 14})}</span>
       <button class="btn small ${x.n.listo ? "primary" : "ghost"}" data-promo="${x.a.id}" data-d="${x.d.id}">${t("Promover")}</button></div>`;
@@ -53,13 +58,13 @@ export function render(el){
       ${cerca.length ? `<div class="list">${cerca.map(x => cand(x, true)).join("")}</div>` : `<p class="muted">${t("Nadie cumple tiempo en las próximas semanas.")}</p>`}</section>
     <section class="card ${rapidas.length ? "warn-card" : ""}"><header class="card-h"><h3>${icon("alert")} ${t("Promociones antes de tiempo")} <span class="count-b">${rapidas.length}</span></h3></header>
       <p class="muted small">${t("Grados del último año que se dieron con menos tiempo del recomendado.")}</p>
-      ${rapidas.length ? `<div class="list">${rapidas.map(x => `<a class="li" href="#/alumno/${x.a.id}">${avatar(x.a, 38)}<div class="li-main"><b>${esc(x.a.nombre)} · ${esc(rankLabel(x.d, x.g))}</b><span class="small warn-t">${esc(x.avisos.map(w => w.txt).join(" "))}</span></div><span class="muted small">${fmtDate(x.g.fecha)}</span></a>`).join("")}</div>` : `<p class="muted">${t("Todo en orden")} 👌</p>`}</section>
+      ${rapidas.length ? `<div class="list">${rapidas.map(x => `<a class="li" href="#/alumno/${x.a.id}">${avatar(x.a, 38)}<div class="li-main"><b>${esc(x.a.nombre)}</b><span class="small">${tag(x.d)}${esc(rankLabel(x.d, x.g))}</span><span class="small warn-t">${esc(x.avisos.map(w => w.txt).join(" "))}</span></div><span class="muted small">${fmtDate(x.g.fecha)}</span></a>`).join("")}</div>` : `<p class="muted">${t("Todo en orden")} 👌</p>`}</section>
     <section class="card"><header class="card-h"><h3>${icon("medal")} ${t("Promociones recientes (90 días)")}</h3></header>
-      ${recientes.length ? `<div class="list">${recientes.map(x => `<a class="li" href="#/alumno/${x.a.id}">${avatar(x.a, 38)}<div class="li-main"><b>${esc(x.a.nombre)}</b><span class="muted small">${esc(t(x.d.nombre))} · ${esc(rankLabel(x.d, x.g))}${x.g.profesor ? " · " + esc(x.g.profesor) : ""}</span></div><span class="li-belt">${belt(x.d, x.g.rank, x.g.grado, {w: 64, h: 12})}</span><span class="muted small">${fmtDate(x.g.fecha)}</span></a>`).join("")}</div>` : `<p class="muted">${t("Sin promociones recientes.")}</p>`}</section>
+      ${recientes.length ? `<div class="list">${recientes.map(x => `<a class="li" href="#/alumno/${x.a.id}">${avatar(x.a, 38)}<div class="li-main"><b>${esc(x.a.nombre)}</b><span class="muted small">${tag(x.d)}${esc(t(x.d.nombre))} · ${esc(rankLabel(x.d, x.g))}${x.g.profesor ? " · " + esc(x.g.profesor) : ""}</span></div><span class="li-belt">${belt(x.d, x.g.rank, x.g.grado, {w: 64, h: 12})}</span><span class="muted small">${fmtDate(x.g.fecha)}</span></a>`).join("")}</div>` : `<p class="muted">${t("Sin promociones recientes.")}</p>`}</section>
     ${sinGrado.length ? `<section class="card"><header class="card-h"><h3>${icon("info")} ${t("Sin grado registrado")} <span class="count-b">${sinGrado.length}</span></h3></header>
-      <div class="list">${sinGrado.map(x => `<div class="li"><a class="li-link" href="#/alumno/${x.a.id}">${avatar(x.a, 36)}<div class="li-main"><b>${esc(x.a.nombre)}</b><span class="muted small">${esc(t(x.d.nombre))}</span></div></a><button class="btn small ghost" data-promo="${x.a.id}" data-d="${x.d.id}">${t("Registrar")}</button></div>`).join("")}</div></section>` : ""}
+      <div class="list">${sinGrado.map(x => `<div class="li"><a class="li-link" href="#/alumno/${x.a.id}">${avatar(x.a, 36)}<div class="li-main"><b>${esc(x.a.nombre)}</b><span class="muted small">${tag(x.d)}${esc(t(x.d.nombre))}</span></div></a><button class="btn small ghost" data-promo="${x.a.id}" data-d="${x.d.id}">${t("Registrar")}</button></div>`).join("")}</div></section>` : ""}
     <section class="card"><header class="card-h"><h3>${icon("belt")} ${t("Tiempos mínimos configurados")}</h3><a class="btn-link" href="#/academia">${t("Editar")}</a></header>
-      ${ds.map(d => `<h4 class="grp"><span class="dot" style="background:${d.color}"></span> ${esc(t(d.nombre))}</h4><table class="tbl"><thead><tr><th>${t("Cinturón")}</th><th>${t("Grados")}</th><th>${t("Tiempo mín.")}</th><th>${t("Entre grados")}</th></tr></thead><tbody>
+      ${ds.map(d => `<h4 class="grp">${tag(d)} ${esc(t(d.nombre))}</h4><table class="tbl"><thead><tr><th>${t("Cinturón")}</th><th>${t("Grados")}</th><th>${t("Tiempo mín.")}</th><th>${t("Entre grados")}</th></tr></thead><tbody>
         ${d.ranks.map((r, i) => `<tr><td>${belt(d, i, 0, {w: 50, h: 10})} ${esc(t(r.n))}</td><td>${r.g || "—"}</td><td>${i < d.ranks.length - 1 ? fmtMonths(r.m) : "—"}</td><td>${r.g ? fmtMonths(r.mg) : "—"}</td></tr>`).join("")}</tbody></table>`).join("")}
     </section>
   </div>`;

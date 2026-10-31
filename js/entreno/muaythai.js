@@ -62,7 +62,7 @@ export const PLAN = [
   "semanas": "Meses 10–15",
   "foco": "Dejar de solo atacar y empezar a responder: atrapar, chequear y devolver, y entender cómo puntúan los jueces tailandeses.",
   "puntos": [
-   "Módulo Atrapar patadas, contraatacar y pelear con criterio tailandés: Atrapar la patada y contraatacar (cooperativo) y Chequear y devolver.",
+   "Módulo Atrapar patadas, contraatacar y pelear con criterio tailandés: Atrapar la patada y contraatacar (cooperativo) y Chequear y devolver; después, Codo tras atrapar la patada y el barrido estilo Saenchai a la pierna de apoyo.",
    "Atrapar y barrer progresivo, empezando sin resistencia y con caídas suaves.",
    "Clinch de posición con rodillas controladas para ganar resistencia y estructura dentro del clinch.",
    "Sparring técnico con puntuación tailandesa una vez por semana; en este punto, algunas personas hacen su primera pelea amateur si su kru lo aprueba, aunque no es obligatorio."
@@ -252,6 +252,22 @@ export const MODULOS = [
      "Verlo como una danza sin significado",
      "Ponerse o quitarse uno mismo el mongkol, o tratarlo como un accesorio"
     ]
+   },
+   {
+    "titulo": "Patada baja al muslo (low kick) y switch kick",
+    "explicacion": "La patada baja es la misma patada circular, pero dirigida al muslo del rival, por encima de la rodilla. Golpea con la parte baja de la tibia, nunca con el pie ni con el empeine, y gira la cadera como en la patada media. Se lanza sobre todo con la pierna de atrás al muslo de adelante del rival, después de un jab o de un cross que lo distraiga. La switch kick es la patada con la pierna delantera: das un paso corto de cambio, llevando el pie de adelante atrás y el de atrás adelante, y pateas con la pierna que quedó atrás. Así ganas potencia sin telegrafiar. Las dos se defienden igual: levanta la rodilla y chequea con la tibia, o retrocede la pierna atacada.",
+    "puntos": [
+     "Golpea con la parte baja de la tibia, al muslo y por encima de la rodilla",
+     "Prepara la patada baja con puños para que el rival no la vea venir",
+     "En la switch kick el cambio de pies es corto y rápido, no un salto",
+     "Vuelve siempre a la guardia con las manos arriba"
+    ],
+    "errores": [
+     "Patear la rodilla del compañero en el entrenamiento",
+     "Golpear con el pie o con el empeine",
+     "Bajar las manos al patear y recibir el contragolpe",
+     "Hacer el cambio de pies demasiado largo y anunciar la patada"
+    ]
    }
   ],
   "drills": [
@@ -286,6 +302,24 @@ export const MODULOS = [
     "nivel": "basico",
     "min": 5,
     "solo": true
+   },
+   {
+    "nombre": "Jab-cross-patada en sombra",
+    "como": "Frente al espejo y en postura tailandesa. Lanza jab, cross y patada circular con la pierna de atrás, y vuelve a la guardia con las manos arriba después de cada combinación. El cross gira la cadera y deja la pierna de atrás lista para patear. Alterna con jab y patada baja al muslo, y con jab, cross y patada de la pierna delantera con cambio de pies (switch kick). Busca técnica limpia, no velocidad. Si eres zurdo, invierte los lados.",
+    "dosis": "3 asaltos de 3 minutos con 1 minuto de descanso",
+    "nivel": "basico",
+    "min": 11,
+    "solo": true,
+    "tipo": "tecnica"
+   },
+   {
+    "nombre": "Defensa en parejas: parry, cobertura y chequeo de la patada baja",
+    "como": "Con guantes, espinilleras y protector bucal, al 30% de potencia. El compañero lanza solo tres golpes, en el orden que quiera: jab, cross o patada baja. Contra el jab, desvía con un parry corto de la mano de atrás. Contra el cross, cubre alto con el guante pegado a la sien y el codo cerrado. Contra la patada baja, levanta la rodilla y chequea con la tibia, apuntando la rodilla hacia su patada. Después de cada defensa vuelve a la guardia. Cambien de rol en cada asalto.",
+    "dosis": "4 asaltos de 2 minutos con 30 segundos de descanso, al 30%",
+    "nivel": "basico",
+    "min": 12,
+    "solo": false,
+    "tipo": "tecnica"
    }
   ],
   "recursos": [
@@ -377,7 +411,8 @@ export const MODULOS = [
     "autor": "No confirmado (Udemy bloqueó la página)",
     "idioma": "es",
     "nivel": "basico",
-    "por_que": "Curso en español de técnicas básicas, aprovechable con la membresía anual de Udemy."
+    "por_que": "Curso en español de técnicas básicas, aprovechable con la membresía anual de Udemy.",
+    "pago": true
    }
   ],
   "hitos": [
@@ -465,11 +500,13 @@ export const MODULOS = [
   "drills": [
    {
     "nombre": "Patada circular en saco por volumen (acondicionamiento progresivo)",
-    "como": "Patea un saco blando o de dureza media con la tibia, a velocidad media y con técnica limpia, volviendo a la guardia después de cada patada. Aumenta el volumen poco a poco. No uses sacos rellenos de arena dura ni patees árboles o postes, y no hagas prácticas como rodar botellas o palos con presión fuerte sin supervisión. Si aparece un hematoma o un bulto en la tibia, descansa hasta que desaparezca antes de volver a subir el volumen.",
-    "dosis": "2 o 3 veces por semana, nunca en días seguidos. Empieza con 3 series de 20 por pierna y sube 10 repeticiones por serie cada 1 o 2 semanas, solo si no hay dolor, hasta llegar a 3 series de 50",
+    "como": "Patea un saco blando o de dureza media con la tibia, a velocidad media y con técnica limpia, volviendo a la guardia después de cada patada. Sigue la tabla de la dosis y no te la saltes aunque te sientas bien. No uses sacos rellenos de arena dura ni patees árboles o postes, y no hagas prácticas como rodar botellas o palos con presión fuerte sin supervisión. Si aparece un hematoma o un bulto en la tibia, descansa hasta que desaparezca y vuelve una semana atrás en la tabla.",
+    "dosis": "2 o 3 veces por semana, nunca en días seguidos. Semanas 1 y 2: 3 series de 15 patadas por pierna. Suma 5 patadas por serie cada semana solo si no hay dolor. Techo: 3 series de 40 por pierna",
     "nivel": "intermedio",
-    "min": 20,
-    "solo": true
+    "min": 15,
+    "solo": true,
+    "tipo": "fisico",
+    "freq": 3
    },
    {
     "nombre": "Combinaciones de puño y patada",
@@ -539,7 +576,8 @@ export const MODULOS = [
     "autor": "No confirmado (Udemy bloqueó la página)",
     "idioma": "es",
     "nivel": "intermedio",
-    "por_que": "Curso en español que combina el enfoque tradicional y el de ring. Complementa los fundamentos con contexto competitivo."
+    "por_que": "Curso en español que combina el enfoque tradicional y el de ring. Complementa los fundamentos con contexto competitivo.",
+    "pago": true
    }
   ],
   "hitos": [
@@ -631,7 +669,29 @@ export const MODULOS = [
     "dosis": "3 a 5 asaltos de 3 minutos, con 1 minuto de descanso, una vez por semana",
     "nivel": "avanzado",
     "min": 20,
-    "solo": false
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 1
+   },
+   {
+    "nombre": "Codo tras atrapar la patada",
+    "como": "Siempre sobre colchoneta, con espinilleras y coderas acolchadas o con el compañero sosteniendo un pao a la altura de la cara. El compañero lanza una patada al cuerpo a baja potencia. Absórbela con el brazo y el costado y envuelve la pierna por debajo. Sin soltarla, da un paso corto hacia él, tira de la pierna atrapada hacia tu cadera para que pierda el equilibrio y lanza un codo horizontal corto al pao con el brazo libre. Suelta la pierna y vuelve a la guardia. Quien patea practica la defensa: baja la mano del lado atrapado para cubrir la cara y entra en clinch. Nunca codos sin protección a la cara del compañero.",
+    "dosis": "3 series de 8 repeticiones por lado y por rol, una vez por semana",
+    "nivel": "avanzado",
+    "min": 20,
+    "solo": false,
+    "tipo": "tecnica",
+    "freq": 1
+   },
+   {
+    "nombre": "Contra estilo Saenchai: barrer la pierna de apoyo",
+    "como": "Sobre colchoneta y a velocidad baja. El compañero lanza una patada media o un teep a ritmo lento. En lugar de chequear, da un paso diagonal hacia fuera, atrapa o desvía la pierna con la mano del mismo lado y, en el mismo tiempo, barre con la planta de tu pie la pierna de apoyo a la altura del tobillo o la pantorrilla, tirando de la pierna atrapada en sentido contrario. Acompaña la caída del compañero y suéltalo para que amortigüe. Sin proyecciones de cadera ni patadas a la rodilla. Cambien de rol en cada asalto.",
+    "dosis": "3 asaltos de 2 minutos por persona, con 30 segundos de descanso, una vez por semana",
+    "nivel": "avanzado",
+    "min": 15,
+    "solo": false,
+    "tipo": "tecnica",
+    "freq": 1
    }
   ],
   "recursos": [
@@ -652,6 +712,15 @@ export const MODULOS = [
     "idioma": "en",
     "nivel": "avanzado",
     "por_que": "Compara la puntuación tradicional tailandesa con la internacional: sistema de 10 puntos, valoración de toda la pelea y el papel del cuarto asalto. Es ideal antes de tu primer sparring con puntuación."
+   },
+   {
+    "titulo": "TÉCNICA DE CONTRAATAQUE 3 - TUTORIAL MUAY THAI - [ALBERTO KBZA Y CARLITOS RODRIGUEZ]",
+    "url": "https://www.youtube.com/watch?v=mHZ842VHZb8",
+    "plataforma": "youtube",
+    "autor": "Fight Doctrine",
+    "idioma": "es",
+    "nivel": "avanzado",
+    "por_que": "Un contraataque de Muay Thai explicado en español. Fíjate en cómo la defensa y la respuesta salen en el mismo tiempo."
    }
   ],
   "hitos": [
@@ -861,7 +930,8 @@ export const MODULOS = [
     "autor": "No confirmado",
     "idioma": "es",
     "nivel": "basico",
-    "por_que": "Curso general de Muay Thai en español, incluido en Udemy."
+    "por_que": "Curso general de Muay Thai en español, incluido en Udemy.",
+    "pago": true
    }
   ],
   "hitos": [
@@ -985,7 +1055,9 @@ export const MODULOS = [
     "dosis": "2 a 3 series de cada ejercicio (isométricos de 10 segundos, dominadas y remos de 6 a 10 repeticiones), 2 veces por semana",
     "nivel": "intermedio",
     "min": 25,
-    "solo": true
+    "solo": true,
+    "tipo": "fisico",
+    "freq": 2
    }
   ],
   "recursos": [
@@ -1050,7 +1122,8 @@ export const MODULOS = [
     "autor": "No confirmado",
     "idioma": "en",
     "nivel": "intermedio",
-    "por_que": "Entrenamiento intensivo de Muay Thai en Udemy, como complemento."
+    "por_que": "Entrenamiento intensivo de Muay Thai en Udemy, como complemento.",
+    "pago": true
    }
   ],
   "hitos": [
@@ -1172,7 +1245,9 @@ export const MODULOS = [
     "dosis": "4 a 6 rondas de 3 minutos con 1 minuto de descanso, 1 o 2 veces por semana",
     "nivel": "avanzado",
     "min": 22,
-    "solo": false
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 2
    }
   ],
   "recursos": [
@@ -1306,7 +1381,9 @@ export const MODULOS = [
     "dosis": "3 a 5 asaltos de 3 minutos con 1 minuto de descanso, 1 o 2 veces por semana",
     "nivel": "basico",
     "min": 20,
-    "solo": false
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 2
    }
   ],
   "recursos": [
@@ -1327,6 +1404,15 @@ export const MODULOS = [
     "idioma": "en",
     "nivel": "basico",
     "por_que": "Explica cómo controlar la intensidad en el sparring ligero y de toque, que es la base de la etiqueta del sparring."
+   },
+   {
+    "titulo": "¿Cómo hacer SPARRING? Consideraciones Importantes - Boxeo, Muay Thai o Kick-Boxing",
+    "url": "https://www.youtube.com/watch?v=nQbcWotjjT0",
+    "plataforma": "youtube",
+    "autor": "Valhalla Training Camp",
+    "idioma": "es",
+    "nivel": "basico",
+    "por_que": "Reglas para un sparring seguro explicadas en español: intensidad, equipo y respeto al compañero. Velo antes del primer play sparring."
    }
   ],
   "hitos": [
@@ -1471,11 +1557,13 @@ export const MODULOS = [
    },
    {
     "nombre": "Acondicionamiento progresivo de la tibia",
-    "como": "Da patadas suaves al saco con la parte media e inferior de la tibia. Sube de forma gradual la intensidad y el número de patadas a lo largo de las semanas. No uses palos, botellas ni rodillos duros. Si aparece un dolor puntual en el hueso que empeora al cargar peso, para y consulta a un médico.",
-    "dosis": "2 o 3 veces por semana, de 30 a 50 patadas por pierna, con un aumento máximo del 10% semanal",
+    "como": "Es la misma tabla del módulo de defensa con la tibia: si ya la empezaste allí, sigue en la semana en que ibas, no vuelvas a empezar ni la dupliques. Da patadas suaves al saco con la parte media e inferior de la tibia. No uses palos, botellas ni rodillos duros. Si aparece un dolor puntual en el hueso que empeora al cargar peso, para y consulta a un médico.",
+    "dosis": "2 o 3 veces por semana, nunca en días seguidos. Semanas 1 y 2: 3 series de 15 patadas por pierna. Suma 5 patadas por serie cada semana solo si no hay dolor. Techo: 3 series de 40 por pierna",
     "nivel": "intermedio",
-    "min": 10,
-    "solo": true
+    "min": 15,
+    "solo": true,
+    "tipo": "fisico",
+    "freq": 3
    }
   ],
   "recursos": [
@@ -1672,7 +1760,9 @@ export const MODULOS = [
     "dosis": "1 o 2 veces por semana, solo si ya tienes una base sólida, con al menos un día de descanso después",
     "nivel": "avanzado",
     "min": 120,
-    "solo": false
+    "solo": false,
+    "tipo": "fisico",
+    "freq": 2
    },
    {
     "nombre": "Estudio de peleas",
@@ -1680,7 +1770,9 @@ export const MODULOS = [
     "dosis": "1 pelea por semana, más 2 asaltos de sombra de 3 minutos con las ideas elegidas",
     "nivel": "avanzado",
     "min": 60,
-    "solo": true
+    "solo": true,
+    "tipo": "estudio",
+    "freq": 1
    }
   ],
   "recursos": [

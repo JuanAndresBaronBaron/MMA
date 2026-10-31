@@ -1,1 +1,98 @@
-/* dash */
+/* Inicio (dashboard): encabezado, primeros pasos, KPI, gráfico y columnas */
+.dash-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* encabezado */
+.dash-h{display:flex;align-items:flex-end;justify-content:space-between;gap:12px 16px;flex-wrap:wrap;margin:0 0 16px}
+.dash-hi{min-width:0}
+.dash-hi h2{margin:0;font-size:24px;font-weight:800;letter-spacing:-.02em;overflow-wrap:anywhere}
+.dash-hi p{margin:4px 0 0;font-size:14px}
+.dash-date::first-letter{text-transform:uppercase}
+.dash-hi a{font-weight:650}
+.dash-h-act{display:flex;gap:8px;flex-wrap:wrap}
+
+/* banner de datos de ejemplo */
+.demo-bar{display:flex;align-items:center;gap:10px;padding:10px 14px;margin-bottom:16px;border-radius:12px;background:var(--info-bg);color:var(--info);font-weight:600;font-size:13.5px;border:1px solid color-mix(in srgb,var(--info) 30%,transparent)}
+.demo-bar span{flex:1;min-width:0}
+.demo-bar .btn-link{color:inherit;text-decoration:underline;padding:6px 4px;font-size:13.5px}
+
+/* primeros pasos */
+.setup{border-color:color-mix(in srgb,var(--accent) 35%,var(--line));background:linear-gradient(160deg,color-mix(in srgb,var(--accent) 8%,var(--surface)),var(--surface) 60%)}
+.setup-prog{display:flex;align-items:center;gap:12px;margin:0 0 10px}
+.setup-bar{flex:1;height:8px;border-radius:4px;background:var(--surface2);overflow:hidden}
+.setup-bar span{display:block;height:100%;background:var(--ok);border-radius:4px;transition:width .4s}
+.setup-list{list-style:none;margin:0;padding:0}
+.setup-list li + li{border-top:1px solid var(--line)}
+.setup-i{display:flex;align-items:center;gap:12px;width:100%;padding:11px 6px;border-radius:10px;text-align:left;color:inherit;min-height:44px}
+.setup-i:hover{background:var(--surface2)}
+.setup-ck{width:28px;height:28px;border-radius:50%;flex:none;display:grid;place-items:center;font-weight:800;font-size:13px;border:2px solid var(--line2);color:var(--muted)}
+.setup-ck .ic{width:16px;height:16px}
+.setup-tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.setup-tx b{font-weight:650}
+.setup-go{color:var(--muted);flex:none}
+.setup-list li.done .setup-ck{background:var(--ok);border-color:var(--ok);color:#fff}
+.setup-list li.done .setup-tx b{color:var(--muted);text-decoration:line-through;text-decoration-color:color-mix(in srgb,var(--muted) 60%,transparent)}
+.setup-demo{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px;padding-top:14px;border-top:1px dashed var(--line2)}
+.setup-demo p{flex:1 1 240px;margin:0}
+.dash-empty-cta{justify-content:center}
+.dash-empty{display:flex;flex-direction:column;align-items:center}
+.dash-empty-ic{width:64px;height:64px;border-radius:50%;display:grid;place-items:center;background:var(--accent-bg);color:var(--accent2)}
+
+/* KPI */
+.kpis.dash-kpis{grid-template-columns:repeat(5,minmax(0,1fr))}
+.dash-kpis .kpi{flex-direction:column;align-items:flex-start;gap:10px;font:inherit;color:inherit;text-align:left;cursor:default}
+.dash-kpis a.kpi,.dash-kpis button.kpi{cursor:pointer}
+.dash-kpis button.kpi:hover{border-color:var(--line2);transform:translateY(-1px)}
+.dash-kpis .kpi > div{width:100%}
+.dash-kpis .kpi span:not(.kpi-ic){display:block}
+.kpi-ic.c5{background:var(--accent-bg);color:var(--accent2)}
+.kpi-sub{display:block;margin-top:3px;font-size:12px;font-weight:600;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
+.kpi-sub.delta.up{color:var(--ok)} .kpi-sub.delta.down{color:var(--err)}
+
+/* columnas */
+.dash-cols{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:16px;align-items:start}
+.dash-col{min-width:0;display:flex;flex-direction:column;gap:16px}
+.dash-col > .card{margin:0}
+.dash-row .li-act,.dash-col .li .li-act{flex:none}
+.dash-amt{font-weight:700;color:var(--text);font-variant-numeric:tabular-nums}
+.dash-row .li-link,.dash-row .li-main{min-width:0}
+.dash-row .pill{white-space:normal;max-width:100%}
+.dash-next{font-weight:650;color:var(--text);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dash-days{font-size:12px;font-weight:800;color:var(--warn);font-variant-numeric:tabular-nums;padding:0 4px}
+.dash-more{margin:8px 10px 0}
+.bday-hoy{background:var(--ok-bg)}
+.bday-hoy:hover{background:var(--ok-bg)}
+
+/* gráfico de ingresos */
+.dchart{padding-top:6px}
+.dc-plot{height:180px;padding-top:22px}
+.dc-area{position:relative;height:100%;display:flex;align-items:flex-end;gap:10px;border-bottom:1px solid var(--line)}
+.dc-col{position:relative;flex:1;height:100%;min-width:0;display:flex;justify-content:center}
+.dc-bar{position:absolute;bottom:0;width:100%;max-width:46px;min-height:3px;border-radius:8px 8px 3px 3px;background:linear-gradient(180deg,var(--accent2),var(--accent));transition:height .5s}
+.dc-col.cur .dc-bar{background:repeating-linear-gradient(135deg,color-mix(in srgb,var(--accent) 55%,transparent) 0 6px,color-mix(in srgb,var(--accent) 30%,transparent) 6px 12px);border:1px dashed var(--accent)}
+.dc-v{position:absolute;left:50%;transform:translateX(-50%);font-size:11px;font-weight:650;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+.dc-avg{position:absolute;left:0;right:0;border-top:1.5px dashed var(--muted);opacity:.7;z-index:1;pointer-events:none}
+.dc-x{display:flex;gap:10px;margin-top:6px}
+.dc-x span{flex:1;min-width:0;text-align:center;font-size:12px;color:var(--muted);white-space:nowrap}
+.dc-x small{display:block;font-size:10.5px;font-weight:700;color:var(--accent2)}
+[data-theme=light] .dc-x small{color:var(--accent)}
+
+@media (max-width:1279px){
+  .kpis.dash-kpis{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media (max-width:900px){
+  .dash-cols{grid-template-columns:minmax(0,1fr)}
+}
+@media (max-width:760px){
+  .dash-h{align-items:stretch}
+  .dash-hi h2{font-size:20px}
+  .dash-h-act{width:100%}
+  .dash-h-act .btn{flex:1 1 100%;justify-content:center}
+  .dash-new{display:none!important}
+  .kpis.dash-kpis{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .dash-kpis .kpi:last-child:nth-child(odd){grid-column:1 / -1}
+  .kpi-sub{white-space:normal}
+  .dc-area,.dc-x{gap:6px}
+  .dc-v{font-size:10px}
+  .setup-demo .btn{flex:1 1 100%;justify-content:center;white-space:normal}
+  .dash-empty-cta .btn{flex:1 1 100%;justify-content:center;white-space:normal}
+}

@@ -42,7 +42,7 @@ export const PLAN = [
   "puntos": [
    "Trabaja el módulo Guardia cerrada, barridas clásicas y el inicio de pie, con la ruptura de postura y control de mangas y la cadena de barridas desde guardia cerrada.",
    "Aprende el trío clásico del módulo Sumisiones de alto porcentaje: triángulo, llave de brazo y omoplata desde la guardia cerrada.",
-   "Suma la llave de brazo desde la montada, la kimura y la americana desde el control lateral, y el mata león (rear naked choke) con pelea de manos.",
+   "Suma la llave de brazo desde la montada, la kimura y la americana desde el control lateral, y el mataleón (rear naked choke) con pelea de manos.",
    "Desde arriba, practica abrir la guardia cerrada sin perder la postura.",
    "Recuerda el principio rector: posición antes que sumisión."
   ]
@@ -145,7 +145,7 @@ export const MODULOS = [
   "conceptos": [
    {
     "titulo": "Jerarquía de posiciones y sistema de puntos",
-    "explicacion": "En BJJ no todas las posiciones valen lo mismo. De mejor a peor para quien está arriba: espalda con ganchos (más control y la amenaza del mataleón), montada, rodilla en el vientre, cien kilos (control lateral), norte-sur y media guardia por arriba. En la base está la guardia, que es una posición neutral y defensiva para quien está abajo. La regla es posición antes que sumisión: primero ganas y estabilizas la posición (3 segundos en competición IBJJF) y luego finalizas. En competición IBJJF se otorgan 2 puntos por derribo, 2 por raspado, 2 por rodilla en el vientre, 3 por pasaje de guardia, 4 por montada y 4 por toma de espalda. La toma de espalda puntúa cuando tienes los dos ganchos puestos o un triángulo de cuerpo (body triangle, piernas cruzadas en forma de triángulo alrededor de la cintura del rival).",
+    "explicacion": "En BJJ no todas las posiciones valen lo mismo. De mejor a peor para quien está arriba: espalda con ganchos (más control y la amenaza del mataleón), montada, rodilla en el vientre, cien kilos (control lateral), norte-sur y media guardia por arriba. En la base está la guardia, que es una posición neutral y defensiva para quien está abajo. La regla es posición antes que sumisión: primero ganas y estabilizas la posición (3 segundos en competición IBJJF) y luego finalizas. En competición IBJJF se otorgan 2 puntos por derribo, 2 por raspado, 2 por rodilla en el vientre, 3 por pase de guardia, 4 por montada y 4 por toma de espalda. La toma de espalda puntúa cuando tienes los dos ganchos puestos o un triángulo de cuerpo (body triangle, piernas cruzadas en forma de triángulo alrededor de la cintura del rival).",
     "puntos": [
      "Orden práctico: espalda, montada, rodilla en el vientre, cien kilos o norte-sur, media guardia arriba y guardia.",
      "Posición antes que sumisión: si pierdes la posición por intentar una llave, retrocedes.",
@@ -298,8 +298,27 @@ export const MODULOS = [
     "como": "Tu compañero te sujeta en cien kilos con presión moderada y sin atacar sumisiones. Tú solo armas tus marcos, mantienes los codos dentro y respiras lento por la nariz. No intentes escapar todavía: el objetivo es aguantar tranquilo y notar cuándo él se mueve.",
     "dosis": "3 rounds de 1 minuto por lado con 30 segundos de descanso",
     "nivel": "basico",
-    "min": 6,
+    "min": 10,
     "solo": false
+   },
+   {
+    "nombre": "Mantener montada y cien kilos",
+    "como": "Empieza arriba en la montada o en cien kilos. El compañero de abajo intenta escapar con upa, codo-rodilla o escape de cadera a ritmo medio. Tu único objetivo es mantener la posición: baja la cadera, abre la base con las rodillas y los pies, controla la cabeza o un brazo y sigue su movimiento en lugar de apretar con fuerza. Si escapa, vuelvan a empezar. Sin sumisiones. Cambien de rol en cada ronda.",
+    "dosis": "4 rondas de 1 minuto por rol con 30 segundos de descanso",
+    "nivel": "basico",
+    "min": 12,
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 3
+   },
+   {
+    "nombre": "Tortuga: volver a la guardia o sentarse",
+    "como": "Ponte en tortuga: rodillas y codos juntos, mentón pegado al pecho y manos protegiendo el cuello. El compañero se coloca al lado o detrás y te empuja con poca fuerza. Desde ahí sal de dos formas: rueda sobre el hombro hacia el lado del compañero para volver a la guardia, o siéntate sacando una pierna (sit-out) y gira hacia él. Nunca dejes que meta los ganchos ni que llegue al cuello. Cambien de rol en cada ronda.",
+    "dosis": "3 rondas de 1 minuto por rol con 30 segundos de descanso",
+    "nivel": "basico",
+    "min": 10,
+    "solo": false,
+    "tipo": "tecnica"
    }
   ],
   "recursos": [
@@ -373,7 +392,8 @@ export const MODULOS = [
     "autor": "Manasses Filho y Alexandra Kovacs",
     "idioma": "en",
     "nivel": "basico",
-    "por_que": "Plan de 4 semanas con entrenamiento seguro, agarres, posiciones básicas, escapes y preparación física; encaja con la membresía de Udemy."
+    "por_que": "Plan de 4 semanas con entrenamiento seguro, agarres, posiciones básicas, escapes y preparación física; encaja con la membresía de Udemy.",
+    "pago": true
    }
   ],
   "hitos": [
@@ -484,7 +504,9 @@ export const MODULOS = [
     "dosis": "4 a 6 rounds de 2 minutos con 1 minuto de descanso",
     "nivel": "intermedio",
     "min": 16,
-    "solo": false
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 3
    },
    {
     "nombre": "De media guardia plana a media guardia útil",
@@ -642,7 +664,9 @@ export const MODULOS = [
     "dosis": "5 rounds de 3 minutos con 1 minuto de descanso, 1 vez por semana",
     "nivel": "avanzado",
     "min": 20,
-    "solo": false
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 1
    }
   ],
   "recursos": [
@@ -654,6 +678,24 @@ export const MODULOS = [
     "idioma": "en",
     "nivel": "avanzado",
     "por_que": "Checklist conceptual: detener el daño, ganar dentro de la inmovilización y no ceder la siguiente."
+   },
+   {
+    "titulo": "4 ESCAPES fáciles y efectivos de SIDE CONTROL (100kg)",
+    "url": "https://www.youtube.com/watch?v=3Mz1_W-mXDU",
+    "plataforma": "youtube",
+    "autor": "JIU JITSU PASO A PASO",
+    "idioma": "es",
+    "nivel": "intermedio",
+    "por_que": "Cuatro escapes de cien kilos en español para encadenarlos: si uno falla, pasa al siguiente, que es la idea de escapar como sistema."
+   },
+   {
+    "titulo": "3 MUST-KNOW Side Control Escapes (Lachlan Giles)",
+    "url": "https://www.youtube.com/watch?v=by85KB6wf8A",
+    "plataforma": "youtube",
+    "autor": "Absolute MMA St Kilda - Melbourne",
+    "idioma": "en",
+    "nivel": "avanzado",
+    "por_que": "Tres escapes de control lateral con los marcos y el momento de cada uno. Complementa el drill de escape en la transición."
    }
   ],
   "hitos": [
@@ -671,7 +713,7 @@ export const MODULOS = [
   "corto": "Base",
   "sub": "Romper la postura, barrer con tijera, hip bump y flor, abrir la guardia desde arriba y llegar al suelo con derribos seguros.",
   "nivel": "basico",
-  "resumen": "Este módulo construye la base del juego de guardia y de pasaje. Aprendes a romper la postura del rival desde la guardia cerrada, a moverte en ángulo y a encadenar las tres barridas fundamentales: tijera, hip bump y flor. Desde arriba aprendes a mantener la postura y a abrir la guardia cerrada, que es el primer paso de cualquier pase. También ves cómo empieza el combate de pie con el double leg, el single leg y el osoto gari, y cuándo conviene jalar guardia según el reglamento. Las técnicas se describen hacia un lado. Para el lado contrario, o si eres zurdo, solo tienes que reflejarlas. Si vienes del MMA, cada concepto señala qué cambia cuando hay golpes.",
+  "resumen": "Este módulo construye la base del juego de guardia y de pase. Aprendes a romper la postura del rival desde la guardia cerrada, a moverte en ángulo y a encadenar las tres barridas fundamentales: tijera, hip bump y flor. Desde arriba aprendes a mantener la postura y a abrir la guardia cerrada, que es el primer paso de cualquier pase. También ves cómo empieza el combate de pie con el double leg, el single leg y el osoto gari, y cuándo conviene jalar guardia según el reglamento. Las técnicas se describen hacia un lado. Para el lado contrario, o si eres zurdo, solo tienes que reflejarlas. Si vienes del MMA, cada concepto señala qué cambia cuando hay golpes.",
   "conceptos": [
    {
     "titulo": "Guardia cerrada: postura, control y ataques",
@@ -782,6 +824,15 @@ export const MODULOS = [
     "nivel": "basico",
     "min": 5,
     "solo": true
+   },
+   {
+    "nombre": "Recuperar guardia con escape de cadera y marco",
+    "como": "El compañero empieza a tu lado, ya casi pasando tu guardia, y avanza despacio. Pon el antebrazo como marco en su cuello o su hombro y la otra mano en su cadera. Con ese marco frena su peso, haz el escape de cadera hacia atrás para abrir espacio y mete la rodilla entre los dos. Termina con las piernas otra vez delante de él, en guardia. Él solo empuja y busca el cien kilos, sin sumisiones. Cambien de rol en cada ronda.",
+    "dosis": "4 rondas de 1 minuto por rol con 30 segundos de descanso",
+    "nivel": "basico",
+    "min": 12,
+    "solo": false,
+    "tipo": "tecnica"
    }
   ],
   "recursos": [
@@ -886,7 +937,7 @@ export const MODULOS = [
     ]
    },
    {
-    "titulo": "Pasaje de guardia: toreando, knee cut y over-under",
+    "titulo": "Pase de guardia: toreando, knee cut y over-under",
     "explicacion": "Pasar la guardia es superar las piernas del rival y llegar a su costado, la posición de cien kilos o side control. En el toreando, de pie, controlas sus rodillas o el pantalón a la altura de las rodillas, empujas sus piernas hacia un lado y corres hacia el otro, como un torero. En el knee cut o knee slice cortas con tu rodilla atravesada sobre su muslo hacia el colchón, con underhook o crossface, y aplanas su hombro. En el over-under pasas un brazo por debajo de una de sus piernas y el otro por encima de la otra. La pierna que abrazas por debajo queda sobre tu hombro mientras lo apilas, y pasas hacia el lado del brazo de arriba, que es la pierna que inmovilizas contra el colchón. Los pases se combinan: si el rival se resiste a uno, se abre otro.",
     "puntos": [
      "Primero controla, con agarres o con la posición de tu cadera, y después pasa.",
@@ -996,7 +1047,8 @@ export const MODULOS = [
     "autor": "Desconocido (Udemy bloqueó el fetch)",
     "idioma": "en",
     "nivel": "intermedio",
-    "por_que": "Curso estructurado de pasajes, incluido en la membresía de Udemy."
+    "por_que": "Curso estructurado de pases, incluido en la membresía de Udemy.",
+    "pago": true
    },
    {
     "titulo": "Brazilian Jiu Jitsu Techniques Vol. 3 - Sweeps and Reversals",
@@ -1005,7 +1057,17 @@ export const MODULOS = [
     "autor": "Desconocido (Udemy bloqueó el fetch)",
     "idioma": "en",
     "nivel": "intermedio",
-    "por_que": "Curso de barridas que complementa el de pasajes de la misma serie."
+    "por_que": "Curso de barridas que complementa el de pases de la misma serie.",
+    "pago": true
+   },
+   {
+    "titulo": "Cómo Pasar la Guardia en Jiu Jitsu | Técnica Efectiva de Guard Pass (BJJ en Español)",
+    "url": "https://www.youtube.com/watch?v=uh6ZuR1G5Qc",
+    "plataforma": "youtube",
+    "autor": "TARZAN TV MMA",
+    "idioma": "es",
+    "nivel": "intermedio",
+    "por_que": "Un pase de guardia explicado en español, útil como primera referencia antes de los videos en inglés del módulo."
    }
   ],
   "hitos": [
@@ -1023,7 +1085,7 @@ export const MODULOS = [
   "corto": "Avanzado",
   "sub": "Deep half, single leg X, X-guard, body lock, leg drag, presión, defensa de leglocks al pasar y cómo adaptar todo al formato.",
   "nivel": "avanzado",
-  "resumen": "Este módulo trabaja las guardias que te ponen debajo del rival y conectan con los leglocks: media guardia profunda, single leg X y X-guard. Desde arriba aprendes los pases modernos más fuertes: body lock, leg drag y pasaje de presión, que funcionan muy bien sin gi y en MMA, y aprendes a pasar sin quedar expuesto a un heel hook. También revisas las diferencias tácticas entre gi y no-gi y las reglas de leglocks según el reglamento. La seguridad es parte de la técnica en este nivel, sobre todo con los heel hooks y las inversiones.",
+  "resumen": "Este módulo trabaja las guardias que te ponen debajo del rival y conectan con los leglocks: media guardia profunda, single leg X y X-guard. Desde arriba aprendes los pases modernos más fuertes: body lock, leg drag y pase de presión, que funcionan muy bien sin gi y en MMA, y aprendes a pasar sin quedar expuesto a un heel hook. También revisas las diferencias tácticas entre gi y no-gi y las reglas de leglocks según el reglamento. La seguridad es parte de la técnica en este nivel, sobre todo con los heel hooks y las inversiones.",
   "conceptos": [
    {
     "titulo": "Media guardia profunda (deep half), single leg X y X-guard",
@@ -1041,8 +1103,8 @@ export const MODULOS = [
     ]
    },
    {
-    "titulo": "Pasaje de presión, body lock y leg drag",
-    "explicacion": "Son de los pases modernos más fuertes. En el body lock cierras tus brazos alrededor de la cintura del rival, a la altura de la zona lumbar y cerca de la cadera, con los codos pegados a sus caderas y la cabeza o el pecho presionando su esternón o su abdomen. Así inmovilizas su pelvis y caminas tus piernas para liberar la pierna atrapada. Es uno de los pases característicos de Gordon Ryan, popularizado en no-gi por el sistema de John Danaher, y funciona mucho en MMA. En el leg drag llevas sus piernas hacia un lado de modo que su rodilla cruce la línea media de su cuerpo, y pegas tu cadera contra la suya para que no pueda volver a girar y reguardar. En el pasaje de presión (smash o pressure passing) vas pecho con pecho, con crossface y peso sobre su hombro, y avanzas las piernas de a poco. La presión se aplica con la cadera baja, no con los brazos.",
+    "titulo": "Pase de presión, body lock y leg drag",
+    "explicacion": "Son de los pases modernos más fuertes. En el body lock cierras tus brazos alrededor de la cintura del rival, a la altura de la zona lumbar y cerca de la cadera, con los codos pegados a sus caderas y la cabeza o el pecho presionando su esternón o su abdomen. Así inmovilizas su pelvis y caminas tus piernas para liberar la pierna atrapada. Es uno de los pases característicos de Gordon Ryan, popularizado en no-gi por el sistema de John Danaher, y funciona mucho en MMA. En el leg drag llevas sus piernas hacia un lado de modo que su rodilla cruce la línea media de su cuerpo, y pegas tu cadera contra la suya para que no pueda volver a girar y reguardar. En el pase de presión (smash o pressure passing) vas pecho con pecho, con crossface y peso sobre su hombro, y avanzas las piernas de a poco. La presión se aplica con la cadera baja, no con los brazos.",
     "puntos": [
      "En el body lock cierra las manos alrededor de su cintura o zona lumbar, con los codos pegados a sus caderas.",
      "En el leg drag su rodilla cruza la línea media de su cuerpo y tu cadera se pega a su glúteo.",
@@ -1071,7 +1133,7 @@ export const MODULOS = [
     ]
    },
    {
-    "titulo": "Diferencias gi vs no-gi en guardias y pasajes",
+    "titulo": "Diferencias gi vs no-gi en guardias y pases",
     "explicacion": "Con gi hay fricción y agarres en mangas, solapas y pantalón, lo que hace viables la araña, el lazo, la De la Riva con agarre de manga, el toreando agarrando el pantalón y la guardia cerrada con ataques de solapa. Sin gi el sudor reduce la fricción, así que dominan el control de cabeza y muñecas, los underhooks, el body lock, la mariposa, la single leg X y la X-guard. Las reglas de leglocks cambian según el formato. En IBJJF con gi los heel hooks están prohibidos en todos los cinturones. En IBJJF no-gi están permitidos, junto con el knee reaping, solo para cinturones marrón y negro en las categorías adulto y master. En ADCC y en la mayoría de eventos de submission-only están permitidos. Los slams están prohibidos en IBJJF y en ADCC y se castigan con descalificación. Para MMA el no-gi es lo más transferible, pero el gi enseña precisión y paciencia en los agarres.",
     "puntos": [
      "Con gi predominan las guardias de agarre, el ritmo lento y el control.",
@@ -1117,10 +1179,40 @@ export const MODULOS = [
     "dosis": "4 rondas de 3 minutos (2 con gi y 2 sin gi), 1 minuto de descanso",
     "nivel": "avanzado",
     "min": 20,
-    "solo": false
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 2
    }
   ],
-  "recursos": [],
+  "recursos": [
+   {
+    "titulo": "Keeping The Knee Line - Bending the knee by Lachlan Giles",
+    "url": "https://www.youtube.com/watch?v=Pl_2oDznYKc",
+    "plataforma": "youtube",
+    "autor": "BJJ Fanatics",
+    "idioma": "en",
+    "nivel": "avanzado",
+    "por_que": "La base de la defensa de heel hook: mantener la rodilla dentro de la línea y doblarla a tiempo. Velo antes del drill de sacar la rodilla del ashi garami."
+   },
+   {
+    "titulo": "5 Steps of BODY LOCK PASS by Lachlan Giles",
+    "url": "https://www.youtube.com/watch?v=CvC6qVljfek",
+    "plataforma": "youtube",
+    "autor": "Bernardo Faria BJJ Fanatics",
+    "idioma": "en",
+    "nivel": "avanzado",
+    "por_que": "El body lock pass explicado por etapas, del agarre a la estabilización. Sirve para el drill de body lock a la caminata de piernas."
+   },
+   {
+    "titulo": "SINGLE LEG X: las mejores entradas paso a paso",
+    "url": "https://www.youtube.com/watch?v=1KiK0pAR7W0",
+    "plataforma": "youtube",
+    "autor": "JIU JITSU PASO A PASO",
+    "idioma": "es",
+    "nivel": "avanzado",
+    "por_que": "Entradas a single leg X explicadas en español. Úsalo como guía para el drill de entradas a single leg X y X-guard."
+   }
+  ],
   "hitos": [
    "Entro a la deep half sin quedarme plano y mantengo la cabeza pegada a su muslo.",
    "Controlo el talón en la single leg X y paso a la X-guard o me levanto sin soltar la pierna.",
@@ -1133,11 +1225,11 @@ export const MODULOS = [
   "id": "guardias-3"
  },
  {
-  "titulo": "Sumisiones de alto porcentaje: mata león, trío de guardia, kimura y americana",
+  "titulo": "Sumisiones de alto porcentaje: mataleón, trío de guardia, kimura y americana",
   "corto": "Básico",
   "sub": "Controla primero, aísla una parte del cuerpo y finaliza con técnica, no con fuerza.",
   "nivel": "basico",
-  "resumen": "En este módulo aprendes las sumisiones que más funcionan en todos los niveles: el mata león, el triángulo, la llave de brazo (desde la guardia y desde la montada), la omoplata, la kimura, la americana y la guillotina básica. La regla principal es la posición antes que la sumisión: primero aíslas un brazo o el cuello y controlas el resto del cuerpo del rival, y solo después finalizas. Cada finalización se aprende desde posiciones estables como la espalda, la montada, la guardia cerrada y el control lateral. La seguridad va en todo momento: golpeas pronto cuando te atrapan y sueltas al instante cuando tu compañero golpea.",
+  "resumen": "En este módulo aprendes las sumisiones que más funcionan en todos los niveles: el mataleón, el triángulo, la llave de brazo (desde la guardia y desde la montada), la omoplata, la kimura, la americana y la guillotina básica. La regla principal es la posición antes que la sumisión: primero aíslas un brazo o el cuello y controlas el resto del cuerpo del rival, y solo después finalizas. Cada finalización se aprende desde posiciones estables como la espalda, la montada, la guardia cerrada y el control lateral. La seguridad va en todo momento: golpeas pronto cuando te atrapan y sueltas al instante cuando tu compañero golpea.",
   "conceptos": [
    {
     "titulo": "Principio rector: posición antes que sumisión",
@@ -1146,7 +1238,7 @@ export const MODULOS = [
      "Aísla, controla y luego finaliza.",
      "Si pierdes la sumisión, recupera la posición antes de intentar otra.",
      "Golpea pronto y suelta al instante cuando tu compañero golpee.",
-     "Prioriza las sumisiones de alto porcentaje: mata león, triángulo, llave de brazo, kimura y guillotina.",
+     "Prioriza las sumisiones de alto porcentaje: mataleón, triángulo, llave de brazo, kimura y guillotina.",
      "Aplica cada finalización de forma lenta y progresiva en el entrenamiento."
     ],
     "errores": [
@@ -1157,8 +1249,8 @@ export const MODULOS = [
     ]
    },
    {
-    "titulo": "Mata león (rear naked choke)",
-    "explicacion": "El mata león es una estrangulación sanguínea desde la espalda. Desde el seatbelt (agarre cruzado en la espalda), si estranguas con el brazo derecho, ese brazo pasa por encima del hombro derecho del rival y rodea su cuello de modo que tu codo queda justo bajo su barbilla. Tu mano derecha agarra tu propio bíceps izquierdo, y la mano izquierda va detrás de su cabeza o sobre tu propio hombro. Para cerrar, juntas los codos y expandes el pecho. Antes de cerrar hay que ganar la pelea de manos: primero controlas la mano del rival que defiende el cuello. Para el otro lado se invierten los brazos. Como corta el flujo de sangre al cerebro, puede dejar inconsciente en pocos segundos: suelta al instante cuando tu compañero golpee o cuando notes que se relaja, y nunca mantengas la presión después del tap.",
+    "titulo": "Mataleón (rear naked choke)",
+    "explicacion": "El mataleón es una estrangulación sanguínea desde la espalda. Desde el seatbelt (agarre cruzado en la espalda), si estranguas con el brazo derecho, ese brazo pasa por encima del hombro derecho del rival y rodea su cuello de modo que tu codo queda justo bajo su barbilla. Tu mano derecha agarra tu propio bíceps izquierdo, y la mano izquierda va detrás de su cabeza o sobre tu propio hombro. Para cerrar, juntas los codos y expandes el pecho. Antes de cerrar hay que ganar la pelea de manos: primero controlas la mano del rival que defiende el cuello. Para el otro lado se invierten los brazos. Como corta el flujo de sangre al cerebro, puede dejar inconsciente en pocos segundos: suelta al instante cuando tu compañero golpee o cuando notes que se relaja, y nunca mantengas la presión después del tap.",
     "puntos": [
      "Gana la pelea de manos antes de buscar el cierre.",
      "Alinea el codo del brazo que estrangula con la barbilla del rival.",
@@ -1243,8 +1335,8 @@ export const MODULOS = [
     "solo": false
    },
    {
-    "nombre": "Mata león con pelea de manos",
-    "como": "Empieza en la espalda del compañero con seatbelt y ganchos. Él defiende el cuello con las manos al 30% de intensidad. Controla la mano que defiende, cierra el mata león, espera el tap y suelta al instante. Sube la resistencia de forma progresiva ronda a ronda.",
+    "nombre": "Mataleón con pelea de manos",
+    "como": "Empieza en la espalda del compañero con seatbelt y ganchos. Él defiende el cuello con las manos al 30% de intensidad. Controla la mano que defiende, cierra el mataleón, espera el tap y suelta al instante. Sube la resistencia de forma progresiva ronda a ronda.",
     "dosis": "5 rondas de 2 minutos con 1 minuto de descanso",
     "nivel": "basico",
     "min": 15,
@@ -1283,7 +1375,7 @@ export const MODULOS = [
     "autor": "JiuJitsu Brasileño Y Defensa Personal SNG",
     "idioma": "es",
     "nivel": "basico",
-    "por_que": "Introducción en español al control desde la espalda y al cierre del mata león. Fíjate en cómo se coloca el codo bajo la barbilla antes de apretar."
+    "por_que": "Introducción en español al control desde la espalda y al cierre del mataleón. Fíjate en cómo se coloca el codo bajo la barbilla antes de apretar."
    },
    {
     "titulo": "APRENDE LA LLAVE DE BRAZO DESDE LA GUARDIA, Paso a Paso MUY FÁCIL‼️ (Armlock) Bjj.",
@@ -1305,7 +1397,7 @@ export const MODULOS = [
    }
   ],
   "hitos": [
-   "Lo domino cuando finalizo el mata león ganando primero la pelea de manos, sin apretar la mandíbula y sin cruzar los tobillos.",
+   "Lo domino cuando finalizo el mataleón ganando primero la pelea de manos, sin apretar la mandíbula y sin cruzar los tobillos.",
    "Lo domino cuando encadeno triángulo, llave de brazo y omoplata desde la guardia según dónde pone los brazos mi compañero.",
    "Lo domino cuando cierro el triángulo con ángulo y presión de muslos, sin depender de tirar de la cabeza.",
    "Lo domino cuando finalizo la llave de brazo desde la montada sin quitar el peso de su pecho al girar.",
@@ -1385,7 +1477,7 @@ export const MODULOS = [
    },
    {
     "titulo": "Defensa temprana de sumisiones",
-    "explicacion": "Defenderse empieza antes de que la sumisión esté cerrada. La regla general es proteger primero la parte atacada y después recuperar la postura o la posición. Mata león: protege el cuello con las dos manos, controla la mano que estrangula y lleva tus hombros al suelo del lado de su brazo de arriba. Triángulo: postura recta, codos dentro y nunca dejes un brazo dentro y otro fuera mucho tiempo. Llave de brazo: junta las manos, gira el pulgar hacia abajo y gira hacia el atacante (hitchhiker escape cuando ya estás de lado). Guillotina: gira la cabeza hacia su lado protegido, baja la barbilla y pasa la guardia hacia el lado del brazo que estrangula. Kimura: agarra tu propio cinturón, pantalón o tu otra mano y mantén el codo pegado al cuerpo.",
+    "explicacion": "Defenderse empieza antes de que la sumisión esté cerrada. La regla general es proteger primero la parte atacada y después recuperar la postura o la posición. Mataleón: protege el cuello con las dos manos, controla la mano que estrangula y lleva tus hombros al suelo del lado de su brazo de arriba. Triángulo: postura recta, codos dentro y nunca dejes un brazo dentro y otro fuera mucho tiempo. Llave de brazo: junta las manos, gira el pulgar hacia abajo y gira hacia el atacante (hitchhiker escape cuando ya estás de lado). Guillotina: gira la cabeza hacia su lado protegido, baja la barbilla y pasa la guardia hacia el lado del brazo que estrangula. Kimura: agarra tu propio cinturón, pantalón o tu otra mano y mantén el codo pegado al cuerpo.",
     "puntos": [
      "Protege el cuello y los codos antes de que el rival tenga el agarre.",
      "Recupera la postura antes de intentar escapar.",
@@ -1395,7 +1487,7 @@ export const MODULOS = [
     "errores": [
      "Estirar el brazo para empujar al rival desde abajo.",
      "Defender con fuerza una sumisión ya cerrada en lugar de golpear.",
-     "Escapar del mata león hacia el lado del brazo de abajo."
+     "Escapar del mataleón hacia el lado del brazo de abajo."
     ]
    },
    {
@@ -1424,7 +1516,9 @@ export const MODULOS = [
     "dosis": "6 rondas de 2 minutos con 30 segundos de descanso, alternando roles",
     "nivel": "intermedio",
     "min": 15,
-    "solo": false
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 3
    },
    {
     "nombre": "Cadena de cuello: guillotina, darce y anaconda",
@@ -1444,7 +1538,7 @@ export const MODULOS = [
    },
    {
     "nombre": "Escapes de sumisión desde la posición previa",
-    "como": "El compañero arma sin finalizar un mata león, un triángulo o una llave de brazo. Tú aplicas la defensa del concepto de defensa temprana hasta recuperar la postura. Si la técnica llega a cerrarse, golpeas y reinicias.",
+    "como": "El compañero arma sin finalizar un mataleón, un triángulo o una llave de brazo. Tú aplicas la defensa del concepto de defensa temprana hasta recuperar la postura. Si la técnica llega a cerrarse, golpeas y reinicias.",
     "dosis": "3 rondas de 3 minutos por sumisión, cambiando de rol cada ronda",
     "nivel": "intermedio",
     "min": 20,
@@ -1457,6 +1551,15 @@ export const MODULOS = [
     "nivel": "intermedio",
     "min": 12,
     "solo": false
+   },
+   {
+    "nombre": "Defensa básica de llaves de pierna",
+    "como": "El compañero entra en ashi garami con tu pierna y sujeta el tobillo, sin aplicar la llave. Esconde el talón girando el pie hacia fuera y poniendo el pie en bota (dedos hacia arriba y tobillo rígido). Mantén la rodilla dentro de su línea: no dejes que pase por encima de su cadera. Siéntate hacia él, controla sus manos o su pierna de arriba y saca la rodilla y luego el pie. El compañero solo controla; nadie gira el talón. Si sientes presión en la rodilla, golpea dos veces y paren.",
+    "dosis": "4 rondas de 1 minuto por lado con 30 segundos de descanso",
+    "nivel": "intermedio",
+    "min": 12,
+    "solo": false,
+    "tipo": "tecnica"
    }
   ],
   "recursos": [
@@ -1467,7 +1570,7 @@ export const MODULOS = [
     "autor": "John Danaher (canal SUBGTV)",
     "idioma": "en",
     "nivel": "intermedio",
-    "por_que": "Detalles de Danaher que van más allá de lo básico. Presta atención a cómo gana la pelea de manos antes de cerrar el mata león."
+    "por_que": "Detalles de Danaher que van más allá de lo básico. Presta atención a cómo gana la pelea de manos antes de cerrar el mataleón."
    },
    {
     "titulo": "ROGER GRACIE Shows How To Do the Perfect Cross Choke From Mount",
@@ -1521,7 +1624,8 @@ export const MODULOS = [
     "autor": "No confirmado (la página de Udemy no se pudo abrir)",
     "idioma": "en",
     "nivel": "intermedio",
-    "por_que": "Curso de Udemy dedicado a la llave de brazo; aprovecha la membresía anual."
+    "por_que": "Curso de Udemy dedicado a la llave de brazo; aprovecha la membresía anual.",
+    "pago": true
    },
    {
     "titulo": "BJJ - Ankle lock series for Modern Grappling, Part 1",
@@ -1530,7 +1634,8 @@ export const MODULOS = [
     "autor": "No confirmado (la página de Udemy no se pudo abrir)",
     "idioma": "en",
     "nivel": "intermedio",
-    "por_que": "Curso de Udemy sobre llaves de tobillo, la puerta de entrada segura al juego de piernas."
+    "por_que": "Curso de Udemy sobre llaves de tobillo, la puerta de entrada segura al juego de piernas.",
+    "pago": true
    }
   ],
   "hitos": [
@@ -1538,7 +1643,7 @@ export const MODULOS = [
    "Lo domino cuando distingo darce y anaconda por el camino de mi brazo y finalizo ambas con el hombro y el pecho.",
    "Lo domino cuando mantengo la espalda con seatbelt y ganchos o triángulo de cuerpo durante una ronda completa contra resistencia.",
    "Lo domino cuando uso el agarre de kimura para barrer o tomar la espalda si la finalización no entra.",
-   "Lo domino cuando escapo de un mata león, un triángulo y una llave de brazo antes de que se cierren.",
+   "Lo domino cuando escapo de un mataleón, un triángulo y una llave de brazo antes de que se cierren.",
    "Lo domino cuando mantengo el ashi garami sin reaping y finalizo el tobillo recto en línea recta.",
    "Lo domino cuando aplico la guillotina con control, sin tirones de cuello."
   ],
@@ -1622,7 +1727,8 @@ export const MODULOS = [
     "dosis": "5 rondas de 2 minutos con 1 minuto de descanso, 1 a 2 veces por semana",
     "nivel": "avanzado",
     "min": 15,
-    "solo": false
+    "solo": false,
+    "freq": 2
    },
    {
     "nombre": "Defensa de heel hook desde posición",
@@ -1638,7 +1744,9 @@ export const MODULOS = [
     "dosis": "4 rondas de 5 minutos por semana, más 10 minutos de revisión de video",
     "nivel": "avanzado",
     "min": 30,
-    "solo": false
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 1
    }
   ],
   "recursos": [

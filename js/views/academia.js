@@ -3,7 +3,7 @@ import {icon, belt, formModal, modal, toast, confirmDlg} from "../ui.js";
 import {esc, money, h} from "../util.js";
 import {sedeModal, disciplineModal} from "../forms.js";
 import {DISCIPLINE_PRESETS, CURRENCIES} from "../catalog.js";
-import {createAcademy} from "../app.js";
+import {createAcademy} from "../shell.js";
 import {t, tn} from "../i18n.js";
 
 export function render(el){

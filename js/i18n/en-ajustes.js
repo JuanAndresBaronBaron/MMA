@@ -49,4 +49,10 @@ export default {
   "Borrar todo": "Erase everything",
   "Copia restaurada": "Backup restored",
   "El archivo no es una copia válida": "The file is not a valid backup",
+  "Tema": "Theme",
+  "Sistema": "System",
+  "Claro": "Light",
+  "Oscuro": "Dark",
+  "Mostrar primeros pasos": "Show getting started",
+  "Primeros pasos visibles en Inicio": "Getting started is back on Home",
 };

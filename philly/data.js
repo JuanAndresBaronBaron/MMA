@@ -311,43 +311,52 @@ export const MODULOS = [
     "nombre": "Sombra en espejo: construir la postura",
     "como": "1) Frente a un espejo, ponte en tu guardia normal y luego perfílate: pie izquierdo adelante y algo girado hacia dentro, pie derecho atrás y abierto. 2) Baja el brazo izquierdo cruzado sobre el abdomen, con el codo pegado a las costillas. 3) Sube el hombro izquierdo y mete el mentón detrás. 4) Pon la mano derecha junto a la mejilla, con la palma hacia el espejo. 5) Muévete despacio adelante, atrás y en círculos sin perder la postura. 6) Cada 30 segundos detente y revisa cinco puntos: pies, codo izquierdo, hombro, mentón y mano derecha.",
     "dosis": "3 rounds de 3 min, 1 min de descanso",
-    "nivel": "basico"
+    "nivel": "basico",
+    "solo": true
    },
    {
     "nombre": "Shoulder roll en sombra con rotación de cadera",
     "como": "1) Desde la shell, imagina que llega una recta de derecha. 2) Rota cadera y torso hacia tu derecha, sube el hombro izquierdo y pasa el peso a la pierna de atrás. 3) Devuelve la rotación y lanza una recta de derecha. 4) Hazlo lento y con técnica limpia, y sube la velocidad solo cuando el movimiento salga natural.",
     "dosis": "4 rounds de 2 min, 1 min de descanso, unas 50 a 60 repeticiones por round",
-    "nivel": "basico"
+    "nivel": "basico",
+    "solo": true
    },
    {
     "nombre": "Atrapar el jab y contragolpear con compañero",
     "como": "1) Tu compañero lanza jabs suaves a tu cara. 2) Atrapa con la palma derecha cerca de la cara, sin estirar el brazo. 3) Responde con jab desde abajo y recta, o con un pull y la derecha. 4) Cambien de rol cada round. Trabajen a una velocidad del 30 al 50 por ciento, con guantes y protector bucal.",
     "dosis": "3 rounds de 3 min por persona, 1 min de descanso",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": false
    },
    {
     "nombre": "Manoplas estilo Mayweather: ritmo y shoulder roll",
     "como": "1) El entrenador alterna tus golpes con rectas de derecha suaves y controladas, usando la manopla hacia tu hombro y tu cabeza. 2) Sigue el ciclo: tu jab y tu recta, su derecha que tú ruedas con el hombro, y tu contragolpe de derecha. 3) Agrega el gancho de izquierda del entrenador para entrenar la mano derecha alta y el codo abajo. 4) Busca un ritmo continuo, sin pausas entre defensa y respuesta.",
     "dosis": "5 rounds de 2 min, 1 min de descanso",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": false
    },
    {
     "nombre": "Drill lento de tres golpes: jab, recta y gancho",
     "como": "1) Tu compañero lanza al 30 por ciento solo tres golpes, en el orden que quiera: jab, recta de derecha o gancho de izquierda. 2) Responde así: parry o pull contra el jab, shoulder roll contra la recta, y mano derecha alta con el codo abajo contra el gancho. 3) Después de cada defensa, contragolpea. 4) Cuando completes un round sin fallar, sube la velocidad un 10 por ciento en el siguiente.",
     "dosis": "4 rounds de 3 min, 1 min de descanso",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": false
    },
    {
     "nombre": "Salidas de cuerdas: shell, guardia alta y pivote",
     "como": "1) Empieza con la espalda cerca de las cuerdas o de una pared. 2) Tu compañero presiona con combinaciones suaves, al 30 o 40 por ciento. 3) Defiende 1 o 2 golpes en shell (roll y parry), cambia a guardia alta, pivota sobre el pie izquierdo y sal al centro. 4) Agrega un clinch corto cuando te encierre. Usen casco, protector bucal y guantes de sparring.",
     "dosis": "3 rounds de 2 min, 1 min de descanso",
-    "nivel": "avanzado"
+    "nivel": "avanzado",
+    "solo": false
    },
    {
     "nombre": "Sparring técnico con la shell adaptado a MMA",
     "como": "1) Haz sparring al 40 o 50 por ciento solo con puños durante 2 rounds usando la shell. 2) En los 2 rounds siguientes agreguen patadas bajas y amagos de derribo: cuádrate un poco más, chequea las patadas bajas levantando la espinilla y vuelve a la guardia alta contra las patadas a la cabeza. 3) Al final, comenta con tu compañero qué golpes te entraron y por dónde. Usen casco, protector bucal, espinilleras y guantes de sparring.",
     "dosis": "4 rounds de 3 min, 1 min de descanso",
-    "nivel": "avanzado"
+    "nivel": "avanzado",
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 1
    }
   ],
   "recursos": [
@@ -457,7 +466,8 @@ export const MODULOS = [
     "autor": "Kerry Pharr",
     "idioma": "en",
     "nivel": "intermedio",
-    "por_que": "Curso general de fundamentos y defensa, no específico de Mayweather. La clase de shoulder roll es muy corta, pero el resto de la sección defensiva (parry, bloqueo del gancho) complementa bien la shell."
+    "por_que": "Curso general de fundamentos y defensa, no específico de Mayweather. La clase de shoulder roll es muy corta, pero el resto de la sección defensiva (parry, bloqueo del gancho) complementa bien la shell.",
+    "pago": true
    },
    {
     "titulo": "FLOYD MAYWEATHER SR. DEMONSTRATES SHOULDER ROLL EFFECTIVENESS; DEFLECTS \"HARD AS YOU CAN\" PUNCHES",
@@ -688,67 +698,80 @@ export const MODULOS = [
     "nombre": "Sombra defensiva por capas",
     "como": "1) Haz sombra en Philly Shell frente a un espejo. 2) Imagina el golpe del rival y responde con la defensa que le toca: rodada de hombro para la derecha, pull para el jab, rodada en U para el gancho, codo abajo para el golpe al cuerpo. 3) Cada defensa termina con un contragolpe. 4) Revisa en el espejo que el mentón quede detrás del hombro y que los codos no se abran.",
     "dosis": "3 rounds x 3 min, 1 min de descanso",
-    "nivel": "basico"
+    "nivel": "basico",
+    "solo": true
    },
    {
     "nombre": "Pull back con pareja (sin contragolpe)",
     "como": "1) Tu pareja lanza jabs lentos a tu cara con guante. 2) Lleva el peso a la pierna de atrás, sube el hombro izquierdo y saca la cabeza lo justo, sin que pase de la rodilla de atrás. 3) Vuelve al centro sin perder la guardia. 4) Ve subiendo la velocidad poco a poco.",
     "dosis": "3 rounds x 2 min, 1 min de descanso",
-    "nivel": "basico"
+    "nivel": "basico",
+    "solo": false
    },
    {
     "nombre": "Rodada de hombro contra la derecha",
     "como": "1) En Philly Shell, tu pareja lanza solo derechas rectas lentas a tu cara. 2) Gira el tronco a la derecha y sube el hombro izquierdo para que el golpe resbale. 3) Vuelve y contesta con tu derecha recta al guante o al pecho de la pareja. 4) Cuando salga limpio, la pareja mezcla jab y derecha para que tengas que elegir entre catch y rodada de hombro.",
     "dosis": "4 rounds x 2 min, 1 min de descanso",
-    "nivel": "basico"
+    "nivel": "basico",
+    "solo": false
    },
    {
     "nombre": "Catch and shoot en manoplas",
     "como": "1) El entrenador lanza un jab suave con la manopla. 2) Atrápalo con la palma derecha junto a la cara. 3) Devuelve de inmediato jab y derecha a las manoplas. 4) Después, el entrenador varía el ritmo con jab doble y fintas.",
     "dosis": "4 rounds x 2 min, 1 min de descanso",
-    "nivel": "basico"
+    "nivel": "basico",
+    "solo": false
    },
    {
     "nombre": "Cuerda de esquivas (slip rope) con rodadas",
     "como": "1) Pon una cuerda a la altura de tus hombros. 2) Avanza y retrocede rodando en U por debajo de la cuerda con las rodillas, con la espalda recta y la guardia arriba. 3) Suma un jab o un gancho al salir de cada rodada.",
     "dosis": "3 rounds x 3 min, 1 min de descanso",
-    "nivel": "basico"
+    "nivel": "basico",
+    "solo": true
    },
    {
     "nombre": "Parry y contragolpe",
     "como": "1) La pareja lanza jabs a la cara y, a veces, al cuerpo. 2) Desvía los jabs a la cara con la mano derecha, con un toque corto hacia abajo o hacia el lado, y los golpes al cuerpo con la mano izquierda baja. 3) Responde con jab o con derecha recta. 4) Alterna mano y dirección del parry.",
     "dosis": "3 rounds x 3 min, 1 min de descanso",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": false
    },
    {
     "nombre": "Codo alto y codos cerrados",
     "como": "1) La pareja lanza derechas a la cabeza y ganchos al cuerpo a ritmo lento. 2) Contra la derecha, levanta el codo izquierdo por dentro para bloquearla y bájalo enseguida. 3) Contra el gancho al cuerpo, baja el codo y gira un poco el tronco para recibirlo en el codo. 4) Después de cada bloqueo, devuelve un golpe.",
     "dosis": "3 rounds x 2 min, 1 min de descanso",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": false
    },
    {
     "nombre": "Pull counter con pareja",
     "como": "1) La pareja lanza jab a media distancia. 2) Haz un pull back corto. 3) Cuando el brazo se recoge, vuelve el peso adelante y lanza la derecha recta a la cara o al pecho con control. 4) Luego la pareja mezcla jab y uno-dos para que no puedas adivinar.",
     "dosis": "4 rounds x 3 min, 1 min de descanso",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": false
    },
    {
     "nombre": "Rodar y salir en ángulo de las cuerdas",
     "como": "1) Ponte contra las cuerdas en shell. 2) La pareja lanza combinaciones lentas (gancho, derecha, cuerpo). 3) Rueda y bloquea con el hombro y los codos. 4) Ante el tercer o cuarto golpe, rueda y da un paso lateral en ángulo hacia el lado contrario a la mano que la pareja tiene cargada, y vuelve al centro. 5) Después practica girar a la pareja contra las cuerdas pivotando sobre tu pie adelantado.",
     "dosis": "4 rounds x 2 min, 1 min de descanso",
-    "nivel": "avanzado"
+    "nivel": "avanzado",
+    "solo": false
    },
    {
     "nombre": "Amarre y control en las cuerdas",
     "como": "1) La pareja presiona con golpes al cuerpo y a la cabeza. 2) Cuando entre, cierra la distancia pecho con pecho y amarra un brazo, con tu antebrazo sobre su hombro y sin presionar el cuello. 3) Gira para cambiar posiciones. 4) Suelta con un paso hacia atrás o un contragolpe corto.",
     "dosis": "3 rounds x 2 min, 1 min de descanso",
-    "nivel": "avanzado"
+    "nivel": "avanzado",
+    "solo": false
    },
    {
     "nombre": "Sparring defensivo con un solo golpe",
     "como": "1) Haz sparring ligero, con protector bucal y casco, en el que tú solo puedes defender y contragolpear con un golpe, por ejemplo la derecha después de una rodada de hombro, un pull o un catch. 2) La pareja ataca con libertad a ritmo controlado. 3) Tu objetivo es leer el ritmo de la pareja y elegir la defensa correcta para cada golpe.",
     "dosis": "3 rounds x 3 min, 1 min de descanso",
-    "nivel": "avanzado"
+    "nivel": "avanzado",
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 1
    }
   ],
   "recursos": [
@@ -876,7 +899,8 @@ export const MODULOS = [
     "autor": "Donnie Hodge",
     "idioma": "en",
     "nivel": "intermedio",
-    "por_que": "Curso completo de defensa: esquivas, rodadas, catch, pull, juego de pies defensivo, defensa contra la presión, pelea por dentro, defensa en la esquina y slip rope. Útil para estructurar semanas de trabajo defensivo."
+    "por_que": "Curso completo de defensa: esquivas, rodadas, catch, pull, juego de pies defensivo, defensa contra la presión, pelea por dentro, defensa en la esquina y slip rope. Útil para estructurar semanas de trabajo defensivo.",
+    "pago": true
    },
    {
     "titulo": "3rd Boxing tutorial: Turning your opponent onto the ropes",
@@ -1038,49 +1062,59 @@ export const MODULOS = [
     "nombre": "Step-drag en las cuatro direcciones (cuadrado en el piso)",
     "como": "1. Marca un cuadrado de 1 x 1 m con cinta. 2. Ponte en guardia con algo más de peso atrás y la planta del pie de adelante apoyada. 3. Recorre los lados: adelante, derecha, atrás e izquierda, moviendo siempre primero el pie más cercano a la dirección y arrastrando el otro la misma distancia. 4. Mantén la cabeza a la misma altura y revisa que la guardia quede igual después de cada paso. 5. A mitad de round invierte el sentido.",
     "dosis": "3 rounds x 2 min, 30 s de descanso",
-    "nivel": "basico"
+    "nivel": "basico",
+    "solo": true
    },
    {
     "nombre": "Saltar la cuerda estilo Mayweather (lateral boxer step)",
     "como": "1. Empieza con salto básico a dos pies. 2. Pasa al boxer skip, pasando el peso de un pie al otro. 3. Agrega pasos laterales cortos de lado a lado sin perder el ritmo de la cuerda. 4. Termina con cambios de ritmo: 20 s suave y 10 s rápido. Mantén los saltos bajos y sobre la planta del pie.",
     "dosis": "4 rounds x 3 min, 1 min de descanso",
-    "nivel": "basico"
+    "nivel": "basico",
+    "solo": true
    },
    {
     "nombre": "Pivotes con cono",
     "como": "1. Pon un cono frente a ti como si fuera el rival. 2. Lanza un jab y pivota sobre la planta del pie izquierdo en sentido antihorario, barriendo el pie derecho hacia la izquierda y atrás entre 45 y 90 grados. 3. Vuelve a quedar en guardia mirando el cono y termina con un check hook o un jab. 4. Repite con el pivote de atrás: gira sobre la planta del pie derecho en sentido horario, moviendo el pie izquierdo hacia la derecha, y cierra con un golpe. Si eres zurdo, invierte pies y sentidos de giro.",
     "dosis": "3 rounds x 2 min alternando pivote de adelante y de atrás, 30 s de descanso",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": true
    },
    {
     "nombre": "Escalera de agilidad con guardia",
     "como": "1. Recorre la escalera de lado manteniendo la guardia de boxeo, entrando y saliendo de cada cuadro con step-drag, sin cruzar nunca los pies. 2. Repite hacia el otro lado. 3. Hazla de frente con dos pies por cuadro. 4. Al salir de la escalera lanza un jab y una derecha recta y queda en guardia.",
     "dosis": "3 patrones x 6 a 8 pasadas cada uno, 20 a 30 s de descanso entre pasadas y 1 min entre patrones",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": true
    },
    {
     "nombre": "Sombra de pull y salida en ángulo",
     "como": "1. En sombra, imagina un jab del rival. 2. Pasa el peso al pie de atrás (pull) para que se quede corto. 3. Contragolpea con derecha recta. 4. Sal de inmediato con un paso lateral o con un pivote. 5. Varía las secuencias: pull, jab y pivote; pull, derecha y paso atrás en diagonal. Usa el pull solo contra golpes rectos imaginarios y cuida que cabeza y pies se muevan juntos.",
     "dosis": "3 rounds x 3 min, 1 min de descanso",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": true
    },
    {
     "nombre": "Salida de la cuerda con compañero",
     "como": "1. Ponte casco y empieza con la espalda a unos 30 cm de la cuerda. 2. Al principio el compañero lanza golpes lentos y anunciados. 3. Tu tarea es inclinarte o agacharte para que se comprometa, rodar bajo el golpe y cambiar de lugar dejándolo a él contra la cuerda, o empujar y salir de lado, hacia el lado contrario a su mano cargada. 4. Sube la velocidad solo cuando la salida salga limpia a baja velocidad. 5. Cambien de rol cada round.",
     "dosis": "4 rounds x 2 min, 1 min de descanso, intensidad técnica al 30-50%",
-    "nivel": "avanzado"
+    "nivel": "avanzado",
+    "solo": false
    },
    {
     "nombre": "Cortar el ring",
     "como": "1. Tu compañero se mueve lateralmente por el ring tratando de escapar. 2. No lo persigas en línea recta: da pasos laterales cortos hacia el lado al que él quiere escapar, adelantándote a su salida mientras avanzas en diagonal. 3. Usa un jab suave para frenarlo cada vez que intente salir. 4. Llévalo hacia una esquina o la cuerda, como hizo Floyd contra Gatti. El objetivo es encerrarlo en menos de 30 segundos.",
     "dosis": "4 rounds x 2 min alternando roles, 1 min de descanso, golpes al 30-40%",
-    "nivel": "avanzado"
+    "nivel": "avanzado",
+    "solo": false
    },
    {
     "nombre": "Sparring condicionado de ritmo roto",
     "como": "1. Con casco y protector bucal, haz sparring ligero en el que solo puedes golpear después de un cambio de ritmo: una pausa, una finta o un cambio de dirección. 2. Trabaja en ráfagas cortas de 1 a 2 golpes. 3. Después de cada ráfaga vuelve a la distancia exterior con un paso o un pivote. 4. Grábate y revisa si te mueves con patrones predecibles.",
     "dosis": "3 a 4 rounds x 3 min, 1 min de descanso, intensidad al 40-50%",
-    "nivel": "avanzado"
+    "nivel": "avanzado",
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 1
    }
   ],
   "recursos": [
@@ -1145,7 +1179,8 @@ export const MODULOS = [
     "autor": "Udemy",
     "idioma": "en",
     "nivel": "basico",
-    "por_que": "Curso dedicado solo al juego de pies, general y no específico de Mayweather. Úsalo como progresión ordenada de fundamentos si quieres más práctica guiada."
+    "por_que": "Curso dedicado solo al juego de pies, general y no específico de Mayweather. Úsalo como progresión ordenada de fundamentos si quieres más práctica guiada.",
+    "pago": true
    },
    {
     "titulo": "Floyd Mayweather Teaching !!( Pivots , Footwork , Jab , Right Hand & More )",
@@ -1363,55 +1398,68 @@ export const MODULOS = [
     "nombre": "Sombra de recta de derecha de frente",
     "como": "1. Ponte en guardia ortodoxa frente al espejo. 2. Lanza la recta de derecha sin jab previo, desde la guardia neutra, con cadera, hombro y brazo arrancando juntos y el talón trasero girando hacia afuera. 3. Revisa en el espejo que nada se mueva antes del golpe, que la izquierda quede arriba y que la cabeza no pase la rodilla delantera. 4. Sal de la línea con un pivote o un paso atrás. 5. Alterna con la versión jab abajo y derecha arriba.",
     "dosis": "3 rounds de 3 min, 1 min de descanso",
-    "nivel": "basico"
+    "nivel": "basico",
+    "solo": true
    },
    {
     "nombre": "Jab al cuerpo con cambio de nivel en el saco",
     "como": "1. Baja con las rodillas, da un pequeño paso del pie delantero hacia afuera y lanza el jab al nivel del estómago del saco, con el hombro izquierdo alto y la derecha pegada al mentón. 2. Vuelve arriba de inmediato. 3. En el segundo round añade un gancho de izquierda arriba después del jab al cuerpo. 4. En el tercero, una recta de derecha arriba.",
     "dosis": "3 rounds de 3 min, 1 min de descanso",
-    "nivel": "basico"
+    "nivel": "basico",
+    "solo": true
    },
    {
     "nombre": "Combinación corta y salida en manoplas",
     "como": "1. El entrenador marca una combinación corta: 1-2, jab abajo y recta arriba, o derecha y gancho. 2. Lanza la combinación completa. 3. Después del último golpe sal siempre: pivote sobre el pie delantero, paso en ángulo o shoulder roll contra un golpe suave que te devuelve el entrenador. 4. Nunca termines frente a él en línea recta.",
     "dosis": "3 rounds de 3 min, 1 min de descanso",
-    "nivel": "basico"
+    "nivel": "basico",
+    "solo": false
    },
    {
     "nombre": "Pull counter con compañero (jab suave)",
     "como": "1. Tu compañero lanza jabs lentos a la cara. 2. Pasa el peso a la pierna de atrás sin mover el pie, con la cabeza sobre la rodilla trasera, y deja que el jab se quede corto. 3. Regresa con una recta de derecha a las manoplas o al hombro del compañero mientras su brazo sigue extendido. 4. Aumenta la velocidad poco a poco. 5. Variante: atrapa el jab con la palma derecha y dispara esa misma mano de inmediato. Si el compañero dobla el jab, la mano vuelve a la guardia.",
     "dosis": "4 rounds de 2 min cambiando de rol, 1 min de descanso",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": false
    },
    {
     "nombre": "Shoulder roll y recta de derecha en manoplas",
     "como": "1. El entrenador lanza una recta de derecha con la manopla. 2. Rueda el hombro izquierdo para desviarla, con el mentón escondido detrás del hombro. 3. Responde de inmediato con tu recta de derecha a la otra manopla. 4. Cuando salga fluido, añade un gancho de izquierda después de la derecha y una salida con pivote.",
     "dosis": "4 rounds de 3 min, 1 min de descanso",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": false
    },
    {
     "nombre": "Gancho de chequeo contra un rival que avanza",
     "como": "1. Tu compañero avanza en línea recta lanzando golpes suaves. 2. Cuando entre, pivota sobre la bola del pie delantero y gira el tronco hacia tu izquierda mientras el pie de atrás barre en arco. 3. Lanza el gancho de izquierda al mismo tiempo que pivotas, con poco contacto o a las manoplas. 4. Termina fuera de su línea de ataque, con el compañero pasando de largo por tu lado izquierdo.",
     "dosis": "3 rounds de 2 min por persona, 1 min de descanso",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": false
    },
    {
     "nombre": "Distancia corta en el saco: frame y uppercut",
     "como": "1. Pégate al saco con el antebrazo izquierdo como frame. 2. Empuja un poco con el antebrazo para crear espacio. 3. Lanza un uppercut corto de derecha girando la cadera y un gancho de izquierda al cuerpo con las rodillas flexionadas. 4. Sal con un pivote o un paso en ángulo después de dos golpes. 5. En el segundo round añade antes una finta de gancho de izquierda.",
     "dosis": "3 rounds de 2 min, 1 min de descanso",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": true
    },
    {
     "nombre": "Sparring de condición: solo contragolpes",
     "como": "1. Haz sparring técnico a baja intensidad, con casco y protector bucal. 2. Solo puedes golpear justo después de que el rival falle o termine su golpe. 3. Cuenta cuántos contragolpes limpios conectas y cuántos golpes lanzas en total. 4. El objetivo es conectar mucho lanzando poco y salir después de cada contragolpe.",
     "dosis": "3 rounds de 3 min, 1 min de descanso",
-    "nivel": "avanzado"
+    "nivel": "avanzado",
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 1
    },
    {
     "nombre": "Fintas y trampas en sparring técnico",
     "como": "1. Elige una trampa por round: finta de jab al cuerpo y gancho arriba, finta de gancho de izquierda y uppercut de derecha, o quedarte a tiro para provocar el jab y hacer el pull counter. 2. Repítela hasta que funcione, sin subir la intensidad. 3. Anota al final del round cómo reaccionó el rival a cada finta.",
     "dosis": "3 a 4 rounds de 3 min, 1 min de descanso",
-    "nivel": "avanzado"
+    "nivel": "avanzado",
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 1
    }
   ],
   "recursos": [
@@ -1723,73 +1771,87 @@ export const MODULOS = [
     "nombre": "Rolls frente al espejo sin contacto",
     "como": "1) Ponte en guardia ortodoxa de perfil: hombro izquierdo arriba, barbilla metida detrás del hombro, mano derecha junto a la mejilla o el mentón, antebrazo izquierdo cruzando el abdomen y rodillas flexionadas. 2) Imagina un recto derecho al mentón: gira el torso a la derecha, pasa un poco de peso a la pierna de atrás y sube el hombro izquierdo. 3) Al girar, tus ojos no se apartan de tu reflejo, como si fuera el rival. 4) Regresa girando y lanza un recto derecho. Zurdos: todo al revés.",
     "dosis": "3 rounds de 2 min, 30 s de descanso",
-    "nivel": "basico"
+    "nivel": "basico",
+    "solo": true
    },
    {
     "nombre": "Sombra con un objetivo por round",
     "como": "1) Round 1: solo jab y desplazamiento lateral. 2) Round 2: shoulder roll contra un recto imaginario y recto derecho de respuesta. 3) Round 3: pull counter imaginario (te echas atrás del jab y vuelves con el recto). 4) Round 4: mezcla libre de todo lo anterior. Mantén los pies en movimiento y vuelve siempre a la guardia.",
     "dosis": "4 rounds de 3 min, 30 s de descanso",
-    "nivel": "basico"
+    "nivel": "basico",
+    "solo": true
    },
    {
     "nombre": "Cuerda estilo Mayweather en progresión",
     "como": "1) Rebote básico con los dos pies. 2) Alterna los pies como si trotaras. 3) Cuando esos dos estén dominados, agrega dobles (dos giros de cuerda por salto) en ráfagas cortas. 4) Suma cruces y cambios de velocidad. Saltos bajos, codos pegados al cuerpo y giro desde las muñecas.",
     "dosis": "5 rounds de 3 min, con 30 s de sombra suave entre rounds como descanso activo",
-    "nivel": "basico"
+    "nivel": "basico",
+    "solo": true
    },
    {
     "nombre": "Pera con ritmo constante",
     "como": "1) Ajusta la pera para que quede a la altura de tu boca. 2) Golpea con el puño cerrado, en un ritmo de tres rebotes por golpe, alternando las manos cada dos golpes. 3) Golpes pequeños y hombros relajados, en círculos cortos. 4) Cuando el ritmo salga estable, intenta el ritmo de un rebote por golpe en ráfagas de 20 a 30 s.",
     "dosis": "3 rounds de 3 min, 1 min de descanso",
-    "nivel": "basico"
+    "nivel": "basico",
+    "solo": true
    },
    {
     "nombre": "Shoulder roll en pareja contra recto derecho lento",
     "como": "1) Ambos con guantes de 16 oz y protector bucal. 2) El compañero lanza solo rectos derechos lentos al mentón. 3) Ruedas el hombro izquierdo girando la cadera y contestas con un recto derecho al pecho o a la careta. 4) Cada 30 s sube un poco la velocidad. 5) Cambien de papel cada round.",
     "dosis": "4 rounds de 2 min (2 por persona), 30 s de descanso",
-    "nivel": "basico"
+    "nivel": "basico",
+    "solo": false
    },
    {
     "nombre": "Línea de slips con contragolpe",
     "como": "1) Amarra una cuerda a la altura de tus hombros a lo largo del gimnasio. 2) Avanza a lo largo de ella en tu postura normal de pelea, pasando por debajo con rolls en U (doblas las rodillas y pasas la cabeza en forma de U de un lado al otro), alternando lados. 3) Después de cada roll lanza un jab y un recto, o un gancho corto. 4) Mantén la guardia arriba y baja con las piernas, no doblando la espalda.",
     "dosis": "3 rounds de 3 min, 1 min de descanso",
-    "nivel": "basico"
+    "nivel": "basico",
+    "solo": true
    },
    {
     "nombre": "Catch and shoot: atrapar el jab y contestar",
     "como": "1) El compañero lanza jabs lentos. 2) Atrapas el jab con la palma derecha, sin estirar el brazo hacia el golpe. 3) Contestas de inmediato con tu jab. 4) Progresión: atrapa y contesta con jab y recto; después atrapa, rueda el hombro contra el recto del compañero y contesta con un gancho.",
     "dosis": "3 rounds de 3 min, 1 min de descanso",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": false
    },
    {
     "nombre": "Pull counter en pareja",
     "como": "1) El compañero lanza jabs lentos al mentón. 2) Pasas el peso a la pierna de atrás inclinando un poco el torso hacia atrás, sin dar un paso, para que el jab se quede corto. 3) Mantén la mano derecha alta mientras te echas atrás. 4) Vuelve el peso hacia adelante y lanza el recto derecho por encima del jab que se retira. 5) Sube la velocidad poco a poco. Zurdos: todo al revés.",
     "dosis": "4 rounds de 2 min (2 por persona), 30 s de descanso",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": false
    },
    {
     "nombre": "Drill de pared: defender con la cintura",
     "como": "1) Ubica el talón trasero a unos 20 a 30 cm de una pared. 2) El compañero lanza combinaciones lentas. 3) No puedes retroceder: defiende solo con rolls, bloqueos y movimientos de cintura. 4) Contesta después de cada defensa. Así corriges la tendencia a echarte hacia atrás.",
     "dosis": "3 rounds de 2 min, 1 min de descanso",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": false
    },
    {
     "nombre": "Manoplas estilo Roger Mayweather en flujo continuo",
     "como": "1) El entrenador alterna recibir golpes con lanzar golpes controlados y suaves al hombro izquierdo, la cabeza y el cuerpo. 2) Patrón básico: jab, recto, el entrenador lanza un recto, roll, recto, gancho. 3) Repitan el patrón sin pausas hasta que salga fluido. 4) Agreguen un patrón nuevo cada semana y luego encadénenlos. 5) Prioriza la técnica y el regreso a la guardia sobre la velocidad.",
     "dosis": "4 a 6 rounds de 3 min, 1 min de descanso",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": false
    },
    {
     "nombre": "Saco pesado con defensa y rounds que crecen",
     "como": "1) Trabaja el saco a ritmo moderado y constante, con las manos vendadas. 2) Cada 3 o 4 combinaciones mete un roll, un pivote o un paso lateral. 3) Imagina el contragolpe del saco: rueda el hombro y contesta. 4) Respira y mantén los hombros relajados. 5) Alarga los rounds poco a poco a lo largo de varias semanas.",
     "dosis": "Empieza con 3 rounds de 3 min y 1 min de descanso; progresa durante semanas hasta 2 rounds de 6 a 10 min",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": true
    },
    {
     "nombre": "Sparring de hombros y cuerpo",
     "como": "1) Con protector bucal, careta y guantes de 16 oz. 2) Solo se vale golpear hombros y cuerpo, nada a la cabeza. 3) Practica rodar, bloquear con el codo y contestar. 4) Intensidad máxima del 50 %. 5) Cuando salga natural, permitan jabs ligeros a la cabeza.",
     "dosis": "3 a 4 rounds de 3 min, 1 min de descanso, 1 a 2 veces por semana",
-    "nivel": "avanzado"
+    "nivel": "avanzado",
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 2
    }
   ],
   "recursos": [
@@ -1827,7 +1889,8 @@ export const MODULOS = [
     "autor": "Jeff Mayweather",
     "idioma": "en",
     "nivel": "basico",
-    "por_que": "Trabajo de saco enseñado por Jeff Mayweather, tío de Floyd y de la misma escuela familiar. Te sirve para aprender a moverte y defender en el saco en vez de solo pegar."
+    "por_que": "Trabajo de saco enseñado por Jeff Mayweather, tío de Floyd y de la misma escuela familiar. Te sirve para aprender a moverte y defender en el saco en vez de solo pegar.",
+    "pago": true
    },
    {
     "titulo": "DEFENSA PHILLY SHELL PARTE 2",
@@ -1890,7 +1953,8 @@ export const MODULOS = [
     "autor": "Jeff Mayweather",
     "idioma": "en",
     "nivel": "intermedio",
-    "por_que": "Curso de manoplas con Jeff Mayweather, tío de Floyd. Es lo más cercano al método familiar de manoplas en formato de curso, y también es útil para quien sostiene las manoplas."
+    "por_que": "Curso de manoplas con Jeff Mayweather, tío de Floyd. Es lo más cercano al método familiar de manoplas en formato de curso, y también es útil para quien sostiene las manoplas.",
+    "pago": true
    },
    {
     "titulo": "Floyd Mayweather MITT WORKOUT with ROGER MAYWEATHER for Fight vs Marcos Maidana",
@@ -1917,7 +1981,8 @@ export const MODULOS = [
     "autor": "Sio Vaspa",
     "idioma": "en",
     "nivel": "intermedio",
-    "por_que": "Curso general de manoplas con slips, rolls y paradas, trabajo de pies y sparring simulado en pareja. Te da más drills para ampliar tu banco de ejercicios."
+    "por_que": "Curso general de manoplas con slips, rolls y paradas, trabajo de pies y sparring simulado en pareja. Te da más drills para ampliar tu banco de ejercicios.",
+    "pago": true
    },
    {
     "titulo": "Mayweather vs. Maidana 2- Floyd Mayweather full workout: Mitts +speed bad+ heavy bag",
@@ -2089,43 +2154,59 @@ export const MODULOS = [
     "nombre": "Estudio de video por bloques",
     "como": "1) Elige una pelea de la lista. Empieza por Corrales o Canelo. 2) Mira los asaltos 1 a 3 sin sonido y anota en una libreta con qué golpe abre el rival, cómo reacciona al jab y a los amagos y hacia dónde sale. 3) Mira los asaltos 4 a 8 y anota qué golpe de Floyd se repite y qué patrón del rival está explotando. 4) Mira los asaltos 9 a 12 y anota los cambios de ritmo. 5) Resume en 3 frases el plan de Floyd y en 1 frase el error principal del rival.",
     "dosis": "1 pelea por semana, en sesiones de 60 a 90 minutos",
-    "nivel": "basico"
+    "nivel": "basico",
+    "solo": true,
+    "tipo": "estudio",
+    "freq": 1
    },
    {
     "nombre": "Sombra de escenarios: pelea imaginaria",
     "como": "1) Elige un rival concreto de Floyd y visualízalo. 2) Asalto 1: recoge información con jab, amagos y jab al cuerpo, sin comprometerte. 3) Asalto 2: contragolpea el patrón que imaginaste con pull counter y recto de derecha de punta. 4) Asalto 3: simula presión tipo Hatton o Maidana y responde con pivote, check hook (pivote sobre la bola del pie de adelante y arco del pie de atrás por detrás, girando el cuerpo hacia tu izquierda), amarre y salida. 5) Mantén siempre la postura ortodoxa con el hombro izquierdo alto. Si eres zurdo, al revés.",
     "dosis": "3 asaltos de 3 minutos con 1 minuto de descanso, 3 veces por semana",
-    "nivel": "basico"
+    "nivel": "basico",
+    "solo": true
    },
    {
     "nombre": "Sparring con restricciones: el primer asalto es para leer",
     "como": "1) En sparring técnico, el asalto 1 es solo para recoger información: jab, amagos y defensa, sin potencia. 2) Al terminar el asalto dile a tu entrenador, o anota, 2 patrones de tu compañero. 3) En los asaltos 2 y 3 solo puedes puntuar con el contragolpe que corresponde a esos patrones, por ejemplo recto de derecha cuando él baja la mano izquierda después del jab. 4) Al final revisa con el entrenador si tus lecturas fueron correctas.",
     "dosis": "3 asaltos de 3 minutos al 50 a 60% de potencia, con 1 minuto de descanso, 1 vez por semana",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 1
    },
    {
     "nombre": "Plan contra el zurdo",
     "como": "1) Con un compañero zurdo, o un ortodoxo que se ponga en guardia zurda, trabaja a ritmo técnico. 2) Primer minuto: solo pelea por la posición del pie adelantado, intentando dejar el tuyo por fuera del suyo sin lanzar golpes. 3) Segundo minuto: desde esa posición lanza el recto de derecha de punta y sal hacia tu izquierda, lejos de su mano izquierda. 4) Tercer minuto: tu compañero lanza rectos de izquierda y tú respondes con pull counter de derecha.",
     "dosis": "3 asaltos de 3 minutos con 1 minuto de descanso, 1 vez por semana",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": false,
+    "freq": 1
    },
    {
     "nombre": "Cuerdas a lo Cotto y De La Hoya",
     "como": "1) Ponte en las cuerdas con el hombro izquierdo alto, la mano derecha pegada a la mejilla derecha y el codo izquierdo cubriendo el hígado. 2) Tu compañero te ataca con combinaciones controladas al 50%. 3) Solo puedes rodar con el hombro izquierdo, bloquear con la derecha y responder de inmediato con recto de derecha o uppercut corto. 4) Sal pivotando justo después de rodar o bloquear un golpe, cuando su peso está comprometido, hacia el lado contrario a su mano de poder: contra un ortodoxo, normalmente hacia tu derecha, por fuera de su mano adelantada. 5) Nunca salgas recto hacia atrás.",
     "dosis": "4 rondas de 2 minutos con 1 minuto de descanso, cambiando de rol en cada ronda, 1 vez por semana",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": false,
+    "freq": 1
    },
    {
     "nombre": "Contra el presionador: check hook, amarre y pull counter",
     "como": "1) Tu compañero entra en línea recta con presión constante, estilo Hatton o Maidana, al 50% de potencia. 2) Respuesta 1: check hook, pegando el gancho de izquierda al mismo tiempo que pivotas sobre la bola del pie de adelante y el pie de atrás barre el arco por detrás para girar hacia tu izquierda y salir del eje. 3) Respuesta 2: amarre corto controlando sus brazos y su cabeza, y salida al centro del ring. 4) Respuesta 3: pull counter con la derecha. 5) El entrenador canta el número de la respuesta, o tú eliges según el ángulo de entrada.",
     "dosis": "3 asaltos de 3 minutos con 1 minuto de descanso, 1 vez por semana",
-    "nivel": "avanzado"
+    "nivel": "avanzado",
+    "solo": false,
+    "freq": 1
    },
    {
     "nombre": "Ajuste tras la crisis: protocolo Mosley",
     "como": "1) En sparring controlado, el entrenador da una señal en medio del asalto que significa que estás sacudido. 2) Durante 15 segundos debes amarrar, taparte y moverte sin lanzar. 3) Después toma el centro del ring y sé el agresor con jab y recto de derecha el resto del asalto. 4) El objetivo es entrenar la mentalidad de recuperar y cambiar el ritmo, no solo sobrevivir. Hazlo solo con un compañero de confianza y a potencia controlada.",
     "dosis": "2 a 3 asaltos de 3 minutos con 1 minuto de descanso, cada 2 semanas",
-    "nivel": "avanzado"
+    "nivel": "avanzado",
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 1
    }
   ],
   "recursos": [
@@ -2393,43 +2474,55 @@ export const MODULOS = [
     "nombre": "Bloque de curso más sombra",
     "como": "1) Mira una sola lección del módulo de defensa de tu curso de Udemy, por ejemplo la de shoulder roll en Boxing Mastery. 2) Arma la guardia frente al espejo: hombro izquierdo arriba, mentón metido, mano derecha en la mejilla y mano izquierda baja pero activa. 3) Haz sombra solo con jab y recto, volviendo a la guardia después de cada golpe. 4) Cada 10 segundos haz un shoulder roll contra un recto imaginario: peso al pie de atrás, rodilla de atrás un poco flexionada, y contesta con tu derecha.",
     "dosis": "3 rounds x 3 min, 1 min de descanso, una lección por sesión",
-    "nivel": "basico"
+    "nivel": "basico",
+    "solo": true
    },
    {
     "nombre": "Shoulder roll con compañero a media velocidad",
     "como": "1) El compañero lanza solo rectos de derecha al 30 a 50 % de velocidad, con guantes de sparring. 2) Rotas el torso a la derecha desde la cadera, pasas el peso al pie de atrás y dejas que el golpe resbale por el hombro izquierdo, con la cabeza dentro de la base. 3) Al soltar la rotación contestas con recto de derecha a la manopla o al pecho del compañero. 4) Cada round sube un poco la velocidad, sin pasar del 70 %. 5) Al final, compara lo que hiciste con el clip de shoulder roll que estés estudiando.",
     "dosis": "4 rounds x 2 min, 1 min de descanso, cambiando de rol cada round",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": false
    },
    {
     "nombre": "Pull counter con jab del compañero",
     "como": "1) El compañero lanza jab simple a tu cara a velocidad media. 2) Pasas el peso al pie de atrás e inclinas el torso un poco hacia atrás y a la derecha sobre la cadera, sin dar un paso y sin sacar la cabeza de la base. 3) La mano derecha se queda en el mentón, cargada. 4) Cuando el jab está extendido o empezando a volver, disparas el recto de derecha por encima. 5) Variante: después del recto, gancho de izquierda al cuerpo.",
     "dosis": "5 rounds x 2 min, 1 min de descanso, unas 30 repeticiones limpias por round",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": false
    },
    {
     "nombre": "Estudio de un round de Floyd",
     "como": "1) Escoge una pelea de la lista, por ejemplo Hatton 2007 o Canelo 2013. 2) Mira un solo round completo sin pausas. 3) Míralo otra vez fijándote solo en un detalle: los pies, la mano derecha o el momento en que contesta. 4) Anota tres situaciones concretas, por ejemplo: rodó el recto y contestó con derecha. 5) Haz 2 rounds de sombra reproduciendo esas tres situaciones.",
     "dosis": "1 round de pelea visto 2 veces + 2 rounds de sombra x 3 min, una vez por semana",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": true,
+    "tipo": "estudio",
+    "freq": 1
    },
    {
     "nombre": "Circuito de clips antes del sparring",
     "como": "1) Antes del sparring mira 2 clips de tu colección: uno de guardia y otro de pull counter. 2) Haz 1 round de sombra aplicando solo esos detalles. 3) En el sparring ponte una sola meta, por ejemplo 3 pull counters limpios. 4) Al terminar vuelve a mirar el clip y anota qué te faltó.",
     "dosis": "1 round de sombra x 3 min antes del sparring + una sola meta dentro del sparring",
-    "nivel": "avanzado"
+    "nivel": "avanzado",
+    "solo": false
    },
    {
     "nombre": "Grábate y compárate",
     "como": "1) Pide que te graben un round de sparring ligero o de manoplas con el celular de lado, donde se vean los pies. 2) Mira el video a velocidad normal y luego a 0.5x. 3) Ponlo al lado del clip de referencia, por ejemplo Floyd en la línea vertical o el pull counter de Luke Howard. 4) Anota tres cosas: si la cabeza salió de la base, si la mano derecha bajó y si contestaste después de cada defensa. 5) Muéstrale el video a tu entrenador y elige un solo detalle para la semana.",
     "dosis": "1 grabación por semana, 15 min de revisión",
-    "nivel": "intermedio"
+    "nivel": "intermedio",
+    "solo": false,
+    "tipo": "estudio",
+    "freq": 1
    },
    {
     "nombre": "Diario de estudio semanal",
     "como": "1) Abre una nota en el celular o un cuaderno solo para este estilo. 2) Cada sesión escribe qué lección, clip o pelea estudiaste, qué detalle practicaste y cuántas repeticiones limpias lograste. 3) Al final de la semana revisa qué error se repite. 4) Escoge el siguiente clip o lección según ese error, no según lo que aparezca en tu feed.",
     "dosis": "5 min después de cada entrenamiento, revisión de 10 min el domingo",
-    "nivel": "basico"
+    "nivel": "basico",
+    "solo": true,
+    "tipo": "estudio"
    }
   ],
   "recursos": [
@@ -2512,7 +2605,8 @@ export const MODULOS = [
     "autor": "Sio Vaspa",
     "idioma": "en",
     "nivel": "avanzado",
-    "por_que": "Inteligencia de pelea para boxeo y kickboxing con algo de clinch: ángulos, pasos para salir de la línea, shoulder roll con contragolpe, fintas y ritmo roto. Déjalo para cuando ya tengas la base de los otros dos cursos."
+    "por_que": "Inteligencia de pelea para boxeo y kickboxing con algo de clinch: ángulos, pasos para salir de la línea, shoulder roll con contragolpe, fintas y ritmo roto. Déjalo para cuando ya tengas la base de los otros dos cursos.",
+    "pago": true
    },
    {
     "titulo": "CÓMO ROMPER LA PHILLY SHELL DE MAYWEATHER...",

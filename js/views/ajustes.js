@@ -2,7 +2,8 @@ import * as S from "../store.js";
 import * as Sync from "../sync.js";
 import {icon, toast, confirmDlg, formModal} from "../ui.js";
 import {esc, download, today, fmtDate} from "../util.js";
-import {toggleTheme, gIcon} from "../app.js";
+import {themePref, setTheme, gIcon} from "../shell.js";
+import {loadDemo, removeDemo, hasDemo} from "../demo.js";
 import {GOOGLE_CLIENT_ID} from "../config.js";
 import {t, tn, lang, locale, setLang, LANGS} from "../i18n.js";
 
@@ -41,8 +42,9 @@ export function render(el){
     <header class="card-h"><h3>${icon("settings")} ${t("Preferencias")}</h3></header>
     <div class="row gap wrap">
       <div class="seg" role="radiogroup" aria-label="${t("Idioma / Language")}" title="${t("Idioma / Language")}">${LANGS.map(([k, l]) => `<label><input type="radio" name="lang" value="${k}" data-lang ${lang() === k ? "checked" : ""}><span>${esc(l)}</span></label>`).join("")}</div>
-      <button class="btn ghost" data-theme>${icon(S.pref("theme", "dark") === "dark" ? "sun" : "moon")} ${S.pref("theme", "dark") === "dark" ? t("Tema claro") : t("Tema oscuro")}</button>
-      <button class="btn ghost" data-demo>${icon("users")} ${t("Cargar alumnos de ejemplo")}</button>
+      <div class="seg" role="radiogroup" aria-label="${t("Tema")}" title="${t("Tema")}">${[["system", t("Sistema")], ["light", t("Claro")], ["dark", t("Oscuro")]].map(([k, l]) => `<label><input type="radio" name="theme" value="${k}" data-set-theme ${themePref() === k ? "checked" : ""}><span>${icon(k === "system" ? "settings" : k === "light" ? "sun" : "moon", "inline")} ${esc(l)}</span></label>`).join("")}</div>
+      ${hasDemo() ? `<button class="btn ghost" data-undemo>${icon("trash")} ${t("Quitar datos de ejemplo")}</button>` : `<button class="btn ghost" data-demo>${icon("users")} ${t("Cargar alumnos de ejemplo")}</button>`}
+      ${S.academy() && S.pref("setupHide:" + S.academy().id, false) ? `<button class="btn ghost" data-setup-show>${icon("check")} ${t("Mostrar primeros pasos")}</button>` : ""}
     </div>
   </section>
 
@@ -63,8 +65,12 @@ export function render(el){
     if(tg.closest("[data-sync]")){ await Sync.sync(); toast(Sync.status().phase === "ok" ? t("Sincronizado") : Sync.status().msg, Sync.status().phase === "ok" ? "ok" : "warn"); render(el); return; }
     if(tg.closest("[data-disconnect]")){ if(await confirmDlg(t("Los datos quedan en este aparato y en tu Drive. Podrás volver a conectar cuando quieras."), {ok: t("Desconectar"), danger: false})){ Sync.disconnect(); render(el); } return; }
     if(tg.closest("[data-export]")){ download(`academia-copia-${today()}.json`, JSON.stringify(S.snapshot())); return; }
-    if(tg.closest("[data-theme]")){ toggleTheme(); render(el); return; }
-    if(tg.closest("[data-demo]")){ const {loadDemo} = await import("../demo.js"); loadDemo(); toast(t("Alumnos de ejemplo agregados")); return; }
+    if(tg.closest("[data-demo]")){ const k = loadDemo(); k ? toast(t("Alumnos de ejemplo agregados")) : toast(t("Primero crea una sede y una disciplina en Academia."), "warn"); render(el); return; }
+    if(tg.closest("[data-undemo]")){
+      if(!await confirmDlg(t("Se borran los alumnos, pagos, grados y asistencias de ejemplo. Tus datos reales no se tocan."), {ok: t("Quitar datos de ejemplo"), title: t("¿Quitar datos de ejemplo?")})) return;
+      removeDemo(); toast(t("Datos de ejemplo quitados")); render(el); return;
+    }
+    if(tg.closest("[data-setup-show]")){ S.setPref("setupHide:" + S.academy().id, false); toast(t("Primeros pasos visibles en Inicio")); render(el); return; }
     if(tg.closest("[data-client]")) return formModal({title: t("ID de cliente de Google"), values: {id: S.pref("clientId", "")}, fields: [
       {k: "id", label: t("ID de cliente OAuth (termina en .apps.googleusercontent.com)"), ph: GOOGLE_CLIENT_ID, hint: t("Déjalo vacío para usar el de la app.")}],
       onSave: v => { S.setPref("clientId", v.id); toast(t("Guardado. Vuelve a conectar Google.")); render(el); }});
@@ -73,6 +79,7 @@ export function render(el){
       Sync.disconnect(); localStorage.clear(); indexedDB.deleteDatabase("mma-fotos"); location.reload();
     }
   };
+  el.querySelectorAll("[data-set-theme]").forEach(r => r.onchange = () => { if(r.checked) setTheme(r.value); });
   el.querySelectorAll("[data-lang]").forEach(r => r.onchange = () => { if(r.checked && r.value !== lang()) setLang(r.value); });
   const imp = el.querySelector("[data-import]");
   imp.onchange = async () => {

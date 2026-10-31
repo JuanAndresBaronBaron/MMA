@@ -149,15 +149,20 @@ async function syncOnce(){
   const files = await listFiles();
   const byName = new Map(files.map(f => [f.name, f]));
   const main = byName.get(NAME);
-  let remote = null;
-  if(main){ remote = await download(main.id); S.merge(remote); }
   const m = meta();
-  let fileId = main ? main.id : null;
-  if(!main || S.aheadOf(remote)){
-    S.compact();
-    const snap = S.snapshot();
-    const r = await upload(fileId, NAME, Object.assign(snap, {saved: new Date().toISOString()}), {v: S.VER});
-    fileId = r.id;
+  let fileId = main ? main.id : null, remoteMod = m.remoteMod || "";
+  /* sin cambios en Drive (misma modifiedTime que la última vez) ni en este aparato: no hace falta bajar ni subir */
+  const same = main && main.modifiedTime && m.remoteMod === main.modifiedTime && m.fileId === main.id && !m.dirty;
+  if(!same){
+    let remote = null;
+    /* flush: lo mezclado queda en localStorage antes de anotar remoteMod; si la página muere antes, no se salta la bajada */
+    if(main){ remote = await download(main.id); S.merge(remote); S.flush(); remoteMod = main.modifiedTime || ""; }
+    if(!main || S.aheadOf(remote)){
+      S.compact();
+      const snap = S.snapshot();
+      const r = await upload(fileId, NAME, Object.assign(snap, {saved: new Date().toISOString()}), {v: S.VER});
+      fileId = r.id; remoteMod = r.modifiedTime || "";
+    }
   }
   /* fotos: subir las de este aparato, bajar las nuevas de Google */
   const q = fotoQ();
@@ -176,13 +181,13 @@ async function syncOnce(){
       if(o && o.data){ await S.setFoto(al.id, o.data, Number(o.u) || al.fotoU, true); window.dispatchEvent(new CustomEvent("mma:foto", {detail: {id: al.id, remote: true}})); }
     }
   }
-  /* fotos de alumnos borrados */
+  /* fotos de alumnos borrados: solo si aquí hay lápida del alumno (no por faltar en una copia local incompleta) */
   for(const f of files){
     const mm = /^foto-(.+)\.json$/.exec(f.name);
-    if(mm && !S.get("alumnos", mm[1]) && S.all("alumnos").length) await remove(f.id);
+    if(mm && S.isDeleted("alumnos", mm[1])) await remove(f.id);
   }
   const fresh = meta();
-  setMeta({fileId, lastSync: now(), dirty: fresh.dirty && fresh.lastLocal > m.lastLocal ? true : false});
+  setMeta({fileId, remoteMod, lastSync: now(), dirty: fresh.dirty && fresh.lastLocal > m.lastLocal ? true : false});
   setPhase("ok");
 }
 const MSG = {

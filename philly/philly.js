@@ -23,7 +23,7 @@ async function sha(s){
 const ytId = u => (u.match(/(?:youtu\.be\/|v=|shorts\/|embed\/)([\w-]{11})/) || [])[1];
 const plat = r => PLATAFORMAS[r.plataforma] || PLATAFORMAS.web;
 function itemsDe(m){
-  return [...m.drills.map((_, i) => `d:${m.id}:${i}`), ...m.recursos.map(r => `r:${r.url}`), ...m.hitos.map((_, i) => `h:${m.id}:${i}`)];
+  return [...m.drills.map((_, i) => `d:${m.id}:${i}`), ...m.recursos.filter(r => !r.pago).map(r => `r:${r.url}`), ...m.hitos.map((_, i) => `h:${m.id}:${i}`)];
 }
 function pct(keys){ return keys.length ? Math.round(keys.filter(k => prog[k]).length / keys.length * 100) : 0; }
 const ring = (p, s = 56) => { const r = s / 2 - 5, c = 2 * Math.PI * r;
@@ -41,7 +41,7 @@ function recurso(r){
     </a>
     <div class="res-body">
       <a href="${esc(r.url)}" target="_blank" rel="noopener" class="res-t">${esc(r.titulo)}</a>
-      <span class="res-meta">${esc(r.autor || "")}${r.idioma ? ` · ${r.idioma === "es" ? "Español" : "Inglés"}` : ""}${r.nivel ? ` · ${NIVEL[r.nivel] || esc(r.nivel)}` : ""}</span>
+      <span class="res-meta">${esc(r.autor || "")}${r.idioma ? ` · ${r.idioma === "es" ? "Español" : "Inglés"}` : ""}${r.nivel ? ` · ${NIVEL[r.nivel] || esc(r.nivel)}` : ""}${r.pago ? ` · <b class="res-pago">De pago</b>` : ""}</span>
       ${r.por_que ? `<p class="res-why">${esc(r.por_que)}</p>` : ""}
       <div class="res-foot">${check(k, "Visto")}</div>
     </div>

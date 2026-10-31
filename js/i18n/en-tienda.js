@@ -15,4 +15,7 @@ export default {
   "Ya tiene": "Has it",
   "Todos tienen": "Everyone has it",
   "Todos los alumnos activos tienen {producto}.": "All active students have {producto}.",
+  "WhatsApp a {nombre}": "WhatsApp {nombre}",
+  "{nombre} ya tiene {producto}": "{nombre} now has {producto}",
+  "Deshacer": "Undo",
 };

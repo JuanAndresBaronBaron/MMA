@@ -53,4 +53,8 @@ export default {
   "Escribe el nombre de la academia": "Enter the academy name",
   "¡Academia creada! Ahora agrega tus alumnos.": "Academy created! Now add your students.",
   "El almacenamiento de este aparato está lleno": "This device's storage is full",
+  "Navegación principal": "Main navigation",
+  "Secciones": "Sections",
+  "1 vencido": "1 overdue",
+  "{n} vencidos": "{n} overdue",
 };

@@ -1,4 +1,13 @@
-/* Camino de Lucha: contenido investigado, con enlaces tomados de resultados reales de búsqueda. */
+/* Camino de Lucha: contenido investigado, con enlaces tomados de resultados reales de búsqueda.
+   Duplicados pendientes para la reorganización en tres pilares (de pie, ataques, suelo); no se borran ni se mueven
+   aquí porque las claves de progreso (lucha:d:modulo:i) dependen de la posición:
+   - Sprawl reactivo: fundamentos-1 y cadenas-1.
+   - Caídas: fundamentos-1 (Progresión de caídas seguras), cadenas-1 (Caídas básicas) y cadenas-3 (Caídas avanzadas).
+   - Snap down a go-behind: fundamentos-2 (intermedio) y cadenas-1 (básico).
+   - Cadenas daguestaníes: fundamentos-3, cadenas-2, suelo-3 (y mma jaula-3).
+   - Clinch grecorromano contra la pared: fundamentos-3, cadenas-3 y suelo-3.
+   - Gut wrench y leg lace: cadenas-2 y suelo-2.
+   - Pelea de manos: fundamentos-1 (progresión de 5 pasos), fundamentos-2 y cadenas-2 (two-on-one). */
 export const INTRO = {
  "titulo": "Lucha: de cero a lucha encadenada",
  "sub": "Este camino usa la lucha libre olímpica (freestyle) con el enfoque daguestaní de encadenar ataques, porque permite atacar las piernas y también proyectar desde el tronco, y es la que mejor se traslada al MMA, al BJJ y a la defensa personal. La grecorromana, que prohíbe atacar o usar las piernas, entra como complemento para el clinch: underhooks (brazo por debajo de la axila del rival), body lock (abrazo de cintura), arm drags y proyecciones.",
@@ -303,6 +312,15 @@ export const MODULOS = [
     "nivel": "basico",
     "min": 5,
     "solo": false
+   },
+   {
+    "nombre": "Progresión de hand fighting en 5 pasos",
+    "como": "Con un compañero, en postura y moviéndose. Una ronda por paso. 1) Posición de manos: busca la mano interior (tu mano por dentro de la suya) y mantén los codos cerca del cuerpo. 2) Collar tie y control de muñeca: agarra la nuca o la muñeca del compañero y luego aprende a romper esos mismos agarres cuando te los hace a ti. 3) Limpiar agarres: suelta cualquier agarre suyo con un golpe de mano o un giro de muñeca y vuelve a la posición neutral. 4) Two-on-one y arm drag: atrapa su brazo con tus dos manos y llévalo hacia tu cadera para pasar a su costado. 5) Juego vivo: el primero que toca las piernas del otro gana el punto. La cabeza también trabaja, como una quinta mano, apoyada en la sien o la frente del compañero. No cruces los pies y no agarres sin un propósito.",
+    "dosis": "5 rondas de 2 minutos (una por paso) con 30 segundos de descanso",
+    "nivel": "basico",
+    "min": 14,
+    "solo": false,
+    "tipo": "tecnica"
    }
   ],
   "recursos": [
@@ -376,7 +394,8 @@ export const MODULOS = [
     "autor": "No confirmado",
     "idioma": "en",
     "nivel": "basico",
-    "por_que": "Curso de lucha incluido en la membresía de Udemy, como apoyo estructurado."
+    "por_que": "Curso de lucha incluido en la membresía de Udemy, como apoyo estructurado.",
+    "pago": true
    }
   ],
   "hitos": [
@@ -709,7 +728,8 @@ export const MODULOS = [
     "autor": "Instructor del curso en Udemy",
     "idioma": "es",
     "nivel": "avanzado",
-    "por_que": "Curso en español sobre contraataques y arrastre de brazo, útil cuando ya dominas la defensa básica. Enfócate en cómo cada contraataque nace de la defensa del rival."
+    "por_que": "Curso en español sobre contraataques y arrastre de brazo, útil cuando ya dominas la defensa básica. Enfócate en cómo cada contraataque nace de la defensa del rival.",
+    "pago": true
    },
    {
     "titulo": "Whizzer Ankle Capture (Single Leg Defense) - Cary Kolat Wrestling Moves",
@@ -991,7 +1011,8 @@ export const MODULOS = [
     "autor": "No confirmado",
     "idioma": "en",
     "nivel": "basico",
-    "por_que": "Curso de Udemy centrado en single leg y high crotch, base para las cadenas; disponible con la membresía."
+    "por_que": "Curso de Udemy centrado en single leg y high crotch, base para las cadenas; disponible con la membresía.",
+    "pago": true
    }
   ],
   "hitos": [
@@ -1360,7 +1381,9 @@ export const MODULOS = [
     "dosis": "3 combates de 3 minutos con 1 minuto de descanso",
     "nivel": "avanzado",
     "min": 12,
-    "solo": false
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 2
    }
   ],
   "recursos": [
@@ -1515,7 +1538,7 @@ export const MODULOS = [
     "como": "1. Ponte en cuatro apoyos sobre el tapiz. 2. Saca una pierna por debajo y siéntate de lado, en ángulo (sit-out). 3. Gira la cadera por debajo para quedar otra vez en cuatro apoyos mirando hacia el otro lado (hip heist). 4. Vuelve a la posición inicial y alterna los lados. Mantén la cabeza arriba todo el tiempo.",
     "dosis": "3 series de 30 segundos, con 30 segundos de descanso",
     "nivel": "basico",
-    "min": 4,
+    "min": 5,
     "solo": true
    },
    {
@@ -1536,6 +1559,24 @@ export const MODULOS = [
     "idioma": "en",
     "nivel": "basico",
     "por_que": "Clip corto con una cadena de escape desde abajo."
+   },
+   {
+    "titulo": "Stand Up Escape: Basic Bottom Wrestling Moves and Technique For Beginners",
+    "url": "https://www.youtube.com/watch?v=g6XGABVzZ4E",
+    "plataforma": "youtube",
+    "autor": "Fundamental Wrestling",
+    "idioma": "en",
+    "nivel": "basico",
+    "por_que": "El stand-up desde abajo explicado para principiantes, paso a paso. Es la técnica base del drill de stand-up técnico."
+   },
+   {
+    "titulo": "Basics - Wrestling Bottom Moves",
+    "url": "https://www.youtube.com/watch?v=DRpBx3qg6GE",
+    "plataforma": "youtube",
+    "autor": "David Griffiths",
+    "idioma": "en",
+    "nivel": "basico",
+    "por_que": "Repaso de los movimientos básicos desde abajo para salir de la posición de referí. Míralo antes del sit-out y el hip heist."
    }
   ],
   "hitos": [
@@ -1647,7 +1688,9 @@ export const MODULOS = [
     "dosis": "6 rondas de 30 a 45 segundos, con 30 segundos de descanso, cambiando roles",
     "nivel": "intermedio",
     "min": 8,
-    "solo": false
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 3
    },
    {
     "nombre": "Circuito de acondicionamiento de lucha",
@@ -1655,7 +1698,9 @@ export const MODULOS = [
     "dosis": "4 vueltas, 40 segundos de trabajo y 20 segundos de descanso por estación",
     "nivel": "intermedio",
     "min": 20,
-    "solo": false
+    "solo": false,
+    "tipo": "fisico",
+    "freq": 2
    }
   ],
   "recursos": [
@@ -1684,7 +1729,8 @@ export const MODULOS = [
     "autor": "No confirmado",
     "idioma": "en",
     "nivel": "intermedio",
-    "por_que": "Curso de Udemy con drills de lucha en el tapiz; entra en la membresía anual."
+    "por_que": "Curso de Udemy con drills de lucha en el tapiz; entra en la membresía anual.",
+    "pago": true
    },
    {
     "titulo": "CONDITIONING WORKOUT WITH PRINCETON WRESTLING #training",
@@ -1803,7 +1849,9 @@ export const MODULOS = [
     "dosis": "1 vez cada 1 o 2 semanas, 3 a 4 minutos por persona",
     "nivel": "avanzado",
     "min": 20,
-    "solo": false
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 1
    }
   ],
   "recursos": [

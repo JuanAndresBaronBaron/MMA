@@ -21,7 +21,7 @@ function readLocal(){
   }catch(e){}
   return empty();
 }
-export function load(){ db = readLocal(); }
+export function load(){ db = readLocal(); if(dedupeAsistencias() + fijarAsistencias()) persist(); }
 export function snapshot(){ return JSON.parse(JSON.stringify(db)); }
 
 let saveT = 0;
@@ -42,6 +42,7 @@ export function put(col, rec){
   const r = Object.assign({}, prev._d ? {} : prev, rec, {id: rec.id || uid(), _u: Math.max(now(), (prev._u || 0) + 1)});
   if(!r._c) r._c = now();
   delete r._d;
+  if(col === "asistencias") fijarAsis(r);
   db.col[col][r.id] = r;
   changed();
   return r;
@@ -53,6 +54,8 @@ export function del(col, id){
 }
 export const get = (col, id) => { const r = db.col[col][id]; return r && !r._d ? r : null; };
 export const all = col => Object.values(db.col[col]).filter(r => !r._d);
+/* hay lápida de este registro (borrado a propósito, no solo ausente) */
+export const isDeleted = (col, id) => !!(db.col[col] && db.col[col][id] && db.col[col][id]._d);
 
 /* ---------- mezclar con la copia de Google ---------- */
 export function merge(remote, local = false){
@@ -63,10 +66,12 @@ export function merge(remote, local = false){
     const L = db.col[c];
     for(const id in R){
       const r = R[id]; if(!isObj(r) || typeof r._u !== "number") continue;
+      /* misma clase viva en los dos lados: se mezcla alumno por alumno */
+      if(c === "asistencias" && L[id] && !L[id]._d && !r._d){ const m = unirAsis(L[id], r); if(m){ L[id] = m; any = true; } continue; }
       if(!L[id] || (L[id]._u || 0) < r._u){ L[id] = r; any = true; }
     }
   }
-  if(any) changed(local);
+  if(any){ dedupeAsistencias(); fijarAsistencias(); changed(local); }
   return any;
 }
 /* ¿la copia local tiene algo que la remota no? */
@@ -81,7 +86,7 @@ export function aheadOf(remote){
 export function replaceAll(data){
   const d = empty();
   if(isObj(data) && isObj(data.col)) for(const c of COLS) if(isObj(data.col[c])) d.col[c] = data.col[c];
-  db = d; changed();
+  db = d; dedupeAsistencias(); fijarAsistencias(); changed();
 }
 /* lápidas de más de 120 días: ya viajaron a todos los aparatos */
 export function compact(){
@@ -226,8 +231,143 @@ export function periodoNuevo(al){
 export const valorPlan = al => Number(al.valor ?? academy()?.valorMensual ?? 0) || 0;
 
 /* ---------- asistencia ---------- */
-export function asistenciasDe(alumnoId, desde){
-  return all("asistencias").filter(a => (a.presentes || []).includes(alumnoId) && (!desde || a.fecha >= desde)).length;
+/* un registro por clase: id fijo fecha_sede_disciplina, así dos toques o dos aparatos no crean copias */
+export const asisId = (fecha, sedeId, discId) => `${fecha}_${sedeId}_${discId}`;
+export const asistenciaDe = (fecha, sedeId, discId) => get("asistencias", asisId(fecha, sedeId, discId))
+  || all("asistencias").find(a => a.fecha === fecha && a.sedeId === sedeId && a.disciplinaId === discId) || null;
+/* marca (on=true) o desmarca a uno o varios alumnos leyendo siempre el registro guardado, no una copia vieja.
+   Cada alumno lleva su propia marca {on, _u} en marcas: si dos aparatos pasan lista de la misma clase sin red,
+   al mezclar se suman (gana por alumno el cambio más reciente). presentes = los on, para la versión anterior. */
+export function marcarAsistencia({fecha, sedeId, disciplinaId}, ids, on){
+  const rec = asistenciaDe(fecha, sedeId, disciplinaId), m = rec ? marcasDe(rec) : {};
+  for(const id of [].concat(ids)) m[id] = {on: !!on, _u: Math.max(now(), (m[id]?._u || 0) + 1)};
+  return guardarAsis({fecha, sedeId, disciplinaId}, rec, m);
+}
+export function setPresentes({fecha, sedeId, disciplinaId}, presentes){
+  const rec = asistenciaDe(fecha, sedeId, disciplinaId), m = rec ? marcasDe(rec) : {}, set = new Set(presentes);
+  const marca = (id, on) => { if(!!m[id]?.on !== on) m[id] = {on, _u: Math.max(now(), (m[id]?._u || 0) + 1)}; };
+  for(const id in m) if(!set.has(id)) marca(id, false);
+  for(const id of set) marca(id, true);
+  return guardarAsis({fecha, sedeId, disciplinaId}, rec, m);
+}
+function guardarAsis({fecha, sedeId, disciplinaId}, rec, marcas){
+  const id = asisId(fecha, sedeId, disciplinaId);
+  if(rec && rec.id !== id) del("asistencias", rec.id);
+  return put("asistencias", Object.assign({}, rec || {}, {id, academiaId: rec?.academiaId || academy()?.id, fecha, sedeId, disciplinaId, marcas,
+    presentes: Object.keys(marcas).filter(x => marcas[x].on)}));
+}
+/* marcas de un registro, cuadradas con presentes: un registro sin marcas (o escrito por la versión anterior, que solo
+   toca presentes) cuenta cada id de presentes como marcado en r._u y cada marca on que ya no está como desmarcada */
+function marcasDe(r){
+  const m = {}, u = r._u || 0, pres = new Set(r.presentes || []);
+  if(isObj(r.marcas)) for(const id in r.marcas){ const x = r.marcas[id]; if(isObj(x)) m[id] = {on: !!x.on, _u: Number(x._u) || 0}; }
+  if(!Array.isArray(r.presentes)) return m;
+  for(const id of pres) if(!m[id]?.on) m[id] = {on: true, _u: Math.max(u, m[id]?._u || 0)};
+  for(const id in m) if(m[id].on && !pres.has(id) && !isDeleted("alumnos", id)) m[id] = {on: false, _u: Math.max(u, m[id]._u)};
+  return m;
+}
+/* deja marcas cuadradas y presentes derivado (sin alumnos borrados). No cambia _u: es igual en todos los aparatos */
+function fijarAsis(r){
+  const m = marcasDe(r);
+  r.marcas = m;
+  r.presentes = Object.keys(m).filter(id => m[id].on && !isDeleted("alumnos", id));
+  return r;
+}
+function fijarAsistencias(){
+  let n = 0;
+  for(const r of Object.values(db.col.asistencias)){
+    if(r._d) continue;
+    const a = JSON.stringify([r.marcas, r.presentes]);
+    if(JSON.stringify([fijarAsis(r).marcas, r.presentes]) !== a) n++;
+  }
+  return n;
+}
+/* por alumno gana el _u más alto; empate: gana marcado (igual en los dos aparatos) */
+const gana = (x, y) => !x ? y : !y ? x : x._u !== y._u ? (x._u > y._u ? x : y) : (y.on ? y : x);
+const unirMarcas = ms => { const out = {}; for(const m of ms) for(const id in m) out[id] = gana(out[id], m[id]); return out; };
+const igualMarcas = (a, b) => { const ka = Object.keys(a); return ka.length === Object.keys(b).length && ka.every(id => b[id] && b[id].on === a[id].on && b[id]._u === a[id]._u); };
+/* mezcla local l con remota r de la misma clase. null si l no cambia. Si l aporta marcas que r no tiene, el _u sube
+   por encima del remoto para que se suba a Drive; el resto de campos, del más reciente */
+function unirAsis(l, r){
+  const a = marcasDe(l), b = marcasDe(r), m = unirMarcas([a, b]);
+  const lu = l._u || 0, base = lu < r._u ? r : l;
+  const u = igualMarcas(m, b) ? Math.max(lu, r._u) : Math.max(lu, r._u + 1);
+  if(base === l && u === lu && igualMarcas(m, a)) return null;
+  return fijarAsis(Object.assign({}, base, {marcas: m, presentes: undefined, _u: u}));
+}
+/* junta los registros repetidos de una misma clase (unión de marcas por alumno) y los pasa al id fijo. Idempotente:
+   corre al cargar y tras cada mezcla con Drive (otro aparato con la versión vieja puede traer copias). El _u sale de
+   los registros juntados (máximo + 1), nunca de now(): dos aparatos que migran lo mismo dan lo mismo, y cualquier
+   cambio real hecho después (aquí u otro aparato) le gana */
+function dedupeAsistencias(){
+  const L = db.col.asistencias, grupos = new Map();
+  for(const r of Object.values(L)){
+    if(r._d || !r.fecha || !r.sedeId || !r.disciplinaId) continue;
+    const k = asisId(r.fecha, r.sedeId, r.disciplinaId);
+    if(!grupos.has(k)) grupos.set(k, []);
+    grupos.get(k).push(r);
+  }
+  let n = 0;
+  for(const [k, rs] of grupos){
+    if(rs.length === 1 && rs[0].id === k) continue;
+    rs.sort((a, b) => (a._c || 0) - (b._c || 0) || (a.id < b.id ? -1 : 1));
+    const u = Math.max(0, ...rs.map(x => x._u || 0)) + 1;
+    const base = Object.assign({}, ...rs);
+    const r = fijarAsis(Object.assign(base, {id: k, marcas: unirMarcas(rs.map(marcasDe)), presentes: undefined, _c: rs[0]._c || u, _u: u}));
+    if(rs.some(x => "demo" in x)) r.demo = rs.every(x => x.demo);
+    delete r._d;
+    for(const x of rs) if(x.id !== k) L[x.id] = {id: x.id, _u: u, _d: true};
+    L[k] = r; n++;
+  }
+  return n;
+}
+/* registros de asistencia de un alumno, opcionalmente de una disciplina */
+const asisDeAlumno = (alumnoId, discId) => all("asistencias").filter(a => (a.presentes || []).includes(alumnoId) && (!discId || a.disciplinaId === discId));
+/* número de clases. asistenciasDe(id, desde?, discId?) o asistenciasDe(id, {desde, disc}) */
+export function asistenciasDe(alumnoId, desde, discId){
+  if(isObj(desde)){ discId = desde.disc; desde = desde.desde; }
+  return asisDeAlumno(alumnoId, discId).filter(a => !desde || a.fecha >= desde).length;
+}
+export function ultimaAsistencia(alumnoId, discId){
+  let u = null;
+  for(const a of asisDeAlumno(alumnoId, discId)) if(!u || a.fecha > u) u = a.fecha;
+  return u;
+}
+/* lunes de la semana de una fecha ISO */
+export function lunes(iso){
+  const d = parseISO(iso); if(!d) return iso;
+  return addDays(iso, -((d.getDay() + 6) % 7));
+}
+/* {total, mes, prom4sem, ultima, dias, rachaSemanas, fechas[] (desc, sin repetir), clases[] (desc)} en una sola pasada */
+export function asistenciaStats(alumnoId, discId){
+  const hoy = today(), mes0 = hoy.slice(0, 7), hace28 = addDays(hoy, -27);
+  const clases = asisDeAlumno(alumnoId, discId).filter(a => a.fecha && a.fecha <= hoy)
+    .sort((a, b) => b.fecha.localeCompare(a.fecha)).map(a => ({fecha: a.fecha, disciplinaId: a.disciplinaId, sedeId: a.sedeId}));
+  let mes = 0, ult4 = 0;
+  const semanas = new Set(), fechas = [];
+  for(const c of clases){
+    if(c.fecha.startsWith(mes0)) mes++;
+    if(c.fecha >= hace28) ult4++;
+    semanas.add(lunes(c.fecha));
+    if(fechas[fechas.length - 1] !== c.fecha) fechas.push(c.fecha);
+  }
+  /* racha: semanas seguidas con al menos una clase; la semana en curso sin clases todavía no la rompe */
+  let racha = 0, w = lunes(hoy);
+  if(!semanas.has(w)) w = addDays(w, -7);
+  while(semanas.has(w)){ racha++; w = addDays(w, -7); }
+  const ultima = fechas[0] || null;
+  return {total: clases.length, mes, prom4sem: Math.round(ult4 / 4 * 10) / 10, ultima, dias: ultima ? daysBetween(ultima, hoy) : null, rachaSemanas: racha, fechas, clases};
+}
+
+/* ---------- disciplinas: etiqueta corta (BJJ, MMA, MT) para no depender solo del color ---------- */
+const CORTOS = [[/kids|infantil/i, "BJJ K"], [/jiu|bjj/i, "BJJ"], [/muay/i, "MT"], [/kick/i, "KB"], [/box/i, "BOX"], [/grappling|no-?gi/i, "NOGI"], [/taekwondo/i, "TKD"], [/karate/i, "KAR"], [/judo/i, "JUDO"], [/lucha|wrestling/i, "LUCHA"], [/mma/i, "MMA"]];
+export function discCorto(d){
+  if(!d) return "";
+  if(d.corto) return String(d.corto).slice(0, 6);
+  const n = String(d.nombre || "");
+  for(const [re, c] of CORTOS) if(re.test(n)) return c;
+  const w = n.trim().split(/\s+/).filter(Boolean);
+  return (w.length > 1 ? w.slice(0, 3).map(x => x[0]).join("") : n.slice(0, 4)).toUpperCase();
 }
 
 /* ---------- fotos (IndexedDB) ---------- */

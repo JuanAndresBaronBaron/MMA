@@ -245,13 +245,14 @@ export const MODULOS = [
     "por_que": "Introducción en español a la guardia y los golpes básicos de MMA. Fíjate en la colocación de los pies y en cómo las manos quedan listas para golpear y para defender una entrada."
    },
    {
-    "titulo": "MMA",
+    "titulo": "Striking de MMA en español (curso de Udemy)",
     "url": "https://www.udemy.com/course/striking-mma-en-espanol/",
     "plataforma": "udemy",
     "autor": "",
     "idioma": "es",
     "nivel": "basico",
-    "por_que": "Curso de striking de MMA en español, incluido en la membresía de Udemy"
+    "por_que": "Curso de striking de MMA en español, incluido en la membresía de Udemy",
+    "pago": true
    },
    {
     "titulo": "MMA Striking for Beginners",
@@ -260,7 +261,8 @@ export const MODULOS = [
     "autor": "",
     "idioma": "en",
     "nivel": "basico",
-    "por_que": "Curso de iniciación al striking específico de MMA"
+    "por_que": "Curso de iniciación al striking específico de MMA",
+    "pago": true
    },
    {
     "titulo": "Sprawl Solo Drill - Wrestling for MMA",
@@ -543,7 +545,9 @@ export const MODULOS = [
     "dosis": "3 o 4 x 3 min al 50 %, descanso 1 min, una vez por semana",
     "nivel": "avanzado",
     "min": 16,
-    "solo": false
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 1
    }
   ],
   "recursos": [
@@ -555,6 +559,24 @@ export const MODULOS = [
     "idioma": "en",
     "nivel": "avanzado",
     "por_que": "Muestra la finta de cross que lleva al derribo a dos piernas, del sistema de GSP. Fíjate en cómo la finta hace subir la guardia y en que el cambio de nivel sale de las piernas con la espalda recta."
+   },
+   {
+    "titulo": "TÉCNICA DE STRIKING en MMA con DERRIBO A DOS PIERNAS [Ramón Lopez]",
+    "url": "https://www.youtube.com/watch?v=rCqouAepyHs",
+    "plataforma": "youtube",
+    "autor": "Fight Doctrine",
+    "idioma": "es",
+    "nivel": "avanzado",
+    "por_que": "Cómo usar los golpes para preparar el derribo a dos piernas, explicado en español. Es la idea del drill de finta de cross y derribo."
+   },
+   {
+    "titulo": "STRIKING Y DERRIBO MMA - TÉCNICAS DE MMA [Alberto del Campo]",
+    "url": "https://www.youtube.com/watch?v=RkZ3FIt4Cgo",
+    "plataforma": "youtube",
+    "autor": "Fight Doctrine",
+    "idioma": "es",
+    "nivel": "avanzado",
+    "por_que": "Otra combinación de golpes y derribo en español para mezclar niveles. Practícala en el shadow de cambio de nivel."
    }
   ],
   "hitos": [
@@ -680,6 +702,15 @@ export const MODULOS = [
     "nivel": "basico",
     "min": 8,
     "solo": true
+   },
+   {
+    "nombre": "Guardia cerrada contra golpes",
+    "como": "Con guantes de MMA y protector bucal. Tú estás abajo en guardia cerrada; el compañero arriba da solo palmadas abiertas al 20%. Atrapa su postura tirando de la nuca o abrazando la cabeza contra tu pecho, controla sus muñecas para que no pueda echar el brazo atrás y, cuando se separe, pon los pies en sus caderas para alejarlo y patea con suavidad hacia sus caderas. Si logra distancia, levántate con la levantada técnica. Cambien de rol en cada ronda.",
+    "dosis": "4 rondas de 1 minuto por rol con 30 segundos de descanso",
+    "nivel": "basico",
+    "min": 13,
+    "solo": false,
+    "tipo": "tecnica"
    }
   ],
   "recursos": [
@@ -832,17 +863,17 @@ export const MODULOS = [
    {
     "nombre": "Ground and pound con pads desde guardia y media guardia",
     "como": "1. El compañero hace guardia o media guardia con un pad en cada mano. 2. Sube la postura y controla su cadera. 3. Lanza golpes cortos y codos a los pads sin perder la base. 4. Cada 10 segundos el compañero intenta romperte la postura y tú la recuperas antes de volver a golpear. Usa guantes y controla la fuerza para no golpear la cara del compañero si falla el pad.",
-    "dosis": "4 rondas de 1 minuto con 30 segundos de descanso",
+    "dosis": "4 rondas de 1 minuto por rol con 30 segundos de descanso, más 3 minutos de técnica",
     "nivel": "intermedio",
-    "min": 7,
+    "min": 15,
     "solo": false
    },
    {
     "nombre": "Escapes de montada y control lateral con presión",
     "como": "1. Empieza abajo en la montada; el compañero da palmadas suaves con guantes a la cara y al cuerpo. 2. Protégete, atrapa brazo y pie y haz el upa, o usa la gamba para recuperar la guardia. 3. En la siguiente ronda empieza en control lateral y escapa con frames y gamba o poniéndote de rodillas. 4. El de arriba solo mantiene la posición y da palmadas ligeras, sin golpes reales.",
-    "dosis": "4 rondas de 1 minuto con 30 segundos de descanso, alternando montada y control lateral",
+    "dosis": "4 rondas de 1 minuto por rol con 30 segundos de descanso, alternando montada y control lateral, más 3 minutos de técnica",
     "nivel": "intermedio",
-    "min": 7,
+    "min": 15,
     "solo": false
    },
    {
@@ -852,6 +883,24 @@ export const MODULOS = [
     "nivel": "intermedio",
     "min": 10,
     "solo": false
+   },
+   {
+    "nombre": "Levantarse bajo golpes en la reja",
+    "como": "Con guantes de MMA. Empieza sentado con la espalda en la reja o en una pared. El compañero, de pie o de rodillas frente a ti, da palmadas suaves a la cabeza y al cuerpo al 20%. Protege la cara con el antebrazo y el guante pegado a la sien, consigue un gancho por debajo, apoya la espalda en la reja y camina hacia arriba (wall walk) llevando la cadera atrás. Cuando estés de pie, gira para sacar la espalda de la reja. Cambien de rol en cada ronda.",
+    "dosis": "4 rondas de 1 minuto por rol con 30 segundos de descanso",
+    "nivel": "intermedio",
+    "min": 13,
+    "solo": false,
+    "tipo": "tecnica"
+   },
+   {
+    "nombre": "Dirty boxing en la reja",
+    "como": "Con guantes de MMA y al 30%. Pon al compañero contra la reja con un gancho por debajo o un collar tie. Desde ese agarre lanza uppercuts cortos y ganchos con la mano libre y rodillas al cuerpo, sin soltar el control. El compañero practica la defensa: cubre, pelea por el gancho por debajo y gira para salir. Al final de cada ronda, sepárate empujando con el marco y sal en ángulo. Nada de rodillas a la cabeza en el entrenamiento.",
+    "dosis": "3 rondas de 2 minutos por rol con 1 minuto de descanso",
+    "nivel": "intermedio",
+    "min": 16,
+    "solo": false,
+    "tipo": "tecnica"
    }
   ],
   "recursos": [
@@ -925,7 +974,8 @@ export const MODULOS = [
     "autor": "No confirmado (no se pudo abrir la página)",
     "idioma": "en",
     "nivel": "intermedio",
-    "por_que": "Curso de Udemy centrado en las entradas de pierna que se usan contra la jaula; está incluido en la membresía si forma parte del catálogo."
+    "por_que": "Curso de Udemy centrado en las entradas de pierna que se usan contra la jaula; está incluido en la membresía si forma parte del catálogo.",
+    "pago": true
    }
   ],
   "hitos": [
@@ -1031,7 +1081,9 @@ export const MODULOS = [
     "dosis": "6 rondas de 1 minuto con 30 segundos de descanso, cambiando de rol",
     "nivel": "avanzado",
     "min": 9,
-    "solo": false
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 2
    },
    {
     "nombre": "Sumisiones desde el ground and pound",
@@ -1048,6 +1100,15 @@ export const MODULOS = [
     "nivel": "avanzado",
     "min": 8,
     "solo": false
+   },
+   {
+    "nombre": "Defensa de guillotina al entrar",
+    "como": "El compañero espera tu doble pierna y, cuando entras, rodea tu cuello en guillotina sin apretar. Mete el mentón, lleva la mano del lado de su brazo a su muñeca para tirar hacia abajo y la otra por encima de su hombro. Pon tu cabeza contra su pecho, pasa al lado del brazo que estrangula y termina el derribo o llévalo a la reja. Si sientes presión en el cuello, golpea dos veces. Cambien de rol al terminar cada serie.",
+    "dosis": "3 series de 6 repeticiones por lado",
+    "nivel": "avanzado",
+    "min": 10,
+    "solo": false,
+    "tipo": "tecnica"
    }
   ],
   "recursos": [
@@ -1183,7 +1244,9 @@ export const MODULOS = [
     "dosis": "1 pelea de 3 rounds por semana",
     "nivel": "basico",
     "min": 25,
-    "solo": true
+    "solo": true,
+    "tipo": "estudio",
+    "freq": 1
    },
    {
     "nombre": "Sparring posicional de bajo riesgo",
@@ -1191,7 +1254,9 @@ export const MODULOS = [
     "dosis": "4 a 6 rounds de 3 min con 1 min de descanso, 2 veces por semana",
     "nivel": "basico",
     "min": 30,
-    "solo": false
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 2
    },
    {
     "nombre": "Base aeróbica en zona 2",
@@ -1199,7 +1264,9 @@ export const MODULOS = [
     "dosis": "30 a 45 min, 2 veces por semana",
     "nivel": "basico",
     "min": 40,
-    "solo": true
+    "solo": true,
+    "tipo": "fisico",
+    "freq": 2
    }
   ],
   "recursos": [
@@ -1231,13 +1298,14 @@ export const MODULOS = [
     "por_que": "Defiende el cardio específico en el saco frente al cardio genérico, en línea con el drill de rounds de saco."
    },
    {
-    "titulo": "MMA",
+    "titulo": "Fundamentos de MMA en español (curso de Udemy)",
     "url": "https://www.udemy.com/course/mma-fundamentos-en-espanol/",
     "plataforma": "udemy",
     "autor": "No confirmado",
     "idioma": "es",
     "nivel": "basico",
-    "por_que": "Curso de fundamentos de MMA en español, accesible con la membresía de Udemy."
+    "por_que": "Curso de fundamentos de MMA en español, accesible con la membresía de Udemy.",
+    "pago": true
    }
   ],
   "hitos": [
@@ -1344,7 +1412,9 @@ export const MODULOS = [
     "dosis": "3 a 5 rounds de 5 min con 1 min de descanso, 2 veces por semana",
     "nivel": "intermedio",
     "min": 35,
-    "solo": true
+    "solo": true,
+    "tipo": "fisico",
+    "freq": 2
    },
    {
     "nombre": "Circuito de fuerza para MMA",
@@ -1352,15 +1422,19 @@ export const MODULOS = [
     "dosis": "2 veces por semana, en días sin sparring duro",
     "nivel": "intermedio",
     "min": 50,
-    "solo": true
+    "solo": true,
+    "tipo": "fisico",
+    "freq": 2
    },
    {
     "nombre": "Plan A y plan B en sparring con escenario",
     "como": "Paso 1: el entrenador asigna un compañero que imita un estilo (striker o wrestler). Paso 2: antes de empezar, define tu plan A y tu plan B en una frase cada uno y acuerda la intensidad. Paso 3: ejecuta el plan A durante el primer round a intensidad controlada. Paso 4: en el segundo round el compañero tiene ventaja y te lleva a su terreno, así que cambias al plan B. Paso 5: en el tercer round combinas ambos. Paso 6: al terminar, haz un repaso de 2 minutos con el entrenador sobre qué funcionó.",
     "dosis": "3 rounds de 5 min con 1 min de descanso, 1 sesión por semana en la fase específica",
     "nivel": "intermedio",
-    "min": 30,
-    "solo": false
+    "min": 20,
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 1
    },
    {
     "nombre": "Cierre de round (últimos 30 s)",
@@ -1368,7 +1442,9 @@ export const MODULOS = [
     "dosis": "En todos los rounds de MMA integrado, unos 4 a 6 rounds por sesión",
     "nivel": "intermedio",
     "min": 20,
-    "solo": false
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 2
    }
   ],
   "recursos": [
@@ -1397,16 +1473,18 @@ export const MODULOS = [
     "autor": "No confirmado",
     "idioma": "en",
     "nivel": "intermedio",
-    "por_que": "Curso de fuerza y acondicionamiento basado en patrones de movimiento, aplicado a la MMA."
+    "por_que": "Curso de fuerza y acondicionamiento basado en patrones de movimiento, aplicado a la MMA.",
+    "pago": true
    },
    {
-    "titulo": "MMA",
+    "titulo": "MMA: lucha contra la jaula (curso de Udemy)",
     "url": "https://www.udemy.com/course/mma-lucha-contra-la-jaula/",
     "plataforma": "udemy",
     "autor": "No confirmado",
     "idioma": "es",
     "nivel": "intermedio",
-    "por_que": "Trabajo contra la jaula, clave en los planes de pelea de wrestler contra striker."
+    "por_que": "Trabajo contra la jaula, clave en los planes de pelea de wrestler contra striker.",
+    "pago": true
    },
    {
     "titulo": "GSP's Takedown System EXPLAINED | A Blueprint to Take Anyone Down",
@@ -1491,7 +1569,9 @@ export const MODULOS = [
     "dosis": "1 vez cada 1 o 2 semanas durante la fase específica del campamento",
     "nivel": "avanzado",
     "min": 40,
-    "solo": false
+    "solo": false,
+    "tipo": "vivo",
+    "freq": 1
    },
    {
     "nombre": "Estudio de pelea en 3 pasadas",
@@ -1499,7 +1579,9 @@ export const MODULOS = [
     "dosis": "1 pelea por semana",
     "nivel": "avanzado",
     "min": 60,
-    "solo": true
+    "solo": true,
+    "tipo": "estudio",
+    "freq": 1
    },
    {
     "nombre": "Visualización de escenarios",
@@ -1507,7 +1589,9 @@ export const MODULOS = [
     "dosis": "5 a 10 min diarios en las últimas 3 o 4 semanas del campamento",
     "nivel": "avanzado",
     "min": 10,
-    "solo": true
+    "solo": true,
+    "tipo": "estudio",
+    "freq": 7
    }
   ],
   "recursos": [
@@ -1518,7 +1602,35 @@ export const MODULOS = [
     "autor": "No confirmado",
     "idioma": "en",
     "nivel": "avanzado",
-    "por_que": "Curso dedicado a analizar peleas de MMA. Complementa el método de estudio en 3 pasadas."
+    "por_que": "Curso dedicado a analizar peleas de MMA. Complementa el método de estudio en 3 pasadas.",
+    "pago": true
+   },
+   {
+    "titulo": "Fight Camp Periodisation: Part 1. Fight Camp Overview / How To: Plan a Training Camp",
+    "url": "https://www.youtube.com/watch?v=4GrxneQ63-o",
+    "plataforma": "youtube",
+    "autor": "Coach_Kobes",
+    "idioma": "en",
+    "nivel": "avanzado",
+    "por_que": "Cómo se organiza un campamento por fases, de la base a la puesta a punto. Sirve para planear las semanas antes de una pelea."
+   },
+   {
+    "titulo": "The Perfect Training Schedule for Fighters! (Fight Camp & Off-Camp Periodisation)",
+    "url": "https://www.youtube.com/watch?v=Brn0hCANOQ4",
+    "plataforma": "youtube",
+    "autor": "Sven Koch",
+    "idioma": "en",
+    "nivel": "avanzado",
+    "por_que": "Diferencia entre la semana dentro y fuera del campamento, y cómo repartir técnica, sparring y físico."
+   },
+   {
+    "titulo": "Cortes de Peso MMA extremos (UFC) Lo que no te han contado-Nutricionista David Rojas - Bynilla Ep.39",
+    "url": "https://www.youtube.com/watch?v=pA2OGBPpg44",
+    "plataforma": "youtube",
+    "autor": "Laura Fernandez",
+    "idioma": "es",
+    "nivel": "avanzado",
+    "por_que": "Conversación en español con un nutricionista sobre los riesgos de los cortes de peso extremos. Complementa el concepto de corte de peso seguro."
    }
   ],
   "hitos": [

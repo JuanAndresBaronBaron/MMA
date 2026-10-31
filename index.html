@@ -1,11 +1,13 @@
 <!doctype html>
-<html lang="es" data-theme="dark">
+<html lang="es">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>AcademiaPro · Gestión de academias de artes marciales</title>
 <meta name="description" content="Alumnos, pagos, cinturones, asistencia y ranking para academias de MMA, BJJ, Muay Thai y artes marciales. Gratis, sincronizado con tu Google Drive.">
 <meta name="theme-color" content="#0b0d12">
+<meta name="color-scheme" content="dark light">
+<script>/* tema antes de pintar: preferencia guardada o la del sistema */try{var p=(JSON.parse(localStorage.getItem("mma:prefs")||"{}")||{}).theme,d=document.documentElement;d.dataset.theme=p==="light"||p==="dark"?p:matchMedia("(prefers-color-scheme: light)").matches?"light":"dark";if(d.dataset.theme==="light")document.querySelector("meta[name=theme-color]").content="#f4f5f8"}catch(e){document.documentElement.dataset.theme="dark"}</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icons/icon-180.png">
@@ -23,6 +25,6 @@
 <body>
 <div class="boot"><div class="boot-spin"></div></div>
 <noscript>Esta app necesita JavaScript.</noscript>
-<script type="module" src="js/app.js?v=1"></script>
+<script type="module" src="js/app.js"></script>
 </body>
 </html>
