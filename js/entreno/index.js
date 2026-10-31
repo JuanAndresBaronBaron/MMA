@@ -17,30 +17,48 @@ export const ARTES = [
     calor: "Cuerda o trote suave, sombra con teeps y patadas al 50 % y movilidad de cadera."},
   {id: "lucha", nombre: "Lucha", corto: "Lucha", color: "#f59e0b", load: () => import("./lucha.js"),
     calor: "Trote, movimiento en postura, cambios de nivel, sprawls suaves y rodadas."},
-  {id: "boxeo", nombre: "Boxeo · Método Mayweather", corto: "Boxeo", color: "#d4a73c", load: () => import("./boxeo.js"),
+  {id: "boxeo", nombre: "Boxeo", corto: "Boxeo", color: "#d4a73c", load: () => import("./boxeo.js"),
     calor: "Saltar cuerda y sombra suave revisando la guardia frente al espejo."},
   {id: "mma", nombre: "MMA", corto: "MMA", color: "#22c55e", load: () => import("./mma.js"),
     calor: "Sombra de MMA mezclando golpes, cambios de nivel y sprawls, más movilidad general."},
+  /* complementos: apoyan a las artes (salud, físico, niños y defensa personal) */
+  {id: "salud", nombre: "Salud y prevención", corto: "Salud", color: "#14b8a6", grupo: "complemento", load: () => import("./salud.js"),
+    calor: "Respiración, movilidad articular de cuello a tobillos y activación suave de hombros y cadera."},
+  {id: "fisico", nombre: "Preparación física", corto: "Físico", color: "#f97316", grupo: "complemento", load: () => import("./fisico.js"),
+    calor: "Trote o cuerda 3 minutos, movilidad dinámica y dos series suaves del primer ejercicio."},
+  {id: "kids", nombre: "Clases para niños", corto: "Niños", color: "#ec4899", grupo: "complemento", load: () => import("./kids.js"),
+    calor: "Juego de persecución, rodadas y equilibrio en un pie para activar a los niños."},
+  {id: "defensa", nombre: "Defensa personal", corto: "Defensa", color: "#8b5cf6", grupo: "complemento", load: () => import("./defensa.js"),
+    calor: "Movilidad general, desplazamientos en guardia y respiración para bajar pulsaciones."},
 ];
 export const arte = id => ARTES.find(a => a.id === id);
+export const esComplemento = a => (typeof a === "string" ? arte(a) : a)?.grupo === "complemento";
+/* sub-rutas de #/entreno que no son artes */
+export const RESERVADOS = ["glosario", "repaso", "stats", "logros", "diario", "curriculo"];
 export const NIVELES = [["basico", "Básico"], ["intermedio", "Intermedio"], ["avanzado", "Avanzado"]];
 const NV = {basico: 0, intermedio: 1, avanzado: 2};
 const SOLO_RE = /compañer|pareja|manopl|sparring|rival|entrenador|partner/i;
 
 /* ---------- carga y normalización del contenido ---------- */
 const cache = {};
+/* si el archivo falta, falla o no trae módulos, queda {vacio: true} y el hub esconde esa arte */
 export async function cargar(id){
   if(cache[id]) return cache[id];
-  const m = await arte(id).load();
+  let m = {};
+  try{ m = await arte(id).load(); }catch(e){ console.warn("[entreno]", id, e); }
   const mods = (m.MODULOS || []).map((x, i) => ({...x, id: x.id || `m${i + 1}`, nivel: x.nivel || "basico",
     drills: (x.drills || []).map(d => ({...d, min: Math.max(5, Math.round(d.min || minutos(d.dosis))),
       solo: d.solo ?? !SOLO_RE.test(d.nombre + " " + d.como), tipo: d.tipo ?? "tecnica", freq: d.freq ?? 7})),
     recursos: x.recursos || [], hitos: x.hitos || [], conceptos: x.conceptos || []}));
   mods.sort((a, b) => NV[a.nivel] - NV[b.nivel] || mods.indexOf(a) - mods.indexOf(b));
   mods.forEach((x, i) => { x.n = i + 1; });
-  return (cache[id] = {id, intro: m.INTRO || {}, plan: m.PLAN || [], semana: m.SEMANA || [], modulos: mods});
+  return (cache[id] = {id, intro: m.INTRO || {}, plan: m.PLAN || [], semana: m.SEMANA || [], pilares: m.PILARES || null, modulos: mods, vacio: !mods.length});
 }
-export const cargado = id => cache[id] || null;
+/* ya se intentó cargar (con o sin éxito) */
+export const intentado = id => !!cache[id];
+export const cargado = id => (cache[id] && !cache[id].vacio ? cache[id] : null);
+/* artes con contenido listo, en el orden de ARTES */
+export const disponibles = () => ARTES.filter(a => cargado(a.id));
 
 /* ---------- lectura de la dosis ---------- */
 const num = s => parseFloat(String(s).replace(",", "."));
@@ -66,7 +84,11 @@ function minutos(dosis = ""){
 
 /* ---------- progreso ---------- */
 export const hecho = k => !!S.get("progreso", k);
-export function marcar(k, on){ if(on) S.put("progreso", {id: k}); else S.del("progreso", k); }
+/* marcar un drill o hito lo pone en el repaso espaciado (mañana); desmarcarlo lo saca */
+export function marcar(k, on){
+  if(on){ S.put("progreso", {id: k}); if(repasable(k)) S.put("repasos", {id: k, n: 0, ultimo: today(), prox: addDays(today(), 1)}); }
+  else { S.del("progreso", k); if(S.get("repasos", k)) S.del("repasos", k); }
+}
 export const kDrill = (a, m, i) => `${a}:d:${m}:${i}`;
 export const kRec = (a, url) => `${a}:r:${url}`;
 export const kHito = (a, m, i) => `${a}:h:${m}:${i}`;
@@ -92,6 +114,42 @@ function pctG(gs){
 }
 export const pctMod = (a, m) => pctG([grupos(a, m)]);
 export const pctArte = d => pctG(d.modulos.map(m => grupos(d.id, m)));
+export const pctMods = (a, ms) => pctG(ms.map(m => grupos(a, m)));
+
+/* pilares: el prefijo del id del módulo (fundamentos-1 → fundamentos); los módulos sin número van a «especial».
+   El contenido puede traer PILARES = {clave: "Nombre"} para nombrarlos. */
+const PIL = {fundamentos: "Fundamentos", guardias: "Guardias", sumisiones: "Sumisiones", clinch: "Clinch", avanzado: "Combate y pads",
+  cadenas: "Cadenas", suelo: "Suelo", striking: "Golpeo", jaula: "Jaula", estrategia: "Estrategia", fund: "Fundamentos", especial: "Especialización"};
+export function pilares(d){
+  const g = new Map();
+  for(const m of d.modulos){ const k = (/^(.+)-\d+$/.exec(m.id) || [, "especial"])[1]; if(!g.has(k)) g.set(k, []); g.get(k).push(m); }
+  return [...g].map(([k, ms]) => ({k, t: d.pilares?.[k] || PIL[k] || k[0].toUpperCase() + k.slice(1), mods: ms}));
+}
+
+/* ---------- repaso espaciado ---------- */
+/* colección "repasos": {id: clave de progreso (drill o hito), n: repasos seguidos, ultimo, prox} */
+export const INTERVALOS = [1, 3, 7, 21, 60];
+const repasable = k => /^[^:]+:[dh]:/.test(k);
+export function repasoOk(k){
+  const r = S.get("repasos", k); if(!r) return;
+  const n = (r.n || 0) + 1;
+  S.put("repasos", {id: k, n, ultimo: today(), prox: addDays(today(), INTERVALOS[Math.min(n, INTERVALOS.length - 1)]), hist: histR(r)});
+}
+export const repasoOtraVez = k => S.put("repasos", {id: k, n: 0, ultimo: today(), prox: addDays(today(), 1), hist: histR(S.get("repasos", k))});
+/* días en que se repasó (los últimos 8), para los logros */
+const histR = r => [...new Set([...(r?.hist || []), today()])].slice(-8);
+export const diasDeRepaso = () => new Set(S.all("repasos").flatMap(r => r.hist || []));
+/* qué es una clave: {arte, m (módulo), tipo: "d"|"h", i, texto, x (drill)}; null si ya no existe o el arte no cargó */
+export function itemDe(k){
+  const [a, tp, mod, i] = k.split(":"), d = cargado(a), m = d?.modulos.find(x => x.id === mod);
+  if(!m) return null;
+  if(tp === "d"){ const x = m.drills[+i]; return x ? {k, arte: a, m, tipo: tp, i: +i, texto: x.nombre, x} : null; }
+  const x = m.hitos[+i]; return x ? {k, arte: a, m, tipo: tp, i: +i, texto: x} : null;
+}
+/* lo que toca repasar hoy (solo lo que sigue marcado y existe); los drills de sparring o físico no se repasan */
+export const pendientesRepaso = (iso = today()) => S.all("repasos").filter(r => r.prox && r.prox <= iso && hecho(r.id))
+  .map(r => ({r, it: itemDe(r.id)})).filter(x => x.it && (x.it.tipo === "h" || ["tecnica", "estudio"].includes(x.it.x.tipo)))
+  .sort((a, b) => a.r.prox.localeCompare(b.r.prox));
 /* primer módulo sin terminar (en orden de nivel) */
 export const moduloActual = d => d.modulos.find(m => pctMod(d.id, m) < 100) || d.modulos[d.modulos.length - 1];
 /* recursos gratis de un módulo (para contar en el hub) */
@@ -100,6 +158,19 @@ export const gratis = m => m.recursos.filter(r => !r.pago);
 /* ---------- rutina ---------- */
 export const rutina = () => S.get("rutinas", "mia");
 export const guardarRutina = v => S.put("rutinas", {id: "mia", ...v});
+/* meta semanal: {tipo: "dias"|"min", valor}; sin meta, los días de la rutina */
+export const metaDe = (r = rutina()) => r?.meta?.valor > 0 ? r.meta : r?.dias?.length ? {tipo: "dias", valor: r.dias.length} : null;
+export function metaSemana(r = rutina(), iso = today()){
+  const m = metaDe(r); if(!m) return null;
+  const ds = semana(iso), hs = hechas().filter(s => s.fecha >= ds[0] && s.fecha <= ds[6]);
+  const v = m.tipo === "min" ? hs.reduce((a, s) => a + (+s.min || 0), 0) : new Set(hs.map(s => s.fecha)).size;
+  return {...m, hecho: v, pct: Math.min(100, Math.round(v / m.valor * 100)), ok: v >= m.valor};
+}
+/* ayer tocaba rutina y no hay nada registrado (para «Recuperar ayer») */
+export function faltoAyer(r = rutina(), iso = today()){
+  const ay = addDays(iso, -1), desde = r?._c ? toISO(new Date(r._c)) : ay;
+  return !!r?.dias?.includes(diaSemana(ay)) && ay >= desde && !hechas().some(s => s.fecha === ay) ? ay : null;
+}
 export const DIAS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
 export const DIAS_C = ["Lun", "Mar", "Mié", "Jue", "Vie", "Sáb", "Dom"];
 export const diaSemana = iso => ((parseISO(iso).getDay() + 6) % 7) + 1;   // 1 = lunes … 7 = domingo

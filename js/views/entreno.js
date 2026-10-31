@@ -1,38 +1,51 @@
-/* Entrenamiento: rutina personal, sesión del día y caminos de aprendizaje por arte. */
+/* Entrenamiento: rutina personal, sesión del día y caminos de aprendizaje por arte.
+   Sub-rutas: #/entreno/glosario, repaso, stats, logros, diario y curriculo/<sistema> (no son artes). */
 import * as E from "../entreno/index.js";
 import * as T from "../entreno/timer.js";
 import * as S from "../store.js";
 import {icon, toast, modal, confirmDlg} from "../ui.js";
-import {esc, today, fmtDate, addDays, h} from "../util.js";
+import {esc, today, fmtDate, addDays, h, norm, parseISO} from "../util.js";
 import {t, tn, lang} from "../i18n.js";
 
 const PLAT = {youtube: ["YouTube", "#ff0033"], tiktok: ["TikTok", "#25f4ee"], udemy: ["Udemy", "#a435f0"], instagram: ["Instagram", "#e1306c"], articulo: [t("Artículo"), "#d4a73c"], web: ["Web", "#8a8a8a"]};
-const st = {dia: today(), hoy: today(), filtro: "todas"};
+const st = {dia: today(), hoy: today(), filtro: "todas", gq: "", ga: "", cr: {}};
+/* las sub-vistas que viven en su propio archivo */
+const SUBS = {repaso: () => import("../entreno/repaso.js"), stats: () => import("../entreno/stats.js"), logros: () => import("../entreno/logros.js"), diario: () => import("../entreno/diario.js")};
+const IDS = () => E.ARTES.map(a => a.id);
 
-export function render(el, [artId, modId]){
+export function render(el, params = [], ctx = {}, query){
+  const [artId, modId] = params, q = query || ctx.query || new URLSearchParams();
   /* pasó la medianoche: si estaba en "hoy", sigue en el día nuevo */
   if(st.hoy !== today()){ if(st.dia === st.hoy) st.dia = today(); st.hoy = today(); }
-  if(artId && E.arte(artId)) return conCarga(el, [artId], () => modId ? vistaModulo(el, artId, modId) : vistaArte(el, artId));
+  if(artId === "glosario") return vistaGlosario(el, q);
+  if(artId === "curriculo") return vistaCurriculo(el, modId);
+  if(SUBS[artId]) return conCarga(el, IDS(), () => SUBS[artId]().then(m => { if(el.isConnected) m.render(el, {params, query: q}); })
+    .catch(e => { console.error(e); el.innerHTML = sinCargar(); }));
+  if(artId && E.arte(artId)) return conCarga(el, [artId], () => !E.cargado(artId) ? (el.innerHTML = sinCargar())
+    : modId ? vistaModulo(el, artId, modId) : vistaArte(el, artId));
+  if(artId && !E.arte(artId)){ location.replace("#/entreno"); return; }
   const r = E.rutina();
-  const ids = E.ARTES.map(a => a.id);
-  return conCarga(el, ids, () => vistaHub(el, r));
+  return conCarga(el, IDS(), () => vistaHub(el, r));
 }
+const sinCargar = () => `<a class="btn ghost small en-back" href="#/entreno">${icon("back")} ${t("Entrenamiento")}</a><div class="card"><p>${t("No se pudo cargar el contenido. Revisa tu conexión.")}</p></div>`;
 
-/* carga el contenido que haga falta y luego pinta */
+/* carga el contenido que haga falta y luego pinta (un arte que no carga queda escondido) */
 function conCarga(el, ids, pintar){
-  const falta = ids.filter(id => !E.cargado(id));
+  const falta = ids.filter(id => !E.intentado(id));
   if(!falta.length) return pintar();
   const hash = location.hash;
   el.innerHTML = `<div class="card"><p class="muted">${icon("sync", "spin")} ${t("Cargando…")}</p></div>`;
-  Promise.all(falta.map(E.cargar)).then(() => { if(location.hash === hash) pintar(); })
-    .catch(e => { console.error(e); el.innerHTML = `<div class="card"><p>${t("No se pudo cargar el contenido. Revisa tu conexión.")}</p></div>`; });
+  Promise.all(falta.map(E.cargar)).then(() => { if(location.hash === hash && el.isConnected) pintar(); })
+    .catch(e => { console.error(e); el.innerHTML = sinCargar(); });
 }
+/* cabecera común de las sub-vistas */
+export const volver = (href = "#/entreno", txt = t("Entrenamiento")) => `<a class="btn ghost small en-back" href="${href}">${icon("back")} ${esc(txt)}</a>`;
 
-const ring = (p, s = 52, color = "var(--accent)") => { const r = s / 2 - 4.5, c = 2 * Math.PI * r;
-  return `<svg class="en-ring" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}"><circle cx="${s / 2}" cy="${s / 2}" r="${r}" class="bg"/><circle cx="${s / 2}" cy="${s / 2}" r="${r}" class="fg" style="stroke:${color}" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - p / 100)}"/><text x="50%" y="50%" dy=".35em" text-anchor="middle">${p}%</text></svg>`; };
-const chk = (k, label = "", cls = "", off = false) => `<label class="en-chk ${cls}"><input type="checkbox" data-k="${esc(k)}" ${E.hecho(k) ? "checked" : ""} ${off ? "disabled" : ""}><span class="box"></span>${label}</label>`;
+export const ring = (p, s = 52, color = "var(--accent)", txt = p + "%") => { const r = s / 2 - 4.5, c = 2 * Math.PI * r;
+  return `<svg class="en-ring" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}"><circle cx="${s / 2}" cy="${s / 2}" r="${r}" class="bg"/><circle cx="${s / 2}" cy="${s / 2}" r="${r}" class="fg" style="stroke:${color}" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - p / 100)}"/><text x="50%" y="50%" dy=".35em" text-anchor="middle">${esc(txt)}</text></svg>`; };
+export const chk = (k, label = "", cls = "", off = false) => `<label class="en-chk ${cls}"><input type="checkbox" data-k="${esc(k)}" ${E.hecho(k) ? "checked" : ""} ${off ? "disabled" : ""}><span class="box"></span>${label}</label>`;
 const nivelT = n => t((E.NIVELES.find(x => x[0] === n) || [, n])[1]);
-const esNota = () => lang() === "en" ? `<p class="muted small en-note">${icon("info", "inline")} ${t("El contenido de los caminos está en español.")}</p>` : "";
+export const esNota = () => lang() === "en" ? `<p class="muted small en-note">${icon("info", "inline")} ${t("El contenido de los caminos está en español.")}</p>` : "";
 
 /* ---------- inicio de Entrenamiento ---------- */
 const PLAY = `<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l10.5-6.5z" fill="currentColor"/></svg>`;
@@ -56,7 +69,7 @@ function meta(s, full){
 function resumen(s){
   const titulo = s.plan ? t("Sesión completada") : s.tipo ? `${tipoT(s.tipo)}${s.artes?.length ? " · " + artesT(s) : ""}` : t("Sesión completada");
   return `<div class="en-done">${icon("check")}<div><b>${esc(titulo)}</b>${meta(s)}${!s.plan && !s.tipo ? `<span class="muted small">${tn(s.hechos?.length || 0, "1 bloque marcado", "{n} bloques marcados")}</span>` : ""}</div>
-    <button class="btn small ghost" data-deshacer="${esc(s.id)}">${s.plan ? t("Deshacer") : t("Borrar")}</button></div>`;
+    <button class="icon-btn" data-editar="${esc(s.id)}" aria-label="${t("Editar diario")}" title="${t("Editar diario")}">${icon("edit")}</button><button class="btn small ghost" data-deshacer="${esc(s.id)}">${s.plan ? t("Deshacer") : t("Borrar")}</button></div>`;
 }
 
 function vistaHub(el, r){
@@ -69,29 +82,32 @@ function vistaHub(el, r){
   const modo = main ? (E.fin(main) ? "hecha" : "curso") : prev ? (futuro ? "futuro" : "preview") : null;
   const hechos = new Set(main?.hechos || []);
   const hs = E.hechas(), conSes = new Set(hs.map(s => s.fecha));
-  const diasSem = E.semana(hoy).filter(d => conSes.has(d)).length;
   const mes = hoy.slice(0, 7), minMes = hs.filter(s => s.fecha.startsWith(mes)).reduce((a, s) => a + (+s.min || 0), 0);
   const rc = E.rachas(r), desde = r?._c ? E.toISO(new Date(r._c)) : "";
   const cab = main || prev;
   const tocaba = r && E.artesDelDia(r, st.dia).length;
   const princ = (bloques || []).filter(b => b.tipo !== "tarea"), tareas = (bloques || []).filter(b => b.tipo === "tarea");
   const nb = princ.filter(b => b.tipo !== "video").length, nh = princ.filter(b => hechos.has(b.b)).length;
+  const ms = E.metaSemana(r), nRep = E.pendientesRepaso().length, ayer = E.faltoAyer(r);
+  const disp = E.disponibles(), artes = disp.filter(a => !E.esComplemento(a)), comps = disp.filter(E.esComplemento);
+  const metaTxt = m => m.tipo === "min" ? `${m.hecho}/${m.valor} min` : `${m.hecho}/${m.valor}`;
 
   el.innerHTML = `
   ${esNota()}
-  ${r || hs.length ? `<div class="kpis">
-    <div class="kpi"><span class="kpi-ic c2">${icon("check")}</span><div><b>${r ? `${diasSem}/${r.dias.length}` : diasSem}</b><span>${t("Días entrenados esta semana")}</span></div></div>
-    <div class="kpi"><span class="kpi-ic c1">${icon("clock")}</span><div><b>${tn(minMes, "1 min", "{n} min")}</b><span>${t("Entrenados este mes")}</span></div></div>
-    <div class="kpi"><span class="kpi-ic c4">${icon("star")}</span><div><b>${tn(rc.actual, "1 día", "{n} días")}</b><span>${t("Racha · récord {n}", {n: rc.record})}</span></div></div>
-    <div class="kpi"><span class="kpi-ic c3">${icon("fist")}</span><div><b>${tn(hs.length, "1 sesión", "{n} sesiones")}</b><span>${t("En total")}</span></div></div>
+  ${!r ? `<section class="card en-cta1"><span class="en-cta1-ic">${icon("calendar")}</span><div class="en-cta1-t"><b>${t("Arma tu rutina de entrenamiento")}</b><span class="muted small hide-s">${t("La app te arma cada sesión con los drills de tu nivel.")}</span></div>
+    <div class="en-cta1-b"><button class="btn primary" data-rutina>${t("Crear mi rutina")}</button><button class="btn-link" data-registrar>${icon("plus")} ${t("Registrar entreno")}</button></div></section>` : ""}
+  ${r || hs.length || nRep ? `<div class="en-tiles">
+    ${ms ? `<div class="en-tile" title="${esc(t("Meta semanal"))}">${ring(ms.pct, 46, ms.ok ? "var(--ok)" : "var(--accent)", ms.ok ? "✓" : ms.pct + "%")}<div><b>${metaTxt(ms)}</b><span>${ms.tipo === "min" ? t("Minutos esta semana") : t("Días esta semana")}</span></div></div>`
+      : `<div class="en-tile"><span class="kpi-ic c2">${icon("check")}</span><div><b>${E.semana(hoy).filter(d => conSes.has(d)).length}</b><span>${t("Días entrenados esta semana")}</span></div></div>`}
+    <a class="en-tile lnk" href="#/entreno/repaso"><span class="kpi-ic c1">${icon("repeat")}</span><div><b>${nRep}</b><span>${t("Repaso de hoy")}</span></div></a>
+    <div class="en-tile"><span class="kpi-ic c4">${icon("flame")}</span><div><b>${tn(rc.actual, "1 día", "{n} días")}</b><span>${t("Racha · récord {n}", {n: rc.record})}</span></div></div>
+    <a class="en-tile lnk" href="#/entreno/stats"><span class="kpi-ic c3">${icon("clock")}</span><div><b>${tn(minMes, "1 min", "{n} min")}</b><span>${t("Entrenados este mes")}</span></div></a>
   </div>` : ""}
-  ${!r ? `<section class="card en-cta">
-    <div><h2>${t("Arma tu rutina de entrenamiento")}</h2><p class="muted">${t("Elige los días, cuánto tiempo tienes cada día y qué artes quieres entrenar: una, varias o todas. La app te arma cada sesión con los drills del nivel en el que vas y guarda tu progreso.")}</p></div>
-    <div class="en-cta-b"><button class="btn primary big" data-rutina>${icon("calendar")} ${t("Crear mi rutina")}</button><button class="btn ghost" data-registrar>${icon("plus")} ${t("Registrar entreno")}</button></div></section>` : ""}
+  ${ayer ? `<div class="en-ayer">${icon("alert")}<span>${t("Ayer tocaba entrenar y no hay registro. Si entrenaste, regístralo y no pierdes la racha.")}</span><button class="btn small" data-ayer="${ayer}">${t("Recuperar ayer")}</button></div>` : ""}
 
   ${r ? `<section class="card">
-    <header class="card-h"><h3>${icon("calendar")} ${t("Tu semana")}</h3><div class="row gap"><span class="muted small hide-s">${esc(rutinaTxt(r))}</span><button class="btn small ghost" data-rutina>${icon("edit")} ${t("Rutina")}</button></div></header>
-    <div class="en-week">${sem.map(d => { const a = E.artesDelDia(r, d), s = conSes.has(d);
+    <header class="card-h"><h3>${icon("calendar")} ${t("Tu semana")}</h3><div class="row gap"><span class="muted small hide-s">${esc(rutinaTxt(r))}</span><button class="btn small ghost" data-ics aria-label="${t("Agregar a mi calendario")}" title="${t("Agregar a mi calendario")}">${icon("download")}</button><button class="btn small ghost" data-rutina>${icon("edit")} ${t("Rutina")}</button></div></header>
+    <div class="en-week">${sem.map(d => { const a = E.artesDelDia(r, d).filter(E.cargado), s = conSes.has(d);
       return `<button class="en-day ${d === st.dia ? "on" : ""} ${d === hoy ? "hoy" : ""} ${s ? "done" : a.length ? (d < hoy && d >= desde ? "miss" : "plan") : "rest"}" data-dia="${d}">
         <span class="en-dn">${t(E.DIAS_C[E.diaSemana(d) - 1])}</span><b>${+d.slice(8)}</b>
         <span class="en-dots">${s ? icon("check") : a.map(x => `<i style="background:${E.arte(x).color}"></i>`).join("")}</span></button>`; }).join("")}</div>
@@ -100,7 +116,7 @@ function vistaHub(el, r){
 
   <section class="card en-today">
     <header class="card-h"><h3>${icon("fist")} ${st.dia === hoy ? t("Sesión de hoy") : t("Sesión del {fecha}", {fecha: fmtDate(st.dia)})}</h3>
-      <div class="row gap">${cab ? `<span class="muted small">${tn(cab.min, "1 min", "{n} min")} · ${(cab.artes || []).map(a => `<span class="en-tag" style="--c:${E.arte(a).color}">${esc(t(E.arte(a).corto))}</span>`).join(" ")}</span>` : ""}
+      <div class="row gap">${cab ? `<span class="muted small">${tn(cab.min, "1 min", "{n} min")} · ${(cab.artes || []).filter(E.arte).map(a => `<span class="en-tag" style="--c:${E.arte(a).color}">${esc(t(E.arte(a).corto))}</span>`).join(" ")}</span>` : ""}
       <button class="btn small ghost" data-crono aria-label="${t("Temporizador")}">${icon("clock")}<span class="hide-s"> ${t("Temporizador")}</span></button></div></header>
     ${main && modo === "hecha" ? resumen(main) : ""}
     ${bloques ? `${modo === "curso" ? `<div class="en-prog"><span style="width:${nb ? Math.round(nh / nb * 100) : 0}%"></span></div>` : ""}
@@ -116,18 +132,26 @@ function vistaHub(el, r){
     ${!futuro ? `<div class="en-reg"><button class="btn ghost small" data-registrar>${icon("plus")} ${t("Registrar entreno")}</button><span class="muted small">${t("Clase, sparring, open mat, cardio o app")}</span></div>` : ""}
   </section>` : ""}
 
+  <div data-tds></div>
+
   <section class="card">
-    <header class="card-h"><h3>${icon("belt")} ${t("Caminos de aprendizaje")}</h3><span class="muted small">${t("De lo más básico a lo más avanzado")}</span></header>
-    <div class="en-arts">${E.ARTES.map(a => { const d = E.cargado(a.id), p = E.pctArte(d), m = E.moduloActual(d), enRut = r?.artes?.includes(a.id);
-      const nv = d.modulos.reduce((s, x) => s + x.recursos.length, 0);
-      return `<article class="en-art" style="--c:${a.color}">
-        <div class="en-art-h">${p ? ring(p, 54, a.color) : `<span class="en-new">${t("Nuevo")}</span>`}<div><a class="en-art-lnk" href="#/entreno/${a.id}"><b>${esc(t(a.nombre))}</b></a>
-          <span class="en-chips"><span>${tn(d.modulos.length, "1 módulo", "{n} módulos")}</span><span>${tn(nv, "1 video", "{n} videos")}</span>${enRut ? `<span class="en-in">${icon("calendar")} ${t("En tu rutina")}</span>` : ""}</span></div></div>
-        <span class="en-art-now"><span class="muted small">${p ? t("Vas en") : t("Empiezas con")}</span> ${esc(m.titulo)} <span class="lvl ${m.nivel}">${nivelT(m.nivel)}</span></span>
-        <a class="en-go" href="#/entreno/${a.id}/${m.id}">${p ? t("Continuar módulo {n}", {n: m.n}) : t("Empezar")} →</a></article>`; }).join("")}</div>
+    <header class="card-h"><h3>${icon("belt")} ${t("Caminos de aprendizaje")}</h3><span class="muted small hide-s">${t("De lo más básico a lo más avanzado")}</span></header>
+    <div class="en-arts">${artes.map(a => artCard(a, r)).join("")}</div>
   </section>
 
-  ${hs.length ? `<section class="card"><header class="card-h"><h3>${icon("list")} ${t("Historial")}</h3></header><div class="list">${hs.slice(0, 10).map(s => `<button class="li en-hist" data-dia="${s.fecha}"><span class="li-ic">${icon(s.plan ? "check" : "fist")}</span><div class="li-main"><b>${fmtDate(s.fecha, true)}</b>${meta(s, true)}</div></button>`).join("")}</div></section>` : ""}`;
+  ${comps.length ? `<section class="card">
+    <header class="card-h"><h3>${icon("heart")} ${t("Complementos")}</h3><span class="muted small hide-s">${t("Salud, físico, niños y defensa personal")}</span></header>
+    <div class="en-comps">${comps.map(a => { const d = E.cargado(a.id), p = E.pctArte(d);
+      return `<a class="en-comp" href="#/entreno/${a.id}" style="--c:${a.color}">${ring(p, 40, a.color)}<span><b>${esc(t(a.nombre))}</b><span class="muted small">${tn(d.modulos.length, "1 módulo", "{n} módulos")}</span></span></a>`; }).join("")}</div>
+  </section>` : ""}
+
+  <nav class="en-tools" aria-label="${t("Herramientas")}">${[["glosario", "book", "Glosario"], ["repaso", "repeat", "Repaso"], ["stats", "chart", "Estadísticas"], ["logros", "award", "Logros"], ["diario", "edit", "Diario"], ["curriculo", "belt", "Mi cinturón"]]
+    .map(([k, ic, l]) => `<a href="#/entreno/${k}">${icon(ic)}<span>${t(l)}</span>${k === "repaso" && nRep ? `<i class="en-badge">${nRep}</i>` : ""}</a>`).join("")}</nav>
+
+  ${hs.length ? `<section class="card"><header class="card-h"><h3>${icon("list")} ${t("Historial")}</h3><a class="btn small ghost" href="#/entreno/diario">${t("Ver diario")}</a></header><div class="list">${hs.slice(0, 8).map(s => `<button class="li en-hist" data-dia="${s.fecha}"><span class="li-ic">${icon(s.plan ? "check" : "fist")}</span><div class="li-main"><b>${fmtDate(s.fecha, true)}</b>${meta(s, true)}</div></button>`).join("")}</div></section>` : ""}`;
+
+  tdsCard(el.querySelector("[data-tds]"), r);
+  import("../entreno/logros.js").then(m => m.revisar?.()).catch(() => {});
 
   /* busca la sesión guardada del día o la congela a partir de la vista previa (solo hoy) */
   const asegurar = () => E.planDe(st.dia) || (modo === "preview" ? E.iniciar(prev) : null);
@@ -136,6 +160,9 @@ function vistaHub(el, r){
     if(tg.closest(".en-b p")){ tg.closest(".en-b").classList.toggle("open"); return; }
     if(tg.closest("[data-rutina]")) return editarRutina();
     if(tg.closest("[data-registrar]")) return registrarModal();
+    const ay = tg.closest("[data-ayer]"); if(ay) return registrarModal({fecha: ay.dataset.ayer});
+    if(tg.closest("[data-ics]")) return rutinaIcs();
+    const ed = tg.closest("[data-editar]"); if(ed){ const s = S.get("sesiones", ed.dataset.editar); if(s) registrarModal({ses: s}); return; }
     if(tg.closest("[data-crono]")) return T.abrir({});
     const d = tg.closest("[data-dia]"); if(d){
       st.dia = d.dataset.dia; vistaHub(el, r);
@@ -167,6 +194,72 @@ function vistaHub(el, r){
     const x = e.target;
     if(x.dataset.b !== undefined){ const s = asegurar(); if(s) E.marcarBloque(s.id, x.dataset.b, x.checked); return; }
     if(x.dataset.k){ if(x.closest(".en-blocks")) asegurar(); E.marcar(x.dataset.k, x.checked); }
+  };
+}
+
+/* tarjeta de un arte en el hub */
+function artCard(a, r){
+  const d = E.cargado(a.id), p = E.pctArte(d), m = E.moduloActual(d), enRut = r?.artes?.includes(a.id);
+  const nv = d.modulos.reduce((s, x) => s + x.recursos.length, 0);
+  return `<article class="en-art" style="--c:${a.color}">
+    <div class="en-art-h">${p ? ring(p, 54, a.color) : `<span class="en-new">${t("Nuevo")}</span>`}<div><a class="en-art-lnk" href="#/entreno/${a.id}"><b>${esc(t(a.nombre))}</b></a>
+      <span class="en-chips"><span>${tn(d.modulos.length, "1 módulo", "{n} módulos")}</span><span>${tn(nv, "1 video", "{n} videos")}</span>${enRut ? `<span class="en-in">${icon("calendar")} ${t("En tu rutina")}</span>` : ""}</span></div></div>
+    <span class="en-art-now"><span class="muted small">${p ? t("Vas en") : t("Empiezas con")}</span> ${esc(m.titulo)} <span class="lvl ${m.nivel}">${nivelT(m.nivel)}</span></span>
+    <a class="en-go" href="#/entreno/${a.id}/${m.id}">${p ? t("Continuar módulo {n}", {n: m.n}) : t("Empezar")} →</a></article>`;
+}
+
+/* técnica de la semana (contenido de semana.js); la academia puede fijar una para todos */
+const tdsKey = x => x && (x.drill != null ? E.kDrill(x.arte, x.mod, x.drill) : x.hito != null ? E.kHito(x.arte, x.mod, x.hito) : null);
+function tdsCard(box, r){
+  if(!box) return;
+  import("../entreno/semana.js").then(M => {
+    if(!box.isConnected || !M.tdsActual) return;
+    const ac = S.academy();
+    const x = M.tdsActual({fecha: new Date(), artes: M.artesTds(r, E.disponibles().map(a => a.id)), pin: ac?.tds || null});
+    if(!x || !E.arte(x.arte)) return;
+    const a = E.arte(x.arte), m = E.cargado(x.arte)?.modulos.find(y => y.id === x.mod), k = tdsKey(x);
+    const fija = ac?.tds?.semana === M.isoWeek(new Date()) && ac.tds.id === x.id;
+    box.innerHTML = `<section class="card en-tds" style="--c:${a.color}">
+      <header class="card-h"><h3>${icon("target")} ${t("Técnica de la semana")}</h3><div class="row gap">${fija ? `<span class="pill info">${t("Fijada por la academia")}</span>` : ""}<button class="btn small ghost" data-tds-pin>${t("Cambiar")}</button></div></header>
+      <div class="en-tds-b"><div class="en-bt"><span class="en-tag" style="--c:${a.color}">${esc(t(a.corto))}</span>${m ? `<a class="muted small" href="#/entreno/${a.id}/${m.id}">${esc(m.titulo)}</a>` : ""}</div>
+        <h4>${esc(x.foco)}</h4>
+        ${x.claves?.length ? `<ol class="en-claves">${x.claves.map(c => `<li>${esc(c)}</li>`).join("")}</ol>` : ""}
+        ${x.reto ? `<p class="en-reto"><b>${t("Reto")}:</b> ${esc(x.reto)}</p>` : ""}
+        ${x.pregunta ? `<p class="muted small"><b>${t("Pregunta para pensar")}:</b> ${esc(x.pregunta)}</p>` : ""}
+        ${k && E.itemDe(k) ? chk(k, t("La practiqué")) : ""}</div></section>`;
+    box.querySelector("[data-tds-pin]").onclick = () => pinTds(M, x);
+    box.onchange = e => { const kk = e.target.dataset.k; if(kk){ e.stopPropagation(); E.marcar(kk, e.target.checked); } };
+  }).catch(() => {});
+}
+/* elegir la técnica de esta semana para toda la academia (o volver a la automática) */
+function pinTds(M, cur){
+  const ac = S.academy(); if(!ac) return;
+  const semana = M.isoWeek(new Date()), disp = new Set(E.disponibles().map(a => a.id));
+  const lista = M.TDS.filter(x => disp.has(x.arte));
+  const body = h(`<div><p class="muted small">${t("La técnica fijada se muestra a todos los que usen la app de esta academia durante esta semana.")}</p>
+    <div class="list en-tds-list">${lista.map(x => `<button class="li ${x.id === cur.id ? "on" : ""}" data-id="${esc(x.id)}"><span class="en-tag" style="--c:${E.arte(x.arte).color}">${esc(t(E.arte(x.arte).corto))}</span><div class="li-main"><b>${esc(x.foco)}</b></div>${x.id === cur.id ? icon("check") : ""}</button>`).join("")}</div></div>`);
+  const m = modal({title: t("Técnica de la semana"), body, foot: `${ac.tds ? `<button class="btn ghost left" data-auto>${t("Usar la automática")}</button>` : ""}<button class="btn ghost" data-close>${t("Cerrar")}</button>`});
+  body.onclick = e => { const b = e.target.closest("[data-id]"); if(!b) return; S.put("academias", {id: ac.id, tds: {semana, id: b.dataset.id}}); m.close(); toast(t("Técnica fijada para esta semana")); };
+  m.foot.querySelector("[data-auto]")?.addEventListener("click", () => { S.put("academias", {id: ac.id, tds: null}); m.close(); });
+}
+
+/* la rutina al calendario del teléfono: un evento semanal por día de entreno */
+function rutinaIcs(){
+  const r = E.rutina(); if(!r) return;
+  const body = h(`<form class="form" novalidate>
+    <label class="field"><span class="lbl">${t("¿A qué hora entrenas?")}</span><input name="hora" type="time" value="${esc(r.hora || "18:00")}" required></label>
+    <label class="field"><span class="lbl">${t("Aviso antes")}</span><select name="alarma">${[0, 15, 30, 60].map(n => `<option value="${n}" ${n === (r.alarma ?? 30) ? "selected" : ""}>${n ? tn(n, "1 min", "{n} min") : t("Sin aviso")}</option>`).join("")}</select></label>
+    <p class="muted small">${t("Se crea un evento que se repite cada semana en tus días de entreno. Ábrelo con tu app de calendario.")}</p></form>`);
+  const m = modal({title: t("Agregar a mi calendario"), body, foot: `<button class="btn ghost" data-close>${t("Cancelar")}</button><button class="btn primary" data-save>${icon("download")} ${t("Descargar calendario")}</button>`});
+  m.foot.querySelector("[data-save]").onclick = async () => {
+    const hora = body.querySelector("[name=hora]").value || "18:00", alarma = +body.querySelector("[name=alarma]").value;
+    E.guardarRutina({hora, alarma});
+    const I = await import("../ics.js"), [hh, mm] = hora.split(":").map(Number), hoy = today();
+    const nom = r.artes.map(a => t(E.arte(a)?.corto || a)).join(", ");
+    const evs = r.dias.map(d => { const f = addDays(hoy, (d - E.diaSemana(hoy) + 7) % 7), ini = parseISO(f); ini.setHours(hh, mm, 0, 0);
+      return I.icsEvento({uid: `rutina-${d}`, titulo: t("Entreno: {a}", {a: nom}), inicio: ini, durMin: r.min || 60, rrule: `FREQ=WEEKLY;BYDAY=${I.byDay(d)}`, alarmaMin: alarma || null, desc: t("Rutina de AcademiaPro")}); });
+    m.close();
+    I.descargarIcs("rutina-entreno.ics", I.icsCalendario(evs, t("Mi rutina de entreno")));
   };
 }
 
@@ -211,21 +304,76 @@ function finModal(s){
   body.onsubmit = e => { e.preventDefault(); m.foot.querySelector("[data-save]").click(); };
 }
 
-function registrarModal(){
-  const hoy = today(), r = E.rutina(), f = st.dia <= hoy ? st.dia : hoy;
-  const def = E.artesDelDia(r, f)[0] || r?.artes?.[0] || E.ARTES[0].id;
+/* resultados de un rollo (sparring o lucha en el suelo) */
+export const RESULTADOS = [["gane_sub", "Gané por sumisión"], ["perdi_sub", "Me sometieron"], ["pase", "Pasé la guardia"], ["raspe", "Barrí"], ["me_pasaron", "Me pasaron la guardia"], ["empate", "Parejo"]];
+export const resT = k => t((RESULTADOS.find(x => x[0] === k) || [, k])[1]);
+const CINTAS = ["", "Blanco", "Azul", "Morado", "Marrón", "Negro", "Otro"];
+const rolloRow = (x = {}) => `<div class="en-rollo">
+  <input name="r_pareja" maxlength="40" placeholder="${esc(t("Compañero"))}" value="${esc(x.pareja || "")}" aria-label="${esc(t("Compañero"))}">
+  <select name="r_cinturon" aria-label="${esc(t("Cinturón"))}">${CINTAS.map(c => `<option value="${c}" ${c === (x.cinturon || "") ? "selected" : ""}>${c ? t(c) : t("Cinturón")}</option>`).join("")}</select>
+  <select name="r_resultado" aria-label="${esc(t("Resultado"))}">${RESULTADOS.map(([k, l]) => `<option value="${k}" ${k === (x.resultado || "empate") ? "selected" : ""}>${t(l)}</option>`).join("")}</select>
+  <input name="r_tecnica" maxlength="60" placeholder="${esc(t("Técnica"))}" value="${esc(x.tecnica || "")}" aria-label="${esc(t("Técnica"))}">
+  <button type="button" class="icon-btn" data-rdel aria-label="${esc(t("Quitar"))}">${icon("x")}</button></div>`;
+/* sugerencias de etiquetas: los drills del módulo actual y del anterior de esa arte */
+function sugTags(arteId){
+  const d = E.cargado(arteId); if(!d) return [];
+  const m = E.moduloActual(d), i = d.modulos.indexOf(m);
+  return [...new Set([...(d.modulos[i - 1]?.drills || []), ...m.drills].filter(x => x.tipo !== "fisico").map(x => x.nombre))].slice(-10);
+}
+
+/* registrar un entreno a mano o editar el diario de una sesión: fecha, arte, tipo, minutos, RPE, nota,
+   y en "Diario": etiquetas, rollos, qué salió bien y qué mejorar */
+export function registrarModal({fecha, ses} = {}){
+  const hoy = today(), r = E.rutina(), f = ses?.fecha || fecha || (st.dia <= hoy ? st.dia : hoy);
+  const soloDiario = !!ses?.plan;   // de la rutina: lo demás viene del plan
+  const disp = E.disponibles(), def = ses?.artes?.[0] || E.artesDelDia(r, f).find(E.cargado) || r?.artes?.find(E.cargado) || disp[0]?.id;
+  const v = ses || {};
+  const tags = new Set(v.tags || []);
   const body = h(`<form class="form" novalidate>
+    ${soloDiario ? `<p class="muted small">${fmtDate(f, true)} · ${artesT(v)}</p>` : `
     <label class="field"><span class="lbl">${t("Fecha")}</span><input name="fecha" type="date" max="${hoy}" value="${f}" required></label>
-    <label class="field"><span class="lbl">${t("Arte")}</span><select name="arte">${E.ARTES.map(a => `<option value="${a.id}" ${a.id === def ? "selected" : ""}>${esc(t(a.nombre))}</option>`).join("")}</select></label>
-    <div class="field"><span class="lbl">${t("Tipo")}</span><div class="seg">${TIPOS.slice(1).map(([k, l], i) => `<label><input type="radio" name="tipo" value="${k}" ${i === 0 ? "checked" : ""}><span>${t(l)}</span></label>`).join("")}</div></div>
-    ${minF(60)}${rpeChips()}${notaF({})}</form>`);
-  const m = modal({title: t("Registrar entreno"), body, foot: `<button class="btn ghost" data-close>${t("Cancelar")}</button><button class="btn primary" data-save>${icon("check")} ${t("Guardar")}</button>`});
+    <label class="field"><span class="lbl">${t("Arte")}</span><select name="arte">${disp.map(a => `<option value="${a.id}" ${a.id === def ? "selected" : ""}>${esc(t(a.nombre))}</option>`).join("")}</select></label>
+    <div class="field"><span class="lbl">${t("Tipo")}</span><div class="seg en-seg">${TIPOS.slice(1).map(([k, l], i) => `<label><input type="radio" name="tipo" value="${k}" ${(v.tipo ? v.tipo === k : i === 0) ? "checked" : ""}><span>${t(l)}</span></label>`).join("")}</div></div>
+    ${minF(v.min || 60)}`}
+    ${rpeChips(v.rpe)}${notaF(v)}
+    <details class="en-more-d" ${v.tags?.length || v.rollos?.length || v.bien || v.mal ? "open" : ""}><summary>${icon("edit")} ${t("Diario: etiquetas, rollos y aprendizajes")}</summary>
+      <div class="field"><span class="lbl">${t("Etiquetas")}</span><div class="chip-row en-tags" data-tags></div>
+        <input name="tagnew" maxlength="40" placeholder="${esc(t("Otra etiqueta y Enter"))}" aria-label="${esc(t("Agregar etiqueta"))}"></div>
+      <div class="field"><span class="lbl">${t("Rollos o sparring")}</span><div class="en-rollos" data-rollos>${(v.rollos || []).map(rolloRow).join("")}</div>
+        <button type="button" class="btn small ghost" data-radd>${icon("plus")} ${t("Agregar rollo")}</button></div>
+      <label class="field"><span class="lbl">${t("Qué salió bien")}</span><textarea name="bien" rows="2" maxlength="400">${esc(v.bien || "")}</textarea></label>
+      <label class="field"><span class="lbl">${t("Qué debo mejorar")}</span><textarea name="mal" rows="2" maxlength="400">${esc(v.mal || "")}</textarea></label>
+    </details></form>`);
+  const pintarTags = () => {
+    const a = body.querySelector("[name=arte]")?.value || def;
+    const sug = [...new Set([...tags, ...sugTags(a)])];
+    body.querySelector("[data-tags]").innerHTML = sug.map(x => `<button type="button" class="chip-btn ${tags.has(x) ? "on" : ""}" data-tag="${esc(x)}" aria-pressed="${tags.has(x)}">${esc(x)}</button>`).join("");
+  };
+  pintarTags();
+  body.querySelector("[name=arte]")?.addEventListener("change", pintarTags);
+  body.addEventListener("click", e => {
+    const tg = e.target.closest("[data-tag]"); if(tg){ const x = tg.dataset.tag; tags.has(x) ? tags.delete(x) : tags.add(x); pintarTags(); return; }
+    if(e.target.closest("[data-radd]")){ body.querySelector("[data-rollos]").insertAdjacentHTML("beforeend", rolloRow()); body.querySelector(".en-rollo:last-child input")?.focus(); return; }
+    e.target.closest("[data-rdel]")?.closest(".en-rollo").remove();
+  });
+  body.querySelector("[name=tagnew]").addEventListener("keydown", e => {
+    if(e.key !== "Enter" && e.key !== ",") return;
+    e.preventDefault(); const x = e.target.value.trim().replace(/,$/, ""); if(x){ tags.add(x); e.target.value = ""; pintarTags(); }
+  });
+  const m = modal({title: ses ? t("Editar entreno") : t("Registrar entreno"), body, foot: `<button class="btn ghost" data-close>${t("Cancelar")}</button><button class="btn primary" data-save>${icon("check")} ${t("Guardar")}</button>`});
   m.foot.querySelector("[data-save]").onclick = () => {
-    const v = leer(body), fecha = body.querySelector("[name=fecha]").value;
+    const x = leer(body), q = n => body.querySelector(`[name=${n}]`);
+    const extra = q("tagnew").value.trim(); if(extra) tags.add(extra);
+    const rollos = [...body.querySelectorAll(".en-rollo")].map(rw => ({pareja: rw.querySelector("[name=r_pareja]").value.trim(), cinturon: rw.querySelector("[name=r_cinturon]").value,
+      resultado: rw.querySelector("[name=r_resultado]").value, tecnica: rw.querySelector("[name=r_tecnica]").value.trim()})).filter(y => y.pareja || y.tecnica || y.resultado !== "empate");
+    const diario = {rpe: x.rpe, nota: x.nota, tags: [...tags], rollos, bien: q("bien").value.trim(), mal: q("mal").value.trim()};
+    if(soloDiario){ S.put("sesiones", {id: ses.id, ...diario}); m.close(); toast(t("Diario guardado")); return; }
+    const fecha = q("fecha").value;
     if(!fecha || fecha > hoy) return toast(t("Elige una fecha de hoy o anterior"), "warn");
-    if(!(v.min > 0)) return toast(t("Escribe los minutos que entrenaste"), "warn");
-    E.registrar({fecha, tipo: body.querySelector("[name=tipo]:checked")?.value || "clase", artes: [body.querySelector("[name=arte]").value], min: v.min, rpe: v.rpe, nota: v.nota});
-    st.dia = fecha; m.close(); toast(t("Entreno registrado"));
+    if(!(x.min > 0)) return toast(t("Escribe los minutos que entrenaste"), "warn");
+    const datos = {fecha, tipo: body.querySelector("[name=tipo]:checked")?.value || "clase", artes: [q("arte").value], min: x.min, ...diario};
+    if(ses) S.put("sesiones", {id: ses.id, ...datos}); else E.registrar(datos);
+    st.dia = fecha; m.close(); toast(ses ? t("Entreno actualizado") : t("Entreno registrado"));
   };
   body.onsubmit = e => { e.preventDefault(); m.foot.querySelector("[data-save]").click(); };
 }
@@ -233,24 +381,132 @@ function registrarModal(){
 const rutinaTxt = r => `${r.dias.map(d => t(E.DIAS_C[d - 1])).join(", ")} · ${tn(r.min, "1 min", "{n} min")} · ${r.artes.map(a => t(E.arte(a)?.corto)).join(", ")}`;
 
 function editarRutina(){
-  const r = E.rutina() || {dias: [1, 3, 5], min: 60, artes: [], modo: "pareja"};
+  const r = E.rutina() || {dias: [1, 3, 5], min: 60, artes: [], modo: "pareja"}, mt = r.meta || {};
   const body = h(`<form class="form" novalidate>
     <div class="field"><span class="lbl">${t("¿Qué días entrenas?")}</span><div class="chips en-dias">${E.DIAS.map((d, i) => `<label class="chip"><input type="checkbox" name="dias" value="${i + 1}" ${r.dias.includes(i + 1) ? "checked" : ""}><span>${t(E.DIAS_C[i])}</span></label>`).join("")}</div></div>
     <div class="field"><span class="lbl">${t("¿Cuánto tiempo por día?")}</span><div class="seg">${[30, 45, 60, 75, 90, 120].map(m => `<label><input type="radio" name="min" value="${m}" ${r.min === m ? "checked" : ""}><span>${m} min</span></label>`).join("")}</div></div>
-    <div class="field"><span class="lbl">${t("¿Qué quieres entrenar?")}</span><div class="en-pick">${E.ARTES.map(a => `<label class="en-pk" style="--c:${a.color}"><input type="checkbox" name="artes" value="${a.id}" ${r.artes.includes(a.id) ? "checked" : ""}><span><b>${esc(t(a.nombre))}</b></span></label>`).join("")}</div>
+    <div class="field"><span class="lbl">${t("¿Qué quieres entrenar?")}</span><div class="en-pick">${E.disponibles().map(a => `<label class="en-pk ${E.esComplemento(a) ? "comp" : ""}" style="--c:${a.color}"><input type="checkbox" name="artes" value="${a.id}" ${r.artes.includes(a.id) ? "checked" : ""}><span><b>${esc(t(a.nombre))}</b></span></label>`).join("")}</div>
       <small class="hint">${t("Con varias artes, se turnan entre tus días. Con sesiones de 90 minutos o más, se combinan dos por día.")}</small></div>
     <div class="field"><span class="lbl">${t("¿Con quién entrenas?")}</span><div class="seg"><label><input type="radio" name="modo" value="pareja" ${r.modo !== "solo" ? "checked" : ""}><span>${t("En academia o con compañero")}</span></label><label><input type="radio" name="modo" value="solo" ${r.modo === "solo" ? "checked" : ""}><span>${t("Solo")}</span></label></div>
       <small class="hint">${t("Si entrenas solo, la rutina usa solo drills que no necesitan compañero.")}</small></div>
+    <div class="field"><span class="lbl">${t("Meta semanal")}</span><div class="en-meta-f"><div class="seg"><label><input type="radio" name="mtipo" value="dias" ${mt.tipo !== "min" ? "checked" : ""}><span>${t("Días")}</span></label><label><input type="radio" name="mtipo" value="min" ${mt.tipo === "min" ? "checked" : ""}><span>${t("Minutos")}</span></label></div>
+      <input name="mvalor" type="number" inputmode="numeric" min="1" max="3000" value="${esc(mt.valor || "")}" placeholder="${esc(t("Según tus días"))}" aria-label="${esc(t("Meta semanal"))}"></div>
+      <small class="hint">${t("Vacío: la meta son los días de tu rutina.")}</small></div>
   </form>`);
   const m = modal({title: t("Tu rutina"), body, foot: `${E.rutina() ? `<button class="btn danger ghost left" data-del>${icon("trash")} ${t("Borrar rutina")}</button>` : ""}<button class="btn ghost" data-close>${t("Cancelar")}</button><button class="btn primary" data-save>${t("Guardar rutina")}</button>`});
   m.foot.querySelector("[data-save]").onclick = () => {
     const v = {dias: [...body.querySelectorAll("[name=dias]:checked")].map(x => +x.value), min: +(body.querySelector("[name=min]:checked")?.value || 60),
       artes: [...body.querySelectorAll("[name=artes]:checked")].map(x => x.value), modo: body.querySelector("[name=modo]:checked")?.value || "pareja"};
+    const mv = Math.round(+body.querySelector("[name=mvalor]").value || 0);
+    v.meta = mv > 0 ? {tipo: body.querySelector("[name=mtipo]:checked")?.value || "dias", valor: mv} : null;
+    if(v.meta?.tipo === "dias" && mv > 7) return toast(t("La meta en días va de 1 a 7"), "warn");
     if(!v.dias.length) return toast(t("Elige al menos un día"), "warn");
     if(!v.artes.length) return toast(t("Elige al menos un arte"), "warn");
     E.guardarRutina(v); st.dia = today(); m.close(); toast(t("Rutina guardada"));
   };
   m.foot.querySelector("[data-del]")?.addEventListener("click", async () => { if(await confirmDlg(t("Se borra la rutina. Tu progreso y tu historial se conservan."))){ S.del("rutinas", "mia"); m.close(); } });
+}
+
+/* mapa del arte: pilar × nivel con el % de cada celda y dónde vas */
+function matriz(id, d, act){
+  const ps = E.pilares(d), a = E.arte(id);
+  if(ps.length < 2) return "";
+  return `<section class="card en-mx" style="--c:${a.color}" aria-label="${esc(t("Mapa del camino"))}">
+    <header class="card-h"><h3>${icon("grid")} ${t("Mapa del camino")}</h3><span class="muted small hide-s">${t("Pilar por nivel")}</span></header>
+    <div class="en-mx-g" style="--n:${E.NIVELES.length}"><span></span>${E.NIVELES.map(([k, n]) => `<span class="en-mx-c lvl ${k}">${t(n)}</span>`).join("")}
+    ${ps.map(p => `<b class="en-mx-p">${esc(t(p.t))}</b>${E.NIVELES.map(([k]) => { const ms = p.mods.filter(m => m.nivel === k);
+      if(!ms.length) return `<span class="en-mx-x" aria-hidden="true">·</span>`;
+      const pc = E.pctMods(id, ms), aqui = ms.includes(act);
+      return `<a class="en-mx-x ${aqui ? "aqui" : ""} ${pc === 100 ? "full" : ""}" href="#/entreno/${id}/${(ms.find(m => m === act) || ms[0]).id}" style="--p:${pc}%" title="${esc(ms.map(m => m.titulo).join(" · "))}">
+        <i>${pc}%</i>${aqui ? `<em>${t("Vas aquí")}</em>` : ""}</a>`; }).join("")}`).join("")}</div></section>`;
+}
+
+/* ---------- glosario ---------- */
+let cacheGlo = null, cacheCur = null;
+function vistaGlosario(el, q){
+  if(q.has("q")) st.gq = q.get("q") || "";
+  if(cacheGlo) return glosario(el, cacheGlo);
+  el.innerHTML = `${volver()}<div class="card"><p class="muted">${icon("sync", "spin")} ${t("Cargando…")}</p></div>`;
+  import("../entreno/glosario.js").then(M => { cacheGlo = M.GLOSARIO || []; if(el.isConnected) glosario(el, cacheGlo); })
+    .catch(() => { el.innerHTML = `${volver()}<div class="card"><p>${t("El glosario no está disponible todavía.")}</p></div>`; });
+}
+function glosario(el, G){
+  const en = lang() === "en", artes = E.ARTES.filter(a => G.some(x => x.arte === a.id));
+  const nom = x => (en && x.en) || x.t;
+  el.innerHTML = `${volver()}
+  <section class="card en-glo">
+    <header class="card-h"><h3>${icon("book")} ${t("Glosario")}</h3><span class="muted small">${tn(G.length, "1 término", "{n} términos")}</span></header>
+    <label class="en-search">${icon("search")}<input id="glq" type="search" value="${esc(st.gq)}" placeholder="${esc(t("Buscar un término"))}" aria-label="${esc(t("Buscar un término"))}" autocomplete="off"></label>
+    <div class="chip-row en-glo-a"><button class="chip-btn ${!st.ga ? "on" : ""}" data-ga="">${t("Todas")}</button>${artes.map(a => `<button class="chip-btn ${st.ga === a.id ? "on" : ""}" data-ga="${a.id}">${esc(t(a.corto))}</button>`).join("")}</div>
+    <nav class="en-az" aria-label="${esc(t("Índice alfabético"))}"></nav>
+    <div class="en-glo-l" aria-live="polite"></div>
+  </section>${esNota()}`;
+  const lista = el.querySelector(".en-glo-l"), az = el.querySelector(".en-az");
+  const pintar = () => {
+    const nq = norm(st.gq.trim());
+    const xs = G.filter(x => (!st.ga || x.arte === st.ga) && (!nq || norm([x.t, x.en, x.orig, x.d].join(" ")).includes(nq)))
+      .sort((a, b) => norm(nom(a)).localeCompare(norm(nom(b))));
+    const letra = x => (norm(nom(x))[0] || "#").toUpperCase().replace(/[^A-Z]/, "#");
+    const ls = [...new Set(xs.map(letra))];
+    az.innerHTML = ls.map(l => `<a href="#" data-az="${l}">${l}</a>`).join("");
+    lista.innerHTML = xs.length ? ls.map(l => `<h4 class="en-glo-h" id="glo-${l}">${l}</h4>${xs.filter(x => letra(x) === l).map(x => { const a = E.arte(x.arte);
+      return `<article class="en-term"><div class="en-term-h"><b>${esc(nom(x))}</b>${en && x.en && x.en !== x.t ? `<span class="muted small">${esc(x.t)}</span>` : !en && x.en && norm(x.en) !== norm(x.t) ? `<span class="muted small">${esc(x.en)}</span>` : ""}${x.orig ? `<span class="muted small">· ${esc(x.orig)}</span>` : ""}
+        ${a ? `<span class="en-tag" style="--c:${a.color}">${esc(t(a.corto))}</span>` : ""}</div><p>${esc(x.d)}</p>
+        ${x.mod && a ? `<a class="en-term-go" href="#/entreno/${x.arte}/${esc(x.mod)}">${t("Ver en el camino")} →</a>` : ""}</article>`; }).join("")}`).join("")
+      : `<div class="empty">${icon("search", "big")}<h3>${t("Sin resultados")}</h3><p>${t("Prueba con otra palabra o quita el filtro de arte.")}</p></div>`;
+  };
+  pintar();
+  el.querySelector("#glq").oninput = e => { st.gq = e.target.value; pintar(); };
+  el.onclick = e => {
+    const g = e.target.closest("[data-ga]"); if(g){ st.ga = g.dataset.ga; for(const b of el.querySelectorAll("[data-ga]")) b.classList.toggle("on", b === g); pintar(); return; }
+    const l = e.target.closest("[data-az]"); if(l){ e.preventDefault(); const h4 = el.querySelector("#glo-" + l.dataset.az);
+      if(h4) window.scrollTo({top: h4.getBoundingClientRect().top + window.scrollY - (document.querySelector(".top")?.offsetHeight || 0) - 52, behavior: "smooth"}); }
+  };
+  el.onchange = null;
+}
+
+/* ---------- Mi cinturón: currículo de un sistema (solo lectura, con autochequeo) ---------- */
+const CUR_ARTE = {bjj: "bjj", bjjkids: "bjj", muaythai: "muaythai", lucha: "lucha", boxeo: "boxeo", mma: "mma"};
+const CUR_NOM = {bjj: "Jiu-Jitsu Brasileño", bjjkids: "Jiu-Jitsu niños", muaythai: "Muay Thai", lucha: "Lucha", boxeo: "Boxeo", mma: "MMA"};
+const CATS = {fundamentos: "Fundamentos", guardia: "Guardia", pase: "Pases", sumision: "Sumisiones", derribo: "Derribos", escape: "Escapes", vivo: "En vivo", golpeo: "Golpeo", defensa: "Defensa", clinch: "Clinch", conocimiento: "Conocimiento", actitud: "Actitud", fisico: "Físico"};
+const kCur = id => "cur:" + id;
+function vistaCurriculo(el, key){
+  if(cacheCur && (!CUR_ARTE[key] || E.intentado(CUR_ARTE[key]))) return curriculo(el, cacheCur, key);
+  el.innerHTML = `${volver()}<div class="card"><p class="muted">${icon("sync", "spin")} ${t("Cargando…")}</p></div>`;
+  const arteK = CUR_ARTE[key];
+  Promise.all([import("../entreno/curriculos.js"), arteK ? E.cargar(arteK) : null]).then(([M]) => { cacheCur = M.CURRICULOS || {}; if(el.isConnected) curriculo(el, cacheCur, key); })
+    .catch(() => { el.innerHTML = `${volver()}<div class="card"><p>${t("Los currículos no están disponibles todavía.")}</p></div>`; });
+}
+function curriculo(el, C, key){
+  const ks = Object.keys(C).filter(k => C[k]?.rangos?.length);
+  const reqs = r => r.grados.flatMap(g => g.req);
+  const pctR = r => { const xs = reqs(r); return xs.length ? Math.round(xs.filter(x => E.hecho(kCur(x.id))).length / xs.length * 100) : 0; };
+  if(!key || !C[key]){
+    el.innerHTML = `${volver()}<section class="card"><header class="card-h"><h3>${icon("belt")} ${t("Mi cinturón")}</h3></header>
+      <p class="muted">${t("Elige tu arte para ver qué te piden en cada cinturón y marcar lo que ya dominas.")}</p>
+      <div class="en-comps">${ks.map(k => { const a = E.arte(CUR_ARTE[k]) || {color: "var(--accent)"}, rs = C[k].rangos, i = Math.max(0, rs.findIndex(r => pctR(r) < 100));
+        return `<a class="en-comp" href="#/entreno/curriculo/${k}" style="--c:${a.color}">${ring(pctR(rs[i]), 40, a.color)}<span><b>${esc(t(CUR_NOM[k] || k))}</b><span class="muted small">${tn(rs.length, "1 rango", "{n} rangos")} · ${esc(t(rs[i].rank))}</span></span></a>`; }).join("")}</div></section>`;
+    el.onclick = el.onchange = null; return;
+  }
+  const cu = C[key], a = E.arte(CUR_ARTE[key]) || {color: "var(--accent)"}, arteId = CUR_ARTE[key], d = arteId && E.cargado(arteId);
+  if(st.cr[key] == null) st.cr[key] = Math.max(0, cu.rangos.findIndex(r => pctR(r) < 100));
+  const ri = Math.min(st.cr[key], cu.rangos.length - 1), r = cu.rangos[ri];
+  const modT = id => d?.modulos.find(m => m.id === id)?.titulo;
+  el.innerHTML = `${volver("#/entreno/curriculo", t("Mi cinturón"))}
+  <section class="en-hero sm" style="--c:${a.color}"><div><span class="en-eye">${t("Mi cinturón")} · ${esc(t(CUR_NOM[key] || key))}</span><h2>${esc(t(r.rank))}</h2>
+    <p>${[r.tiempo ? t("Tiempo mínimo: {x}", {x: r.m ? tn(r.m, "1 mes", "{n} meses") : r.tiempo}) : "", r.edadMin ? t("Edad mínima: {n} años", {n: r.edadMin}) : ""].filter(Boolean).map(esc).join(" · ")}</p></div><span data-ring>${ring(pctR(r), 76, a.color)}</span></section>
+  <div class="chip-row en-ranks no-print">${cu.rangos.map((x, i) => `<button class="chip-btn ${i === ri ? "on" : ""}" data-ri="${i}">${esc(t(x.rank))} <i>${pctR(x)}%</i></button>`).join("")}</div>
+  <div class="row gap no-print en-cur-act"><span class="muted small">${t("Marca lo que ya haces bien en vivo. Es tu autoevaluación: el grado lo decide tu profesor.")}</span><button class="btn small ghost" data-print>${icon("print")} ${t("Imprimir")}</button></div>
+  ${r.grados.map(g => `<section class="card en-grado"><header class="card-h"><h3>${esc(g.titulo || t("Grado {n}", {n: g.g}))}</h3><span class="muted small">${g.req.filter(x => E.hecho(kCur(x.id))).length}/${g.req.length}</span></header>
+    ${Object.entries(g.req.reduce((o, x) => ((o[x.cat] ||= []).push(x), o), {})).map(([c, xs]) => `<h4 class="en-sub">${esc(t(CATS[c] || c))}</h4>
+      <div class="en-reqs">${xs.map(x => `<div class="en-req">${chk(kCur(x.id), `<span>${esc(x.txt)}${x.critico ? ` <span class="pill vencido" title="${esc(t("Requisito crítico"))}">${t("Crítico")}</span>` : ""}</span>`, "row")}
+        ${x.mod && modT(x.mod) ? `<a class="en-req-go no-print" href="#/entreno/${arteId}/${esc(x.mod)}">${esc(modT(x.mod))} →</a>` : ""}</div>`).join("")}</div>`).join("")}</section>`).join("")}
+  ${r.conducta?.length ? `<section class="card"><header class="card-h"><h3>${icon("heart")} ${t("Conducta y actitud")}</h3></header><ul class="en-cond">${r.conducta.map(x => `<li>${esc(x.txt)}</li>`).join("")}</ul></section>` : ""}`;
+  el.onclick = e => {
+    const b = e.target.closest("[data-ri]"); if(b){ st.cr[key] = +b.dataset.ri; curriculo(el, C, key); window.scrollTo(0, 0); return; }
+    if(e.target.closest("[data-print]")) window.print();
+  };
+  el.onchange = e => { const k = e.target.dataset.k; if(k){ E.marcar(k, e.target.checked); } };
 }
 
 /* ---------- camino de un arte ---------- */
@@ -263,6 +519,7 @@ function vistaArte(el, id){
     <div><span class="en-eye">${t("Camino de aprendizaje")}</span><h2>${esc(d.intro.titulo || a.nombre)}</h2><p>${esc(d.intro.sub || "")}</p></div>
     ${ring(p, 84, a.color)}
   </section>
+  ${matriz(id, d, act)}
   ${d.intro.reglas?.length ? `<div class="en-rules">${d.intro.reglas.map(x => `<div><b>${esc(x.t)}</b><p>${esc(x.d)}</p></div>`).join("")}</div>` : ""}
   ${E.NIVELES.map(([k, n]) => { const ms = d.modulos.filter(m => m.nivel === k); if(!ms.length) return "";
     return `<h3 class="en-lvl"><span class="lvl ${k}">${t(n)}</span><span class="muted small">${tn(ms.length, "1 módulo", "{n} módulos")}</span></h3>
@@ -337,3 +594,5 @@ function vistaModulo(el, id, modId){
     e.target.closest(".en-drill,.en-r")?.classList.toggle("done", e.target.checked);
   };
 }
+
+export {meta as metaSesion, tipoT, artesT};

@@ -3,7 +3,7 @@ import {icon, avatar, empty, pill, modal, toast} from "../ui.js";
 import {esc, money, today, fmtDate, MESES, addMonths, waLink, norm, csv, download, h} from "../util.js";
 import {paymentModal, quickPay} from "../forms.js";
 import {planById} from "../catalog.js";
-import {deuda, estadoPago, pillTxt, txtCuotas, tplCobro, msgCobro, diasRecordado} from "../cobros.js";
+import {deuda, estadoPago, pillTxt, txtCuotas, tplCobro, msgCobro, diasRecordado, estadoEf, fmtNumRecibo} from "../cobros.js";
 import {t, tn} from "../i18n.js";
 
 /* mes: null = el mes actual al pintar (no se congela si la app queda abierta) */
@@ -22,8 +22,8 @@ export function render(el){
   const porMetodo = {};
   for(const p of delMes) porMetodo[p.metodo || "Otro"] = (porMetodo[p.metodo || "Otro"] || 0) + (Number(p.monto) || 0);
   const histList = q ? delMes.filter(p => norm(S.get("alumnos", p.alumnoId)?.nombre).includes(q) || norm(p.nota).includes(q) || norm(t(p.concepto || "")).includes(q)) : delMes;
-  const activos = S.alumnos().filter(a => a.estado === "activo");
-  const est = activos.map(a => ({a, e: estadoPago(a, acad.avisoDias ?? 5), d: deuda(a)})).filter(x => !["beca"].includes(x.e.k) && (!q || norm(x.a.nombre).includes(q)));
+  const activos = S.alumnos().filter(a => estadoEf(a) === "activo");
+  const est = activos.map(a => ({a, e: estadoPago(a, acad.avisoDias ?? 5), d: deuda(a), ult: S.pagosDe(a.id)[0]})).filter(x => !["beca"].includes(x.e.k) && (!q || norm(x.a.nombre).includes(q)));
   est.sort((x, y) => (x.e.dias ?? 9999) - (y.e.dias ?? 9999));
   const venc = est.filter(x => x.e.k === "vencido"), pronto = est.filter(x => x.e.k === "pronto"), ok = est.filter(x => x.e.k === "aldia" || x.e.k === "clase");
   const owed = x => x.d.monto || S.valorPlan(x.a);
@@ -43,9 +43,10 @@ export function render(el){
       <a href="#/alumno/${x.a.id}" class="pr-link">${avatar(x.a, 40)}
         <b class="pr-name">${esc(x.a.nombre)}</b>
         <b class="pr-amt amount ${many ? "err" : ""}" title="${many ? esc(t("Debe {cuotas}", {cuotas: txtCuotas(x.a, x.d.cuotas)})) : ""}">${money(x.e.k === "vencido" ? owed(x) : S.valorPlan(x.a), cur)}</b>
-        <span class="pr-meta">${pill(x.e.k, pillTxt(x.a, x.e, x.d))}<span class="muted small">${esc(meta)}${rt ? ` · <span class="pr-rec">${icon("whatsapp", "inline")}${esc(rt)}</span>` : ""}</span></span>
+        <span class="pr-meta">${pill(x.e.k, pillTxt(x.a, x.e, x.d))}<span class="pr-tiq" data-tiq="${x.a.id}" hidden></span><span class="muted small">${esc(meta)}${rt ? ` · <span class="pr-rec">${icon("whatsapp", "inline")}${esc(rt)}</span>` : ""}</span></span>
       </a>
       <span class="li-act">${w ? `<a class="icon-btn wa hide-s" href="${esc(w)}" target="_blank" rel="noopener" data-wa="${x.a.id}" title="${t("Recordar por WhatsApp")}" aria-label="${t("Recordar por WhatsApp")}">${icon("whatsapp")}</a>` : ""}
+      ${x.ult ? `<a class="icon-btn hide-s" href="#/recibo/${x.ult.id}" title="${esc(t("Ver último recibo"))}" aria-label="${esc(t("Ver último recibo"))}">${icon("receipt")}</a>` : ""}
       <button class="icon-btn hide-s" data-more="${x.a.id}" title="${t("Registrar otro pago")}" aria-label="${t("Registrar otro pago")}">${icon("plus")}</button>
       <button class="icon-btn only-m pr-dots" data-menu="${x.a.id}" aria-label="${esc(t("Más acciones para {nombre}", {nombre: x.a.nombre}))}"><span aria-hidden="true">⋯</span></button>
       <button class="paycheck ${x.e.k === "aldia" ? "on" : ""}" data-pay="${x.a.id}" title="${x.e.k === "aldia" ? t("Al día (toca para registrar el siguiente pago)") : t("Marcar como pagado")}" aria-label="${esc((x.e.k === "aldia" ? t("Al día (toca para registrar el siguiente pago)") : t("Marcar como pagado")) + ": " + x.a.nombre)}">${icon("check")}</button></span>
@@ -55,20 +56,24 @@ export function render(el){
   const conTel = venc.filter(x => x.a.telefono || x.a.acudienteTel);
   const search = `<label class="search">${icon("search")}<input id="pq" type="search" placeholder="${st.tab === "hist" ? t("Buscar alumno o nota") : t("Buscar alumno")}" value="${esc(st.q)}" aria-label="${t("Buscar alumno")}"></label>`;
 
+  const tip = !S.pref("tipPagos") && !S.pref("qpUsado");
   el.innerHTML = `
-  <div class="kpis">
+  <div class="kpis pay-kpis">
     <div class="kpi"><span class="kpi-ic c2">${icon("cash")}</span><div><b>${money(total, cur)}</b><span>${t("Recaudado en {mes}", {mes: MESES[m - 1]})}</span></div></div>
     <div class="kpi"><span class="kpi-ic c3">${icon("alert")}</span><div><b>${venc.length}</b><span>${t("Vencidos")} · ${t("deben {monto}", {monto: money(totalDeuda, cur)})}</span></div></div>
     <div class="kpi"><span class="kpi-ic c4">${icon("clock")}</span><div><b>${pronto.length}</b><span>${tn(acad.avisoDias ?? 5, "Vencen en 1 día", "Vencen en {n} días")}</span></div></div>
     <div class="kpi"><span class="kpi-ic c1">${icon("check")}</span><div><b>${ok.length}</b><span>${t("Al día")}</span></div></div>
   </div>
-  <div class="tabs">
-    <button class="tab ${st.tab === "cobrar" ? "on" : ""}" data-tab="cobrar">${icon("check")} ${t("Control de pagos")}</button>
-    <button class="tab ${st.tab === "hist" ? "on" : ""}" data-tab="hist">${icon("list")} ${t("Historial del mes")}</button>
+  <div class="pay-tabs">
+    <div class="tabs">
+      <button class="tab ${st.tab === "cobrar" ? "on" : ""}" data-tab="cobrar">${icon("check")} ${t("Control de pagos")}</button>
+      <button class="tab ${st.tab === "hist" ? "on" : ""}" data-tab="hist">${icon("list")} ${t("Historial del mes")}</button>
+    </div>
+    <a class="btn ghost small pay-rep" href="#/reportes">${icon("chart")}<span>${t("Reportes")}</span></a>
   </div>
   ${st.tab === "cobrar" ? `<section class="card">
       <div class="toolbar pay-tools">${search}${conTel.length ? `<button class="btn ghost small" data-remind>${icon("whatsapp")}<span>${t("Recordar a todos los vencidos ({n})", {n: conTel.length})}</span></button>` : ""}</div>
-      ${S.pref("qpUsado") ? "" : `<p class="muted small">${t("Toca {check} para marcar que el alumno pagó su plan: se registra el pago y se corre la fecha del próximo cobro. Usa {plus} para un valor o período distinto.", {check: icon("check", "inline"), plus: icon("plus", "inline")})}</p>`}
+      ${tip ? `<div class="pay-tip" role="note">${icon("info")}<p>${t("Toca {check} para marcar que el alumno pagó su plan: se registra el pago y se corre la fecha del próximo cobro. Usa {plus} para un valor o período distinto.", {check: icon("check", "inline"), plus: icon("plus", "inline")})}</p><button type="button" class="icon-btn" data-tipx aria-label="${t("Entendido, ocultar")}">${icon("x")}</button></div>` : ""}
       ${est.length ? group(t("Vencidos"), venc, "err") + group(t("Por vencer"), pronto, "warn") + group(t("Al día"), ok, "ok") : empty("users", q ? t("Sin resultados") : t("Sin alumnos activos"), q ? t("Prueba con otro nombre.") : t("Los alumnos activos con plan de pago aparecen aquí."))}
     </section>`
   : `<section class="card">
@@ -76,13 +81,15 @@ export function render(el){
         <span class="grow"></span><button class="btn ghost small" data-csv>${icon("download")} CSV</button></div>
       <div class="toolbar">${search}</div>
       ${Object.keys(porMetodo).length ? `<div class="methods">${Object.entries(porMetodo).map(([k, v]) => `<span class="tag">${esc(t(k))}: <b>${money(v, cur)}</b></span>`).join("")}</div>` : ""}
-      ${histList.length ? `<div class="list">${histList.map(p => { const a = S.get("alumnos", p.alumnoId); return `<div class="li" data-editp="${p.id}" role="button" tabindex="0">${a ? avatar(a, 36) : `<span class="li-ic">${icon("cash")}</span>`}<div class="li-main"><b>${esc(a?.nombre || t("Alumno eliminado"))}</b><span class="muted small">${fmtDate(p.fecha)} · ${esc(t(p.concepto || ""))} · ${esc(t(p.metodo || ""))}${p.hasta ? " · " + t("hasta {fecha}", {fecha: fmtDate(p.hasta)}) : ""}${p.nota ? " · " + esc(p.nota) : ""}</span></div><b class="amount">${money(p.monto, cur)}</b></div>`; }).join("")}</div>`
+      ${histList.length ? `<div class="list">${histList.map(p => { const a = S.get("alumnos", p.alumnoId); return `<div class="li"><button type="button" class="li-link" data-editp="${p.id}">${a ? avatar(a, 36) : `<span class="li-ic">${icon("cash")}</span>`}<div class="li-main"><b>${esc(a?.nombre || t("Alumno eliminado"))}</b><span class="muted small">${fmtDate(p.fecha)} · ${esc(t(p.concepto || ""))} · ${esc(t(p.metodo || ""))}${p.hasta ? " · " + t("hasta {fecha}", {fecha: fmtDate(p.hasta)}) : ""}${p.nota ? " · " + esc(p.nota) : ""}</span></div><b class="amount">${money(p.monto, cur)}</b></button><a class="icon-btn" href="#/recibo/${p.id}" title="${esc(t("Ver recibo"))}" aria-label="${esc(t("Ver recibo") + (p.num ? " N.º " + fmtNumRecibo(p.num) : ""))}">${icon("receipt")}</a></div>`; }).join("")}</div>`
         : delMes.length ? empty("search", t("Sin resultados"), t("Prueba con otro nombre.")) : empty("cash", t("Sin pagos este mes"), t("Los pagos registrados aparecen aquí."))}
     </section>`}`;
 
   el.onclick = e => {
     const tg = e.target;
     const tb = tg.closest("[data-tab]"); if(tb){ st.tab = tb.dataset.tab; render(el); return; }
+    if(tg.closest("[data-tipx]")){ S.setPref("tipPagos", true); tg.closest(".pay-tip").remove(); return; }
+    if(tg.closest("a[href^='#/recibo/']")) return;
     const mm = tg.closest("[data-m]"); if(mm){ st.mes = addMonths(mes + "-01", +mm.dataset.m).slice(0, 7); if(st.mes === today().slice(0, 7)) st.mes = null; render(el); return; }
     const p = tg.closest("[data-pay]"); if(p){ const a = S.get("alumnos", p.dataset.pay); p.classList.contains("on") ? paymentModal(a) : quickPay(a); return; }
     const mo = tg.closest("[data-more]"); if(mo){ paymentModal(S.get("alumnos", mo.dataset.more)); return; }
@@ -96,16 +103,28 @@ export function render(el){
       download(`pagos-${mes}.csv`, csv(rows), "text/csv;charset=utf-8");
     }
   };
-  el.onkeydown = e => { if((e.key === "Enter" || e.key === " ") && e.target.matches("[data-editp]")){ e.preventDefault(); e.target.click(); } };
+  el.onkeydown = null;
+  /* saldo de tiquetera (si el módulo de clases está) */
+  const tiqs = el.querySelectorAll("[data-tiq]");
+  if(tiqs.length) import("../clases.js").then(C => {
+    for(const sp of tiqs){
+      const s = C.saldoTiquetera(S.get("alumnos", sp.dataset.tiq)); if(!s || !sp.isConnected) continue;
+      const k = s.vencida || s.saldo === 0 ? "vencido" : s.saldo <= 2 ? "pronto" : "aldia";
+      sp.outerHTML = pill(k, s.vencida ? t("Tiquetera vencida") : tn(s.saldo, "Tiquetera: 1 clase", "Tiquetera: {n} clases"));
+    }
+  }).catch(() => {});
   const pq = el.querySelector("#pq");
   if(pq){ pq.oninput = e => { st.q = e.target.value; st.f = true; render(el); }; if(st.f){ st.f = false; pq.focus(); pq.setSelectionRange(st.q.length, st.q.length); } }
 }
 
 /* menú ⋯ de una fila (móvil): WhatsApp y otro monto */
 function rowMenu(x, w){
+  const ult = S.pagosDe(x.a.id)[0];
   const body = h(`<div class="act-sheet">
     ${w ? `<a class="act-it" href="${esc(w)}" target="_blank" rel="noopener" data-a="wa">${icon("whatsapp")}<span>${t("Recordar por WhatsApp")}</span></a>` : ""}
     <button type="button" class="act-it" data-a="more">${icon("plus")}<span>${t("Registrar otro pago")}</span></button>
+    ${ult ? `<a class="act-it" href="#/recibo/${ult.id}" data-a="rec">${icon("receipt")}<span>${t("Ver último recibo")}</span></a>
+    <a class="act-it" href="#/recibo/${ult.id}?print=1" data-a="rec">${icon("print")}<span>${t("Imprimir último recibo")}</span></a>` : ""}
     <a class="act-it" href="#/alumno/${x.a.id}" data-a="ver">${icon("users")}<span>${t("Ver perfil")}</span></a>
   </div>`);
   const m = modal({title: x.a.nombre, body, foot: false, cls: "sheet"});

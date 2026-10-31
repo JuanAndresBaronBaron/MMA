@@ -5,26 +5,13 @@
    - Si una clave no tiene traducción se muestra el español: así un nombre que puso el usuario (una sede, un cinturón
      personalizado) pasa tal cual, y los nombres por defecto del catálogo («Blanco», «Mensual»…) sí se traducen.
    - Cambiar de idioma recarga la página. */
-import app from "./i18n/en-app.js";
-import ui from "./i18n/en-ui.js";
-import util from "./i18n/en-util.js";
-import store from "./i18n/en-store.js";
-import sync from "./i18n/en-sync.js";
-import forms from "./i18n/en-forms.js";
-import catalog from "./i18n/en-catalog.js";
-import dashboard from "./i18n/en-dashboard.js";
-import alumnos from "./i18n/en-alumnos.js";
-import alumno from "./i18n/en-alumno.js";
-import pagos from "./i18n/en-pagos.js";
-import grados from "./i18n/en-grados.js";
-import ranking from "./i18n/en-ranking.js";
-import asistencia from "./i18n/en-asistencia.js";
-import tienda from "./i18n/en-tienda.js";
-import academia from "./i18n/en-academia.js";
-import ajustes from "./i18n/en-ajustes.js";
-import entreno from "./i18n/en-entreno.js";
-
-export const EN = Object.assign({}, catalog, util, store, sync, ui, forms, app, dashboard, alumnos, alumno, pagos, grados, ranking, asistencia, tienda, academia, ajustes, entreno);
+/* cada vista trae su archivo en-*.js; si uno falta o falla, la app sigue (en español) */
+const NAMES = ["app", "ui", "util", "store", "sync", "forms", "catalog", "dashboard", "alumnos", "alumno", "pagos", "grados", "ranking", "asistencia", "tienda", "academia", "ajustes", "entreno", "clases", "leads", "inscripcion", "recibo", "reportes", "certificado", "evaluacion", "ficha", "palette", "frases"];
+const mods = await Promise.all(NAMES.map(n => import(`./i18n/en-${n}.js`).catch(() => ({default: {}}))));
+/* el catálogo y lo común primero (como antes), para que los textos de cada pantalla los pisen */
+const FIRST = ["catalog", "util", "store", "sync", "ui", "forms"];
+const order = [...FIRST, ...NAMES.filter(n => !FIRST.includes(n))];
+export const EN = Object.assign({}, ...order.map(n => mods[NAMES.indexOf(n)].default || {}));
 export const LANGS = [["es", "Español"], ["en", "English"]];
 const KEY = "mma:lang";
 

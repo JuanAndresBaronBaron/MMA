@@ -2,11 +2,12 @@ import * as S from "../store.js";
 import * as Sync from "../sync.js";
 import * as UI from "../ui.js";
 import {icon, avatar, belt, pill, rankLabel, toast, confirmDlg} from "../ui.js";
-import {esc, money, today, fmtDate, MESES, parseISO, waLink, addMonths, fmtMonth, relDays, daysBetween} from "../util.js";
+import {esc, money, today, fmtDate, MESES, parseISO, waLink, addMonths, addDays, fmtMonth, relDays, daysBetween} from "../util.js";
 import {studentForm, quickPay} from "../forms.js";
 import {GEAR} from "../catalog.js";
 import {loadDemo, removeDemo, hasDemo} from "../demo.js";
-import {deuda, pillTxt, estadoPago} from "../cobros.js";
+import {deuda, pillTxt, estadoPago, estadoEf} from "../cobros.js";
+import * as C from "../cobros.js";
 import {t, tn, locale} from "../i18n.js";
 
 const AUS = 14; /* días sin venir para la tarjeta de retención */
@@ -24,7 +25,7 @@ const pct = (a, b) => Math.round((a - b) / b * 100);
 export function render(el, params, ctx){
   const acad = S.academy(), cur = acad.moneda || "COP";
   const als = S.alumnos();
-  const activos = als.filter(a => a.estado === "activo");
+  const activos = als.filter(a => estadoEf(a) === "activo");
   const hoy = today(), ym = hoy.slice(0, 7), mesN = parseISO(hoy).getMonth();
   const sede = S.curSede();
   const pagos = S.inAcad("pagos").filter(p => !sede || p.sedeId === sede);
@@ -41,14 +42,19 @@ export function render(el, params, ctx){
     {ok: todos.some(a => !a.demo), txt: t("Agrega tu primer alumno"), sub: t("Foto, cinturón actual y plan de pago."), act: "data-new"},
     {ok: real("pagos"), txt: t("Registra un pago"), sub: t("Así sabrás quién está al día y quién debe."), href: "#/pagos"},
     {ok: asisAcad.some(a => !a.demo), txt: t("Toma asistencia de una clase"), sub: t("Un toque por alumno; sirve para ver quién dejó de venir."), href: "#/asistencia"},
+    {ok: real("clases"), txt: t("Arma tu horario de clases"), sub: t("Cada día se abre sola la clase que empieza para pasar lista."), href: "#/horario"},
+    {ok: real("leads"), txt: t("Anota tu primer prospecto"), sub: t("Quien pregunta por clases: la app te recuerda cuándo escribirle."), href: "#/leads?nuevo=1"},
     {ok: Sync.connected(), txt: t("Conecta Google Drive"), sub: t("Copia automática y uso en varios aparatos."), href: "#/ajustes"},
   ];
   const nOk = steps.filter(s => s.ok).length;
   const hideKey = "setupHide:" + acad.id;
   const showSetup = nOk < steps.length && !S.pref(hideKey, false);
   const demoBtn = !demo ? `<button type="button" class="btn ghost" data-demo>${icon("users")} ${t("Probar con datos de ejemplo")}</button>` : "";
-  const setup = !showSetup ? "" : `<section class="card setup" aria-labelledby="setupH">
-    <header class="card-h"><h3 id="setupH">${icon("star")} ${t("Primeros pasos")}</h3><button type="button" class="icon-btn" data-setup-hide aria-label="${t("Ocultar primeros pasos")}" title="${t("Ocultar")}">${icon("x")}</button></header>
+  /* con datos de ejemplo, primeros pasos queda en una línea (se abre con un toque) */
+  const setupMini = demo && !S.pref("setupOpen", false);
+  const setup = !showSetup ? "" : setupMini ? `<button type="button" class="setup-mini" data-setup-open aria-expanded="false">${icon("star")}<span>${t("Primeros pasos · {a}/{b}", {a: nOk, b: steps.length})}</span><span class="setup-mini-bar" aria-hidden="true"><i style="width:${Math.round(nOk / steps.length * 100)}%"></i></span>${icon("chevron")}</button>`
+  : `<section class="card setup" aria-labelledby="setupH">
+    <header class="card-h"><h3 id="setupH">${icon("star")} ${t("Primeros pasos")}</h3>${demo ? `<button type="button" class="btn-link" data-setup-close>${t("Contraer")}</button>` : ""}<button type="button" class="icon-btn" data-setup-hide aria-label="${t("Ocultar primeros pasos")}" title="${t("Ocultar")}">${icon("x")}</button></header>
     <div class="setup-prog"><div class="setup-bar"><span style="width:${Math.round(nOk / steps.length * 100)}%"></span></div><span class="muted small">${t("{a} de {b} listos", {a: nOk, b: steps.length})}</span></div>
     <ol class="setup-list">${steps.map((s, i) => {
       const inner = `<span class="setup-ck" aria-hidden="true">${s.ok ? icon("check") : i + 1}</span><span class="setup-tx"><b>${esc(s.txt)}</b><span class="muted small">${esc(s.sub)}</span></span>${s.ok ? `<span class="dash-sr">${t("Hecho")}</span>` : icon("chevron", "setup-go")}`;
@@ -168,13 +174,13 @@ export function render(el, params, ctx){
         <div class="dc-x">${months.map((m, i) => `<span>${fmtMonth(m)}${i === 5 ? `<small>${t("en curso")}</small>` : ""}</span>`).join("")}</div>
       </div>
     </section>`;
-  const cOpps = `<section class="card">
-      <header class="card-h"><h3>${icon("bag")} ${t("Oportunidades de venta")}</h3><a class="btn-link" href="#/tienda">${t("Tienda")}</a></header>
-      <div class="opps">
-        <a href="#/tienda/gi" class="opp"><b>${sinGi}</b><span>${t("sin gi (BJJ / Judo)")}</span></a>
-        <a href="#/tienda/bucal" class="opp"><b>${sinBucal}</b><span>${t("sin protector bucal")}</span></a>
-        ${GEAR.filter(g => !["gi", "bucal"].includes(g.k)).slice(0, 2).map(g => `<a href="#/tienda/${g.k}" class="opp"><b>${activos.filter(a => !a.equipo?.[g.k]?.tiene).length}</b><span>${t("sin {equipo}", {equipo: esc(t(g.n).toLowerCase())})}</span></a>`).join("")}
-      </div>
+  /* las 3 oportunidades más grandes */
+  const opps = [{k: "gi", n: sinGi, txt: t("sin gi (BJJ / Judo)")}, {k: "bucal", n: sinBucal, txt: t("sin protector bucal")},
+    ...GEAR.filter(g => !["gi", "bucal"].includes(g.k)).map(g => ({k: g.k, n: activos.filter(a => !a.equipo?.[g.k]?.tiene).length, txt: t("sin {equipo}", {equipo: t(g.n).toLowerCase()})}))]
+    .filter(o => o.n > 0).sort((a, b) => b.n - a.n);
+  const cOpps = !opps.length ? "" : `<section class="card">
+      <header class="card-h"><h3>${icon("bag")} ${t("Oportunidades de venta")}</h3><a class="btn-link" href="#/tienda">${t("Ver todos")}</a></header>
+      <div class="opps dash-opps">${opps.slice(0, 3).map(o => `<a href="#/tienda/${o.k}" class="opp"><b>${o.n}</b><span>${esc(o.txt)}</span></a>`).join("")}</div>
     </section>`;
   const cAus = !ausentes.length ? "" : `<section class="card warn-card" id="dashRet">
       <header class="card-h"><h3>${icon("clock")} ${t("Hace tiempo no vienen")}</h3><span class="count-b">${ausentes.length}</span></header>
@@ -193,8 +199,8 @@ export function render(el, params, ctx){
       }).join("")}</div>
     </section>`;
   const cRapidas = !rapidas.length ? "" : `<section class="card warn-card">
-      <header class="card-h"><h3>${icon("alert")} ${t("Promociones muy seguidas (último año)")}</h3></header>
-      <div class="list">${rapidas.slice(0, 6).map(x => `<a class="li" href="#/alumno/${x.a.id}">${avatar(x.a, 38)}<div class="li-main"><b>${esc(x.a.nombre)} · ${esc(rankLabel(x.d, x.g))}</b><span class="muted small">${esc(x.avisos[0].txt)}</span></div><span class="muted small">${fmtDate(x.g.fecha)}</span></a>`).join("")}</div>
+      <header class="card-h"><h3>${icon("alert")} ${t("Promociones antes de tiempo")}</h3>${rapidas.length > 3 ? `<a class="btn-link" href="#/grados">${t("Ver todos ({n})", {n: rapidas.length})}</a>` : `<span class="muted small">${t("último año")}</span>`}</header>
+      <div class="list">${rapidas.slice(0, 3).map(x => `<a class="li" href="#/alumno/${x.a.id}">${avatar(x.a, 38)}<div class="li-main"><b>${esc(x.a.nombre)} · ${esc(rankLabel(x.d, x.g))}</b><span class="muted small">${esc(x.avisos[0].txt)}</span></div><span class="muted small">${fmtDate(x.g.fecha)}</span></a>`).join("")}</div>
     </section>`;
   const cCumple = !cumple.length ? "" : `<section class="card">
       <header class="card-h"><h3>${icon("cake")} ${t("Próximos cumpleaños")}</h3><span class="muted small">${t("30 días")}</span></header>
@@ -215,27 +221,138 @@ export function render(el, params, ctx){
       }).join("")}
     </section>`;
 
-  el.innerHTML = `${head}${demoBar}${setup}
+  /* ---------- prospectos ---------- */
+  const leads = S.inAcad("leads").filter(l => !sede || !l.sedeId || l.sedeId === sede);
+  const fLead = l => l.fecha || new Date(l._c || 0).toISOString().slice(0, 10);
+  const leads30 = leads.filter(l => fLead(l) >= addDays(hoy, -29)).length;
+  const l90 = leads.filter(l => fLead(l) >= addDays(hoy, -89));
+  const conv = l90.length ? Math.round(l90.filter(l => l.etapa === "inscrito").length / l90.length * 100) : null;
+  const pruebasHoy = leads.filter(l => l.prueba === hoy && !["inscrito", "perdido"].includes(l.etapa));
+  const nuevosL = leads.filter(l => (l.etapa || "nuevo") === "nuevo").length;
+  const lStat = (n, txt, href) => `<a class="dl-st" href="${href}"><b>${n}</b><span>${esc(txt)}</span></a>`;
+  const cLeads = `<section class="card">
+      <header class="card-h"><h3>${icon("userPlus")} ${t("Prospectos")}</h3><a class="btn-link" href="#/leads">${t("Ver todos")}</a></header>
+      ${leads.length ? `<div class="dl-stats">${lStat(nuevosL, t("nuevos por contactar"), "#/leads")}${lStat(pruebasHoy.length, t("pruebas hoy"), "#/leads")}${lStat(conv === null ? "—" : conv + "%", t("conversión 90 días"), "#/leads")}</div>
+        ${pruebasHoy.length ? `<div class="list">${pruebasHoy.slice(0, 4).map(l => `<a class="li" href="#/leads?lead=${l.id}"><span class="li-ic">${icon("calendar")}</span><div class="li-main"><b>${esc(l.nombre)}</b><span class="muted small">${t("Clase de prueba hoy")}${l.claseId && S.get("clases", l.claseId) ? " · " + esc(S.get("clases", l.claseId).hora || "") : ""}</span></div>${icon("chevron")}</a>`).join("")}</div>` : ""}`
+      : `<p class="muted small dash-p">${t("Anota a cada persona que pregunta por clases y la app te recuerda cuándo escribirle.")}</p><a class="btn ghost small" href="#/leads?nuevo=1">${icon("plus")} ${t("Nuevo prospecto")}</a>`}
+    </section>`;
+
+  /* ---------- cumpleaños de hoy: aviso arriba ---------- */
+  const cumpleHoy = cumple.filter(x => x.dd === 0);
+  const bdayBar = !cumpleHoy.length ? "" : `<div class="dash-bday" role="status">${icon("cake")}<span>${cumpleHoy.length === 1 ? t("Hoy cumple {nombre} ({edad})", {nombre: esc(cumpleHoy[0].a.nombre), edad: cumpleHoy[0].edad}) : t("Hoy cumplen {nombres}", {nombres: esc(cumpleHoy.map(x => nom1(x.a)).join(", "))})}</span>
+    ${cumpleHoy.length === 1 ? waA(waLink(cumpleHoy[0].a.telefono || cumpleHoy[0].a.acudienteTel, t("¡Feliz cumpleaños, {nombre}! Todo el equipo de {academia} te desea un gran año.", {nombre: nom1(cumpleHoy[0].a), academia: acad.nombre})), t("Felicitar a {nombre} por WhatsApp", {nombre: cumpleHoy[0].a.nombre})) : ""}</div>`;
+
+  let incRows = null;
+  const slot = k => `<div class="dash-slot" data-slot="${k}"></div>`;
+  el.innerHTML = `${head}${demoBar}${bdayBar}${setup}${slot("install")}
   <div class="kpis dash-kpis">
-    ${kpi("users", "c1", activos.length, t("Alumnos activos"), altas ? delta(altas, t("{n} este mes", {n: altas})) : `<small class="kpi-sub">${t("Sin altas este mes")}</small>`)}
-    ${kpi("cash", "c2", esc(moneyC(mes, cur)), t("Recaudado en {mes}", {mes: MESES[mesN]}), recSub)}
+    ${kpi("users", "c1", activos.length, t("Alumnos activos"), altas ? delta(altas, t("{n} este mes", {n: altas})) : `<small class="kpi-sub">${t("Sin altas este mes")}</small>`, `href="#/alumnos"`, "a")}
+    ${kpi("cash", "c2", esc(moneyC(mes, cur)), t("Recaudado en {mes}", {mes: MESES[mesN]}), recSub, `href="#/pagos"`, "a")}
     ${kpi("alert", "c3", venc.length, t("Pagos vencidos"), porCobrar ? `<small class="kpi-sub err-t">${t("{v} por cobrar", {v: esc(moneyC(porCobrar, cur))})}</small>` : "", `href="#/pagos"`, "a")}
     ${kpi("belt", "c4", listos.length, t("Listos para promoción"), "", `href="#/grados"`, "a")}
     ${kpi("clock", "c5", asisAcad.length ? ausentes.length : "—", t("Sin venir +{n} días", {n: AUS}), asisAcad.length ? "" : `<small class="kpi-sub">${t("Aún no tomas asistencia")}</small>`, ausentes.length ? `type="button" data-goto="dashRet"` : `href="#/asistencia"`, ausentes.length ? "button" : "a")}
+    ${kpi("userPlus", "c6", leads30, t("Prospectos (30 días)"), pruebasHoy.length ? `<small class="kpi-sub ok-t">${tn(pruebasHoy.length, "1 prueba hoy", "{n} pruebas hoy")}</small>` : "", `href="#/leads"`, "a")}
   </div>
   <div class="dash-cols">
-    <div class="dash-col">${cCobros}${cIngresos}${cOpps}</div>
-    <div class="dash-col">${cAus}${cListos}${cRapidas}${cCumple}${cDist}</div>
+    <div class="dash-col">${slot("clases")}${cCobros}${cAus}${cListos}${slot("ingresos")}</div>
+    <div class="dash-col">${slot("riesgo")}${cLeads}${slot("tds")}${slot("frase")}${cCumple}${cRapidas}${cOpps}${cDist}</div>
   </div>
   <button type="button" class="fab only-m" data-new aria-label="${t("Nuevo alumno")}">${icon("plus")}</button>`;
   bind();
+  tarjetas();
   return watchSync();
 
+  /* ---------- tarjetas de otros módulos: cada una se carga aparte y, si su módulo falta, no sale ---------- */
+  function poner(k, html, after){
+    const s = el.querySelector(`[data-slot="${k}"]`); if(!s) return;
+    if(!html){ s.remove(); return; }
+    const tpl = document.createElement("template"); tpl.innerHTML = html.trim();
+    const node = tpl.content.firstElementChild;
+    s.replaceWith(node); after && after(node);
+  }
+  function tarjetas(){
+    const carga = (k, imp, fn) => imp.then(m => { if(el.isConnected) poner(k, ...[].concat(fn(m))); }).catch(err => { if(!/dynamically imported|Failed to fetch|Importing a module/i.test(err?.message || "")) console.warn(err); poner(k, ""); });
+    carga("clases", import("../clases.js"), cardClases);
+    carga("riesgo", import("../retencion.js"), cardRiesgo);
+    carga("tds", import("../entreno/semana.js"), cardTds);
+    carga("frase", import("./frases.js"), m => m.dailyCard ? m.dailyCard() : "");
+    carga("install", import("../install.js"), m => [m.installCardHTML ? m.installCardHTML() : "", n => m.bindInstallCard && m.bindInstallCard(n)]);
+    if(typeof C.ingresos12 === "function") Promise.resolve().then(() => poner("ingresos", cardIngresos(C.ingresos12()))).catch(err => { console.warn(err); poner("ingresos", cIngresos); });
+    else poner("ingresos", cIngresos);
+  }
+  function cardClases(m){
+    if(!S.clases().length) return "";
+    const hoyCl = m.clasesHoy(hoy, sede), prox = m.proximaClase(sede), ahora = new Date();
+    const hm = d => `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+    return `<section class="card dash-cl">
+      <header class="card-h"><h3>${icon("clock")} ${t("Clases de hoy")}</h3><a class="btn-link" href="#/horario">${t("Horario")}</a></header>
+      ${hoyCl.length ? `<div class="list">${hoyCl.map(x => {
+        const n = m.presentesClase(hoy, x.clase), pasada = x.fin <= ahora, esProx = prox && prox.clase.id === x.clase.id;
+        const cuando = esProx ? (prox.enMin <= 0 ? t("ahora") : prox.enMin < 60 ? t("en {n} min", {n: prox.enMin}) : "") : "";
+        return `<div class="li dash-cl-row ${pasada ? "past" : ""} ${esProx ? "next" : ""}"><span class="dash-cl-h"><b>${esc(hm(x.inicio))}</b><small>${esc(hm(x.fin))}</small></span>
+          <div class="li-main"><b><span class="dot" style="background:${esc(x.disc.color || "#888")}"></span>${esc(m.nombreClase ? m.nombreClase(x.clase, x.disc) : t(x.disc.nombre))}</b><span class="muted small">${x.clase.cupo ? t("{n}/{cupo} presentes", {n, cupo: x.clase.cupo}) : tn(n, "{n} presente", "{n} presentes")}${x.clase.instructor ? " · " + esc(x.clase.instructor) : ""}</span></div>
+          <div class="li-act">${cuando ? `<span class="pill ${prox.enMin <= 0 ? "aldia" : "pronto"}">${esc(cuando)}</span>` : ""}<a class="btn small ${esProx ? "primary" : "ghost"}" href="#/asistencia?clase=${x.clase.id}&fecha=${hoy}">${icon("check")}<span>${t("Pasar lista")}</span></a></div></div>`;
+      }).join("")}</div>` : `<p class="muted small dash-p">${t("Hoy no hay clases en el horario.")}</p>`}
+    </section>`;
+  }
+  function cardRiesgo(m){
+    const lista = m.listaRiesgo(20, sede).filter(x => x.nivel !== "bajo");
+    if(!lista.length) return "";
+    return `<section class="card">
+      <header class="card-h"><h3>${icon("alert")} ${t("En riesgo de irse")}</h3><span class="count-b">${lista.length}</span></header>
+      <div class="list">${lista.slice(0, 5).map(x => `<div class="li"><a class="li-link" href="#/alumno/${x.al.id}">${avatar(x.al, 38)}<div class="li-main"><b>${esc(x.al.nombre)}</b><span class="muted small">${esc(x.motivos.slice(0, 2).join(" · "))}</span></div></a>
+        <div class="li-act"><span class="risk ${x.nivel}" title="${t("Riesgo")}">${x.score}</span>${waA(waLink(x.al.telefono || x.al.acudienteTel, x.script), t("Escribir a {nombre} por WhatsApp", {nombre: x.al.nombre}))}</div></div>`).join("")}</div>
+      ${lista.length > 5 ? `<button type="button" class="btn-link dash-more" data-dif="riesgo">${icon("whatsapp", "inline")} ${t("Escribirles a todos ({n})", {n: lista.length})}</button>` : ""}
+    </section>`;
+  }
+  function cardTds(m){
+    const x = m.tdsActual && m.tdsActual({fecha: new Date(), pin: acad.tds || null});
+    if(!x) return "";
+    return `<section class="card dash-tds">
+      <header class="card-h"><h3>${icon("target")} ${t("Técnica de la semana")}</h3>${x.arte ? `<span class="tag">${esc(String(x.arte).toUpperCase())}</span>` : ""}</header>
+      <b class="dash-tds-f">${esc(x.foco || "")}</b>
+      ${Array.isArray(x.claves) && x.claves.length ? `<ul class="dash-tds-k">${x.claves.slice(0, 3).map(k => `<li>${esc(k)}</li>`).join("")}</ul>` : ""}
+      ${x.reto ? `<p class="muted small dash-p">${icon("flame", "inline")} ${esc(x.reto)}</p>` : ""}
+      ${x.arte && x.mod ? `<a class="btn ghost small" href="#/entreno/${esc(x.arte)}/${esc(x.mod)}">${icon("book")} ${t("Ver en Entrenamiento")}</a>` : ""}
+    </section>`;
+  }
+  /* 12 meses: cobrado (línea) frente a esperado (guía punteada); un toque muestra el mes */
+  function cardIngresos(rows){
+    if(!Array.isArray(rows) || !rows.length) return cIngresos;
+    incRows = rows;
+    const W = 320, H = 96, P = 6, n = rows.length;
+    const max = Math.max(1, ...rows.map(r => Math.max(r.cobrado || 0, r.esperado || 0)));
+    const x = i => P + i * (W - 2 * P) / Math.max(1, n - 1), y = v => H - P - (v || 0) / max * (H - 2 * P);
+    const path = k => rows.map((r, i) => `${i ? "L" : "M"}${x(i).toFixed(1)} ${y(r[k]).toFixed(1)}`).join("");
+    const last = rows[n - 1], tot = rows.reduce((s, r) => s + (r.cobrado || 0), 0);
+    const pctR = last.esperado ? Math.round(last.cobrado / last.esperado * 100) : null;
+    return `<section class="card dash-inc">
+      <header class="card-h"><h3>${icon("chart")} ${t("Ingresos 12 meses")}</h3><a class="btn-link" href="#/reportes">${t("Reportes")}</a></header>
+      <div class="dash-inc-n"><div><b>${esc(moneyC(last.cobrado, cur))}</b><span class="muted small">${t("cobrado este mes")}${pctR !== null ? ` · ${t("{p}% de lo esperado", {p: pctR})}` : ""}</span></div><div><b>${esc(moneyC(tot, cur))}</b><span class="muted small">${t("en 12 meses")}</span></div></div>
+      <div class="spark" role="img" aria-label="${esc(rows.map(r => `${fmtMonth(r.ym)}: ${money(r.cobrado, cur)} / ${money(r.esperado, cur)}`).join(", "))}">
+        <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">
+          <path d="${path("esperado")}" class="sp-exp" vector-effect="non-scaling-stroke"/>
+          <path d="${path("cobrado")}L${x(n - 1)} ${H - P}L${x(0)} ${H - P}Z" class="sp-area"/>
+          <path d="${path("cobrado")}" class="sp-line" vector-effect="non-scaling-stroke"/>
+        </svg>
+        <span class="sp-dot" style="left:${(x(n - 1) / W * 100).toFixed(2)}%;top:${(y(last.cobrado) / H * 100).toFixed(2)}%"></span>
+        <div class="sp-hit">${rows.map((r, i) => `<button type="button" data-sp="${i}" aria-label="${esc(fmtMonth(r.ym))}"></button>`).join("")}</div>
+        <div class="sp-tip" hidden></div>
+      </div>
+      <div class="sp-x"><span>${esc(fmtMonth(rows[0].ym))}</span><span class="sp-leg"><i class="l1"></i>${t("Cobrado")}<i class="l2"></i>${t("Esperado")}</span><span>${esc(fmtMonth(last.ym))}</span></div>
+    </section>`;
+  }
+
   function bind(){
+    el.onpointerover = e => { const b = e.target.closest?.("[data-sp]"); if(b && e.pointerType === "mouse") tip(b); };
     el.onclick = async e => {
       const tg = e.target;
       const p = tg.closest("[data-pay]"); if(p){ e.preventDefault(); quickPay(S.get("alumnos", p.dataset.pay)); return; }
       if(tg.closest("[data-new]")){ studentForm(null); return; }
+      if(tg.closest("[data-setup-open]")){ S.setPref("setupOpen", true); rerender(); return; }
+      if(tg.closest("[data-setup-close]")){ S.setPref("setupOpen", false); rerender(); return; }
+      const df = tg.closest("[data-dif]"); if(df){ import("../difusion.js").then(m => m.openDifusion({segmento: df.dataset.dif})).catch(() => {}); return; }
+      const sp = tg.closest("[data-sp]"); if(sp){ tip(sp); return; }
       const g = tg.closest("[data-goto]"); if(g){ document.getElementById(g.dataset.goto)?.scrollIntoView({behavior: "smooth", block: "start"}); return; }
       if(tg.closest("[data-setup-hide]")){ S.setPref(hideKey, true); rerender(); toast(t("Primeros pasos ocultos"), "ok", {label: t("Deshacer"), fn: () => { S.setPref(hideKey, false); rerender(); }}); return; }
       if(tg.closest("[data-demo]")){
@@ -248,6 +365,16 @@ export function render(el, params, ctx){
         removeDemo(); toast(t("Datos de ejemplo quitados"));
       }
     };
+  }
+  /* globo del gráfico de 12 meses */
+  function tip(b){
+    const r = incRows && incRows[+b.dataset.sp], box = b.closest(".spark"); if(!r || !box) return;
+    const tp = box.querySelector(".sp-tip");
+    for(const o of box.querySelectorAll("[data-sp]")) o.classList.toggle("on", o === b);
+    tp.innerHTML = `<b>${esc(fmtMonth(r.ym))}</b><span>${t("Cobrado")}: ${esc(money(r.cobrado, cur))}</span><span>${t("Esperado")}: ${esc(money(r.esperado, cur))}</span>`;
+    tp.hidden = false;
+    const i = +b.dataset.sp, n = incRows.length;
+    tp.style.left = `${Math.min(80, Math.max(20, i / Math.max(1, n - 1) * 100))}%`;
   }
   /* el paso "Conecta Google" se marca solo cuando cambia la conexión */
   function watchSync(){

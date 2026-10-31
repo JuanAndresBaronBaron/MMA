@@ -18,4 +18,7 @@ export default {
   "WhatsApp a {nombre}": "WhatsApp {nombre}",
   "{nombre} ya tiene {producto}": "{nombre} now has {producto}",
   "Deshacer": "Undo",
+  // W4 ronda 3
+  "Productos": "Products",
+  "Tallas que faltan": "Sizes needed",
 };

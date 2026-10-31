@@ -7,15 +7,59 @@
 .att-tools [data-lista]{margin-left:auto}
 .att-otro{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:-4px 0 12px;padding:8px 12px;border-radius:10px;background:var(--warn-bg);color:var(--warn);font-weight:600}
 .att-otro .ic{width:15px;height:15px}
-.att-debe{position:absolute;top:8px;left:8px;min-width:22px;height:22px;padding:0 5px;border-radius:11px;background:var(--err);color:#fff;font-size:13px;font-weight:800;line-height:22px;text-align:center}
-.att.on .att-check{animation:att-pop .22s ease-out}
-@keyframes att-pop{50%{transform:scale(1.18)}}
+/* cabecera: fecha, Hoy/Ayer, sede y kiosco */
+.att-top{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.att-date{position:relative;display:inline-flex;align-items:center;gap:8px;padding:9px 14px;border-radius:12px;border:1px solid var(--line2);background:var(--surface);font-weight:600;font-size:14.5px;cursor:pointer;min-height:42px}
+.att-date .ic{width:18px;height:18px;color:var(--accent2)}
+.att-date span::first-letter{text-transform:uppercase}
+.att-date input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;border:0;padding:0}
+.att-date:focus-within{outline:2px solid var(--focus);outline-offset:2px}
+.att-qd{display:flex;gap:6px}
+.chip-b{padding:8px 13px;border-radius:999px;border:1px solid var(--line2);background:var(--surface);font-weight:650;font-size:13px;color:var(--muted);min-height:38px}
+.chip-b:hover{color:var(--text);border-color:var(--muted)}
+.att-top select{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-size:13.5px;font-weight:600;min-height:40px;max-width:100%}
+.att-kiosk{margin-left:auto}
+/* clases del día */
+.att-cls{margin-bottom:10px}
+.att-cl{--dc:var(--accent);display:flex;align-items:center;gap:8px;padding:9px 13px;border-radius:12px;border:1px solid var(--line2);border-left:4px solid var(--dc);background:var(--surface);font-size:13.5px;color:var(--muted);min-height:44px;max-width:240px}
+.att-cl b{font-variant-numeric:tabular-nums;color:var(--text);display:flex}
+.att-cl b .ic{width:16px;height:16px}
+.att-cl span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:600}
+.att-cl i{font-style:normal;font-size:11.5px;font-weight:750;padding:2px 7px;border-radius:999px;background:var(--surface2);color:var(--muted)}
+.att-cl i.att-now{background:var(--ok);color:#fff}
+.att-cl.on{color:var(--text);border-color:var(--dc);background:color-mix(in srgb,var(--dc) 14%,var(--surface))}
+.att-cl.libre{--dc:var(--line2)}
+.att-cl.libre.on{--dc:var(--muted)}
+.att-libre{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.att-libre select{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:9px 10px;font-size:13.5px;font-weight:600;min-height:40px;max-width:100%}
+.att-info{margin:-2px 0 12px}
+/* avisos por alumno: pago, tiquetera, lesión */
+.att-bds{position:absolute;top:8px;left:8px;display:flex;flex-direction:column;gap:4px;align-items:flex-start}
+.att-bd{display:inline-flex;align-items:center;gap:2px;min-width:22px;height:22px;padding:0 5px;border-radius:11px;font-size:12.5px;font-weight:800;line-height:22px;justify-content:center}
+.att-bd .ic{width:13px;height:13px;stroke-width:2.4}
+.att-bd.err{background:var(--err);color:#fff}
+.att-bd.warn{background:var(--warn);color:#1a1300}
+.att-bd.info{background:var(--info);color:#fff}
+/* pie fijo con el conteo */
+.att-foot{position:sticky;bottom:12px;z-index:5;display:flex;align-items:center;gap:12px;margin:14px -4px 0;padding:10px 10px 10px 16px;border-radius:14px;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(10px);border:1px solid var(--line2);box-shadow:var(--shadow)}
+.att-foot .att-count{margin-left:0;flex:1;min-width:0}
+.att-foot .att-count span{color:var(--muted);font-weight:600}
+.att-foot.lleno .att-count b{color:var(--warn)}
+.att-foot .btn{min-width:110px}
+/* últimas clases */
+.att-h{align-items:center}
+.att-h-d{display:flex;flex-direction:column;align-items:center;justify-content:center;width:44px;height:44px;border-radius:10px;background:var(--surface2);flex:none;line-height:1.1}
+.att-h-d b{font-size:11px;text-transform:uppercase;color:var(--muted);font-weight:750}
+.att-h-d span{font-size:16px;font-weight:800}
+.att-stack{display:flex;align-items:center;margin-top:4px}
+.att-stack .avatar{margin-right:-6px;box-shadow:0 0 0 2px var(--surface)}
+.att-stack i{font-style:normal;font-size:11.5px;font-weight:700;color:var(--muted);margin-left:12px}
 .att-grid.att-list{grid-template-columns:minmax(0,1fr)!important;gap:6px}
 .att-list .att{flex-direction:row;align-items:center;gap:10px;padding:8px 44px 8px 10px;text-align:left;min-height:52px}
 .att-list .att b{flex:1;min-width:0;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .att-list .att .avatar{--s:36px!important}
 .att-list .att-check{top:50%;margin-top:-11px;right:12px}
-.att-list .att-debe{position:static;flex:none;order:3}
+.att-list .att-bds{position:static;flex-direction:row;flex:none;order:3}
 .att-list .att svg.belt,.att-list .att > svg:not(.ic){flex:none}
 .list .li.on{border-color:var(--accent);background:var(--accent-bg)}
 
@@ -61,6 +105,16 @@
 
 @media (max-width:760px){
   .att-tools .search{flex-basis:100%}
+  .att-foot{bottom:calc(var(--bottom-h) + env(safe-area-inset-bottom) + 10px)}
+  .att-kiosk span{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  .att-top{flex-wrap:nowrap;gap:6px}
+  .att-top:has(select){flex-wrap:wrap}
+  .att-date{min-width:0;padding:9px 11px;font-size:14px}
+  .att-date span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+  .att-date .ic{flex:none}
+  .chip-b{padding:8px 10px}
+  .att-kiosk{flex:none;padding:8px 10px}
+  .att-cl{max-width:200px}
   .pf-photo .avatar{--s:72px!important}
   .pf-tabs{grid-template-columns:repeat(5,minmax(0,1fr))!important}
   .pf-tabs .tab{padding:8px 2px;font-size:11.5px}
@@ -70,3 +124,4 @@
   .pf-alert .row{width:100%}
   .pf-alert .row .btn{flex:1 1 auto;justify-content:center}
 }
+.att-stack .avatar span{font-size:9px}

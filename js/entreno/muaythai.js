@@ -1861,3 +1861,4 @@ export const MODULOS = [
   "id": "avanzado-3"
  }
 ];
+export const PILARES = {fundamentos: "Fundamentos", clinch: "Clinch", avanzado: "Combate y pads"};

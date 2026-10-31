@@ -1,7 +1,7 @@
 {
   "name": "AcademiaPro · Gestión de academias de artes marciales",
   "short_name": "AcademiaPro",
-  "description": "Alumnos, pagos, cinturones, asistencia y ranking para academias de MMA, BJJ y artes marciales.",
+  "description": "Alumnos, pagos, horario, asistencia, cinturones y prospectos para academias de MMA, BJJ y artes marciales.",
   "id": "./",
   "start_url": "./",
   "scope": "./",
@@ -9,17 +9,95 @@
   "background_color": "#0b0d12",
   "theme_color": "#0b0d12",
   "lang": "es",
-  "categories": ["business", "productivity", "sports"],
+  "categories": [
+    "business",
+    "productivity",
+    "sports"
+  ],
   "icons": [
-    {"src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
-    {"src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
-    {"src": "icons/icon-192-maskable.png", "sizes": "192x192", "type": "image/png", "purpose": "maskable"},
-    {"src": "icons/icon-512-maskable.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable"},
-    {"src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any"}
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
   ],
   "shortcuts": [
-    {"name": "Alumnos", "url": "./#/alumnos"},
-    {"name": "Pagos", "url": "./#/pagos"},
-    {"name": "Asistencia", "short_name": "Asistencia", "url": "./#/asistencia"}
-  ]
+    {
+      "name": "Nuevo alumno",
+      "short_name": "Nuevo alumno",
+      "url": "./#/alumnos?new=1",
+      "icons": [
+        {
+          "src": "icons/sc-alumno.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        },
+        {
+          "src": "icons/sc-alumno.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Pasar lista",
+      "short_name": "Pasar lista",
+      "url": "./#/asistencia",
+      "icons": [
+        {
+          "src": "icons/sc-lista.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        },
+        {
+          "src": "icons/sc-lista.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Horario",
+      "short_name": "Horario",
+      "url": "./#/horario",
+      "icons": [
+        {
+          "src": "icons/sc-horario.png",
+          "sizes": "96x96",
+          "type": "image/png"
+        },
+        {
+          "src": "icons/sc-horario.svg",
+          "sizes": "any",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ],
+  "orientation": "any"
 }

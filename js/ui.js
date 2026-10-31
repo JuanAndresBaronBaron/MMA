@@ -2,6 +2,7 @@
 import {esc, initials, h, $, $$} from "./util.js";
 import * as S from "./store.js";
 import {t, tn} from "./i18n.js";
+import {rankColor} from "./catalog.js";
 
 /* ---------- iconos (trazo 2, 24×24) ---------- */
 const P = {
@@ -46,13 +47,33 @@ const P = {
   map: '<path d="M12 21s7-6.2 7-11.5a7 7 0 0 0-14 0C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>',
   heart: '<path d="M12 20s-8-4.7-8-10.5A4.5 4.5 0 0 1 12 7a4.5 4.5 0 0 1 8 2.5C20 15.3 12 20 12 20z"/>',
   menu: '<path d="M4 7h16M4 12h16M4 17h16"/>',
+  userPlus: '<circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.3-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M19 8v6M16 11h6"/>',
+  chart: '<path d="M4 20V4M4 20h16"/><path d="M8 16v-5M12 16V8M16 16v-3M20 16V6"/>',
+  tablet: '<rect x="5" y="2.5" width="14" height="19" rx="2"/><path d="M11 18h2"/>',
+  receipt: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/>',
+  award: '<circle cx="12" cy="9" r="6"/><path d="m8.5 14-1.5 7 5-3 5 3-1.5-7"/>',
+  qr: '<rect x="3.5" y="3.5" width="6" height="6" rx="1"/><rect x="14.5" y="3.5" width="6" height="6" rx="1"/><rect x="3.5" y="14.5" width="6" height="6" rx="1"/><path d="M14.5 14.5h2v2h-2zM18.5 18.5h2v2h-2zM14.5 20.5v-2M20.5 14.5v2"/>',
+  share: '<circle cx="18" cy="5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="19" r="2.5"/><path d="m8.2 10.8 7.6-4.4M8.2 13.2l7.6 4.4"/>',
+  print: '<path d="M7 8V3h10v5"/><rect x="3" y="8" width="18" height="9" rx="2"/><path d="M7 14h10v7H7z"/>',
+  flame: '<path d="M12 21a6 6 0 0 0 6-6c0-4-3-6-4-10-2 2-3 4-3 6-1-1-1.5-2-1.5-3C7 10 6 12.5 6 15a6 6 0 0 0 6 6z"/>',
+  target: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+  book: '<path d="M4 4.5A1.5 1.5 0 0 1 5.5 3H20v15H5.5A1.5 1.5 0 0 0 4 19.5z"/><path d="M4 19.5A1.5 1.5 0 0 0 5.5 21H20v-3"/>',
+  repeat: '<path d="M17 2l3 3-3 3"/><path d="M4 11V9a4 4 0 0 1 4-4h12"/><path d="M7 22l-3-3 3-3"/><path d="M20 13v2a4 4 0 0 1-4 4H4"/>',
+  filter: '<path d="M3 5h18l-7 8.5V20l-4-2v-4.5z"/>',
+  zap: '<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+  copy: '<rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/>',
+  link: '<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+  keyboard: '<rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>',
+  wifiOff: '<path d="m3 3 18 18M8.5 16.5a5 5 0 0 1 7 0M5 12.5a10 10 0 0 1 4.5-2.4M19 12.5a10 10 0 0 0-2.3-1.6M2 8.8A15 15 0 0 1 6.6 6M22 8.8A15 15 0 0 0 11 5M12 20h.01"/>',
   fist: '<path d="M7 11V7.5a1.5 1.5 0 0 1 3 0V11M10 10V6.5a1.5 1.5 0 0 1 3 0V10M13 10V7a1.5 1.5 0 0 1 3 0v3.5M16 10a1.5 1.5 0 0 1 3 0v3.5c0 4-2.5 7.5-6.5 7.5H11a5 5 0 0 1-5-5v-2.5A1.5 1.5 0 0 1 7.5 11H10a2 2 0 0 1 0 4H8.5"/>',
 };
 export const icon = (n, cls = "") => `<svg class="ic ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n] || P.info}</svg>`;
 
 /* ---------- cinturón ---------- */
 export function belt(disc, rankIdx, grado = 0, opts = {}){
-  const r = S.rankDef(disc, rankIdx);
+  const r0 = S.rankDef(disc, rankIdx) || {n: ""};
+  /* rangos viejos o creados a mano sin color: uno de la escala de niveles */
+  const r = r0.c ? r0 : Object.assign({}, r0, {c: rankColor(r0, rankIdx || 0)});
   const w = opts.w || 120, hh = opts.h || 22;
   const tipW = Math.round(w * 0.3), tipX = w - tipW - Math.round(w * 0.08);
   const tip = r.tip || (r.c === "#111111" ? "#c1121f" : "#111111");
@@ -128,15 +149,24 @@ function compress(file, size = 360){
 }
 
 /* ---------- avisos ---------- */
-export function toast(msg, kind = "ok", action){
+/* opts.key: un aviso nuevo con la misma clave reemplaza al anterior (p. ej. «3 presentes» al marcar seguido) */
+export function toast(msg, kind = "ok", action, opts = {}){
   let host = $("#toasts");
   if(!host){ host = h(`<div id="toasts" class="toasts" role="status" aria-live="polite"></div>`); document.body.appendChild(host); }
   else if(host.closest("[inert]")) document.body.appendChild(host);   // nunca dentro del fondo inerte de un modal
+  if(opts.key) for(const o of host.querySelectorAll(".toast")) if(o.dataset.key === opts.key) o.remove();
   const el = h(`<div class="toast ${kind}">${icon(kind === "error" ? "alert" : kind === "warn" ? "alert" : "check")}<span>${esc(msg)}</span>${action ? `<button class="btn-link">${esc(action.label)}</button>` : ""}</div>`);
+  if(opts.key) el.dataset.key = opts.key;
+  el._t = Date.now();
   if(action) el.querySelector("button").onclick = () => { action.fn(); el.remove(); };
   host.appendChild(el);
   requestAnimationFrame(() => el.classList.add("in"));
-  setTimeout(() => { el.classList.remove("in"); setTimeout(() => el.remove(), 300); }, action ? 6000 : 3200);
+  setTimeout(() => { el.classList.remove("in"); setTimeout(() => el.remove(), 300); }, opts.ms || (action ? 6000 : 3200));
+  return el;
+}
+/* al cambiar de pantalla: fuera los avisos viejos (los recién creados, p. ej. «Guardado» antes de navegar, se quedan) */
+export function dismissToasts(minAge = 600){
+  for(const el of $$("#toasts .toast")) if(Date.now() - (el._t || 0) > minAge){ el.classList.remove("in"); setTimeout(() => el.remove(), 250); }
 }
 
 /* ---------- modal ---------- */
@@ -212,6 +242,42 @@ document.addEventListener("keydown", e => {
   else if(e.shiftKey && (a === first || a === top.el.querySelector(".modal"))){ e.preventDefault(); last.focus(); }
   else if(!e.shiftKey && a === last){ e.preventDefault(); first.focus(); }
 });
+/* hoja inferior: en el celular sube desde abajo (se cierra arrastrando, con el fondo o Esc); en el computador es un modal */
+export function sheet({title, body, onClose, cls = ""} = {}){
+  const m = modal({title, body, foot: false, onClose, cls: "sheet " + cls});
+  const box = m.el.querySelector(".modal");
+  box.insertAdjacentHTML("afterbegin", `<div class="sheet-grab" aria-hidden="true"></div>`);
+  let y0 = null, dy = 0;
+  const head = box.querySelector(".sheet-grab"), hh = box.querySelector(".modal-h");
+  const start = e => { if(!matchMedia("(max-width:760px)").matches) return; y0 = e.touches[0].clientY; dy = 0; box.style.transition = "none"; };
+  const move = e => { if(y0 === null) return; dy = Math.max(0, e.touches[0].clientY - y0); box.style.transform = `translateY(${dy}px)`; };
+  const end = () => { if(y0 === null) return; y0 = null; box.style.transition = ""; box.style.transform = ""; if(dy > 80) m.close(); };
+  for(const z of [head, hh]){ z.addEventListener("touchstart", start, {passive: true}); z.addEventListener("touchmove", move, {passive: true}); z.addEventListener("touchend", end); }
+  return {el: m.el, body: m.body, close: m.close};
+}
+
+/* compartir con el menú del sistema; si no se puede: descarga el archivo o copia el texto */
+export async function shareOrDownload({title, text, url, files, filename} = {}){
+  const fs = (files || []).map((f, i) => f instanceof File ? f : new File([f], (i ? i + "-" : "") + (filename || "archivo"), {type: f.type || "application/octet-stream"}));
+  const data = {title, text, url};
+  if(fs.length) data.files = fs;
+  try{
+    if(navigator.share && (!navigator.canShare || navigator.canShare(data))){ await navigator.share(data); return "shared"; }
+  }catch(e){ if(e && e.name === "AbortError") return "cancel"; }
+  if(fs.length){
+    for(const f of fs){
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(f); a.download = fs.length === 1 && filename ? filename : f.name;
+      document.body.appendChild(a); a.click();
+      setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+    }
+    toast(tn(fs.length, "Archivo descargado", "{n} archivos descargados"));
+    return "downloaded";
+  }
+  const s = [text, url].filter(Boolean).join("\n");
+  try{ await navigator.clipboard.writeText(s); toast(t("Copiado. Pégalo donde quieras.")); return "copied"; }
+  catch(e){ toast(t("No se pudo compartir en este aparato"), "warn"); return "fail"; }
+}
 export function confirmDlg(msg, {ok = t("Eliminar"), danger = true, title = t("¿Seguro?")} = {}){
   return new Promise(res => {
     let done = false;

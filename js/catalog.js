@@ -165,5 +165,8 @@ export const SIZES = ["A0", "A1", "A2", "A3", "A4", "A5", "M0", "M00", "M1", "M2
 export const STATUS = {activo: "Activo", congelado: "Congelado", inactivo: "Inactivo"};
 export const CURRENCIES = ["COP", "USD", "MXN", "EUR", "ARS", "CLP", "PEN", "BRL"];
 
-/* copia profunda de los rangos de un sistema del catálogo */
-export const cloneRanks = key => JSON.parse(JSON.stringify((SYSTEMS[key] || SYSTEMS.niveles).ranks));
+/* colores de respaldo por nivel (gris, celeste, verde, ámbar, rojo, negro…) para rangos sin color */
+export const NIVEL_COLORS = ["#9aa4b2", "#38bdf8", "#22c55e", "#f59e0b", "#ef4444", "#111111", "#7c3aed", "#0891b2"];
+export const rankColor = (r, i) => (r && /^#[0-9a-f]{3,8}$/i.test(r.c || "") ? r.c : NIVEL_COLORS[i % NIVEL_COLORS.length]);
+/* copia profunda de los rangos de un sistema del catálogo (todo rango sale con color) */
+export const cloneRanks = key => JSON.parse(JSON.stringify((SYSTEMS[key] || SYSTEMS.niveles).ranks)).map((r, i) => Object.assign(r, {c: rankColor(r, i)}));

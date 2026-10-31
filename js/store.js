@@ -7,22 +7,33 @@ import {planById} from "./catalog.js";
 import {t, tn, lang} from "./i18n.js";
 
 const KEY = "mma:data", PREFS = "mma:prefs";
-export const COLS = ["academias", "sedes", "disciplinas", "alumnos", "pagos", "grados", "asistencias", "productos", "progreso", "rutinas", "sesiones"];
+export const COLS = ["academias", "sedes", "disciplinas", "alumnos", "pagos", "grados", "asistencias", "productos", "progreso", "rutinas", "sesiones", "clases", "leads", "evaluaciones", "notas", "repasos", "favoritos"];
 export const APP = "mma-academia", VER = 1;
 
 const empty = () => ({app: APP, v: VER, col: Object.fromEntries(COLS.map(c => [c, {}]))});
+/* colecciones que esta versión no conoce (de una versión más nueva en otro aparato): se guardan y se sincronizan
+   tal cual, para no borrarlas de Google Drive al subir */
+const colName = c => /^[a-z][a-zA-Z0-9_]{0,40}$/.test(c);
+const copyCols = (src, d) => { for(const c of Object.keys(src)) if(colName(c) && isObj(src[c])) d.col[c] = src[c]; return d; };
 let db = empty();
 const subs = new Set();
 
 function readLocal(){
   try{
     const o = JSON.parse(localStorage.getItem(KEY) || "null");
-    if(isObj(o) && isObj(o.col)){ const d = empty(); for(const c of COLS) if(isObj(o.col[c])) d.col[c] = o.col[c]; return d; }
+    if(isObj(o) && isObj(o.col)) return copyCols(o.col, empty());
   }catch(e){}
   return empty();
 }
 export function load(){ db = readLocal(); if(dedupeAsistencias() + fijarAsistencias()) persist(); }
-export function snapshot(){ return JSON.parse(JSON.stringify(db)); }
+export function snapshot(cols){
+  if(!cols) return JSON.parse(JSON.stringify(db));
+  return JSON.parse(JSON.stringify({app: db.app, v: db.v, col: Object.fromEntries(cols.filter(c => db.col[c]).map(c => [c, db.col[c]]))}));
+}
+/* colecciones que la primera versión publicada ya conocía; las demás viajan también en un archivo aparte que esa
+   versión nunca toca (si un aparato con la versión vieja sube su copia, las borra de mma-academia.json) */
+export const COLS_V1 = ["academias", "sedes", "disciplinas", "alumnos", "pagos", "grados", "asistencias", "productos", "progreso", "rutinas", "sesiones"];
+export const colsExtra = () => Object.keys(db.col).filter(c => !COLS_V1.includes(c));
 
 let saveT = 0;
 function persist(){
@@ -48,8 +59,11 @@ export function put(col, rec){
   return r;
 }
 export function del(col, id){
-  if(!db.col[col][id]) return;
-  db.col[col][id] = {id, _u: Math.max(now(), (db.col[col][id]._u || 0) + 1), _d: true};
+  const prev = db.col[col][id];
+  if(!prev) return;
+  db.col[col][id] = {id, _u: Math.max(now(), (prev._u || 0) + 1), _d: true};
+  /* el pago borrado guarda su número de recibo: ese número no se vuelve a dar */
+  if(col === "pagos" && prev.num) Object.assign(db.col[col][id], {num: prev.num, academiaId: prev.academiaId});
   changed();
 }
 export const get = (col, id) => { const r = db.col[col][id]; return r && !r._d ? r : null; };
@@ -61,9 +75,9 @@ export const isDeleted = (col, id) => !!(db.col[col] && db.col[col][id] && db.co
 export function merge(remote, local = false){
   if(!isObj(remote) || !isObj(remote.col)) return false;
   let any = false;
-  for(const c of COLS){
+  for(const c of new Set([...COLS, ...Object.keys(remote.col).filter(colName)])){
     const R = remote.col[c]; if(!isObj(R)) continue;
-    const L = db.col[c];
+    const L = db.col[c] || (db.col[c] = {});
     for(const id in R){
       const r = R[id]; if(!isObj(r) || typeof r._u !== "number") continue;
       /* misma clase viva en los dos lados: se mezcla alumno por alumno */
@@ -71,13 +85,38 @@ export function merge(remote, local = false){
       if(!L[id] || (L[id]._u || 0) < r._u){ L[id] = r; any = true; }
     }
   }
-  if(any){ dedupeAsistencias(); fijarAsistencias(); changed(local); }
+  if(any){ dedupeAsistencias(); fijarAsistencias(); renumerarRecibos(); changed(local); }
   return any;
 }
+/* ---------- recibos ---------- */
+/* mayor número de recibo dado en la academia, contando pagos borrados */
+export function maxNumRecibo(acadId){
+  let m = 0;
+  for(const p of Object.values(db.col.pagos)) if(p.academiaId === acadId) m = Math.max(m, Number(p.num) || 0);
+  return m;
+}
+/* dos aparatos sin red dieron el mismo número: se queda con él el pago creado primero y los demás pasan al siguiente
+   libre. Igual en todos los aparatos (orden por _c e id), y el _u sube para que el cambio viaje */
+function renumerarRecibos(){
+  const porAcad = new Map();
+  for(const p of Object.values(db.col.pagos)) if(!p._d && p.num){ if(!porAcad.has(p.academiaId)) porAcad.set(p.academiaId, []); porAcad.get(p.academiaId).push(p); }
+  let n = 0;
+  for(const [acadId, ps] of porAcad){
+    ps.sort((a, b) => (Number(a.num) - Number(b.num)) || ((a._c || 0) - (b._c || 0)) || (a.id < b.id ? -1 : 1));
+    let max = Math.max(maxNumRecibo(acadId), Number(db.col.academias[acadId]?.ultimoRecibo) || 0);
+    for(let i = 1; i < ps.length; i++) if(Number(ps[i].num) === Number(ps[i - 1].num)){
+      const p = ps[i];
+      db.col.pagos[p.id] = Object.assign({}, p, {num: ++max, numAntes: p.num, _u: (p._u || 0) + 1});
+      n++;
+    }
+  }
+  return n;
+}
 /* ¿la copia local tiene algo que la remota no? */
-export function aheadOf(remote){
+export function aheadOf(remote, cols = Object.keys(db.col)){
   const R = isObj(remote) && isObj(remote.col) ? remote.col : {};
-  for(const c of COLS){
+  for(const c of cols){
+    if(!db.col[c]) continue;
     const rc = R[c] || {};
     for(const id in db.col[c]) if(!rc[id] || (rc[id]._u || 0) < db.col[c][id]._u) return true;
   }
@@ -85,13 +124,13 @@ export function aheadOf(remote){
 }
 export function replaceAll(data){
   const d = empty();
-  if(isObj(data) && isObj(data.col)) for(const c of COLS) if(isObj(data.col[c])) d.col[c] = data.col[c];
+  if(isObj(data) && isObj(data.col)) copyCols(data.col, d);
   db = d; dedupeAsistencias(); fijarAsistencias(); changed();
 }
 /* lápidas de más de 120 días: ya viajaron a todos los aparatos */
 export function compact(){
   const lim = now() - 120 * 864e5;
-  for(const c of COLS) for(const id in db.col[c]){ const r = db.col[c][id]; if(r._d && r._u < lim) delete db.col[c][id]; }
+  for(const c of Object.keys(db.col)) for(const id in db.col[c]){ const r = db.col[c][id]; if(r?._d && r._u < lim) delete db.col[c][id]; }
 }
 
 /* ---------- preferencias de este aparato (no se sincronizan) ---------- */
@@ -119,6 +158,9 @@ export function alumnos(opts = {}){
   const sede = opts.sede !== undefined ? opts.sede : curSede();
   return inAcad("alumnos").filter(a => (!sede || a.sedeId === sede) && (opts.todos || a.estado !== "inactivo"));
 }
+
+/* horario semanal: clases activas por día (0 = domingo) y hora */
+export const clases = () => inAcad("clases").filter(c => c.activa !== false).sort((a, b) => (a.dia - b.dia) || String(a.hora || "").localeCompare(String(b.hora || "")) || (a._c - b._c));
 
 /* ---------- grados ---------- */
 const byDate = (a, b) => (a.fecha || "").localeCompare(b.fecha || "") || (a.rank - b.rank) || ((a.grado || 0) - (b.grado || 0)) || (a._c - b._c);
@@ -231,30 +273,42 @@ export function periodoNuevo(al){
 export const valorPlan = al => Number(al.valor ?? academy()?.valorMensual ?? 0) || 0;
 
 /* ---------- asistencia ---------- */
-/* un registro por clase: id fijo fecha_sede_disciplina, así dos toques o dos aparatos no crean copias */
-export const asisId = (fecha, sedeId, discId) => `${fecha}_${sedeId}_${discId}`;
-export const asistenciaDe = (fecha, sedeId, discId) => get("asistencias", asisId(fecha, sedeId, discId))
-  || all("asistencias").find(a => a.fecha === fecha && a.sedeId === sedeId && a.disciplinaId === discId) || null;
+/* un registro por clase: id fijo fecha_sede_disciplina, así dos toques o dos aparatos no crean copias. Solo si ese día
+   hay más de una clase de esa disciplina en esa sede se añade _clase (para no mezclarlas); con una sola clase el id es el
+   de siempre y la clase va en claseId. Así la versión anterior (que agrupa por fecha_sede_disciplina) no mueve nada */
+const asisBase = (fecha, sedeId, discId) => `${fecha}_${sedeId}_${discId}`;
+function variasClases(fecha, sedeId, discId){
+  const d = parseISO(fecha); if(!d) return false;
+  const w = d.getDay(); let n = 0;
+  for(const c of clases()) if(c.dia === w && c.sedeId === sedeId && c.disciplinaId === discId && ++n > 1) return true;
+  return false;
+}
+export const asisId = (fecha, sedeId, discId, claseId) => claseId && variasClases(fecha, sedeId, discId) ? `${asisBase(fecha, sedeId, discId)}_${claseId}` : asisBase(fecha, sedeId, discId);
+/* con una sola clase ese día, el registro sin clase (kiosco antes de hora, otro aparato sin horario) es el de la clase */
+export const asistenciaDe = (fecha, sedeId, discId, claseId) => get("asistencias", asisId(fecha, sedeId, discId, claseId))
+  || all("asistencias").find(a => a.fecha === fecha && a.sedeId === sedeId && a.disciplinaId === discId && (a.claseId || null) === (claseId || null)) || null;
 /* marca (on=true) o desmarca a uno o varios alumnos leyendo siempre el registro guardado, no una copia vieja.
    Cada alumno lleva su propia marca {on, _u} en marcas: si dos aparatos pasan lista de la misma clase sin red,
    al mezclar se suman (gana por alumno el cambio más reciente). presentes = los on, para la versión anterior. */
-export function marcarAsistencia({fecha, sedeId, disciplinaId}, ids, on){
-  const rec = asistenciaDe(fecha, sedeId, disciplinaId), m = rec ? marcasDe(rec) : {};
+export function marcarAsistencia(c, ids, on){
+  const rec = asistenciaDe(c.fecha, c.sedeId, c.disciplinaId, c.claseId), m = rec ? marcasDe(rec) : {};
   for(const id of [].concat(ids)) m[id] = {on: !!on, _u: Math.max(now(), (m[id]?._u || 0) + 1)};
-  return guardarAsis({fecha, sedeId, disciplinaId}, rec, m);
+  return guardarAsis(c, rec, m);
 }
-export function setPresentes({fecha, sedeId, disciplinaId}, presentes){
-  const rec = asistenciaDe(fecha, sedeId, disciplinaId), m = rec ? marcasDe(rec) : {}, set = new Set(presentes);
+export function setPresentes(c, presentes){
+  const rec = asistenciaDe(c.fecha, c.sedeId, c.disciplinaId, c.claseId), m = rec ? marcasDe(rec) : {}, set = new Set(presentes);
   const marca = (id, on) => { if(!!m[id]?.on !== on) m[id] = {on, _u: Math.max(now(), (m[id]?._u || 0) + 1)}; };
   for(const id in m) if(!set.has(id)) marca(id, false);
   for(const id of set) marca(id, true);
-  return guardarAsis({fecha, sedeId, disciplinaId}, rec, m);
+  return guardarAsis(c, rec, m);
 }
-function guardarAsis({fecha, sedeId, disciplinaId}, rec, marcas){
-  const id = asisId(fecha, sedeId, disciplinaId);
+function guardarAsis({fecha, sedeId, disciplinaId, claseId}, rec, marcas){
+  const id = asisId(fecha, sedeId, disciplinaId, claseId);
   if(rec && rec.id !== id) del("asistencias", rec.id);
-  return put("asistencias", Object.assign({}, rec || {}, {id, academiaId: rec?.academiaId || academy()?.id, fecha, sedeId, disciplinaId, marcas,
-    presentes: Object.keys(marcas).filter(x => marcas[x].on)}));
+  const r = Object.assign({}, rec || {}, {id, academiaId: rec?.academiaId || academy()?.id, fecha, sedeId, disciplinaId, marcas,
+    presentes: Object.keys(marcas).filter(x => marcas[x].on)});
+  if(claseId) r.claseId = claseId;
+  return put("asistencias", r);
 }
 /* marcas de un registro, cuadradas con presentes: un registro sin marcas (o escrito por la versión anterior, que solo
    toca presentes) cuenta cada id de presentes como marcado en r._u y cada marca on que ya no está como desmarcada */
@@ -303,13 +357,20 @@ function dedupeAsistencias(){
   const L = db.col.asistencias, grupos = new Map();
   for(const r of Object.values(L)){
     if(r._d || !r.fecha || !r.sedeId || !r.disciplinaId) continue;
-    const k = asisId(r.fecha, r.sedeId, r.disciplinaId);
+    const k = asisBase(r.fecha, r.sedeId, r.disciplinaId) + "|" + (r.claseId || "");
     if(!grupos.has(k)) grupos.set(k, []);
     grupos.get(k).push(r);
   }
   let n = 0;
-  for(const [k, rs] of grupos){
-    if(rs.length === 1 && rs[0].id === k) continue;
+  for(const rs of grupos.values()){
+    const r0 = rs[0], b = asisBase(r0.fecha, r0.sedeId, r0.disciplinaId);
+    /* un registro ya en un id fijo no se mueve nunca (ni si cambia el horario ni si lo dejó ahí la versión anterior):
+       si no, dos versiones lo pasarían de un id a otro en cada sincronización */
+    const fijo = x => x.id === b || (x.claseId && x.id === `${b}_${x.claseId}`);
+    if(rs.length === 1 && fijo(r0)) continue;
+    const k = rs.some(x => x.id === b) ? b : (rs.find(fijo)?.id || asisId(r0.fecha, r0.sedeId, r0.disciplinaId, r0.claseId));
+    /* el id destino ya lo ocupa otro registro de ese día (p. ej. la única clase): se juntan */
+    if(L[k] && !L[k]._d && !rs.includes(L[k])) rs.push(L[k]);
     rs.sort((a, b) => (a._c || 0) - (b._c || 0) || (a.id < b.id ? -1 : 1));
     const u = Math.max(0, ...rs.map(x => x._u || 0)) + 1;
     const base = Object.assign({}, ...rs);

@@ -1,16 +1,25 @@
 import * as S from "../store.js";
-import {icon, avatar, belt, empty, pill, modal} from "../ui.js";
+import {icon, avatar, belt, empty, pill, modal, toast} from "../ui.js";
 import {esc, norm, age, csv, download, today, h} from "../util.js";
 import {studentForm, quickPay} from "../forms.js";
 import {STATUS, planById} from "../catalog.js";
-import {pillTxt, estadoPago, vence, ultimasAsistencias, diasSinVenir} from "../cobros.js";
+import {pillTxt, estadoPago, vence, ultimasAsistencias, diasSinVenir, estadoEf} from "../cobros.js";
 import {t, tn, locale} from "../i18n.js";
 
 /* filtros que se recuerdan mientras la app está abierta */
-const st = {q: "", disc: "", estado: "activo", pago: "", aus: false, vista: S.pref("vistaAlumnos", "grid"), orden: "nombre"};
+const st = {q: "", disc: "", estado: "activo", pago: "", aus: false, vista: null, orden: "nombre"};
 const AUS = 14; /* días sin venir para el filtro de retención */
 
-export function render(el){
+export function render(el, params, ctx, query){
+  /* vista: la elegida, o lista en el celular y tarjetas en el computador */
+  if(!st.vista) st.vista = S.pref("vistaAlumnos", null) || (matchMedia("(max-width:760px)").matches ? "list" : "grid");
+  /* #/alumnos?new=1&volver=asistencia: abre el formulario una vez y quita la consulta del hash */
+  const qy = query || ctx?.query;
+  if(qy?.get?.("new")){
+    const volver = qy.get("volver");
+    try{ history.replaceState(null, "", "#/alumnos"); }catch(e){}
+    setTimeout(() => studentForm(null, {onSaved: a => { location.hash = volver ? `#/${volver}${volver.includes("?") ? "&" : "?"}nuevo=${a.id}` : "#/alumno/" + a.id; }}), 0);
+  }
   const acad = S.academy();
   const discs = S.discsOfSede(S.curSede());
   const all = S.alumnos({todos: true});
@@ -19,9 +28,9 @@ export function render(el){
   let list = all.filter(a =>
     (!q || norm(a.nombre).includes(q) || norm(a.documento).includes(q) || norm(a.telefono).includes(q)) &&
     (!st.disc || (a.disciplinaIds || []).includes(st.disc)) &&
-    (!st.estado || a.estado === st.estado));
+    (!st.estado || estadoEf(a) === st.estado));
   const withPay = list.map(a => ({a, e: estadoPago(a, acad.avisoDias ?? 5), sv: diasSinVenir(a, ult)}));
-  const aus = x => x.a.estado === "activo" && x.sv >= AUS;
+  const aus = x => estadoEf(x.a) === "activo" && x.sv >= AUS;
   const nAus = withPay.filter(aus).length;
   const filtered = withPay.filter(x => (!st.pago || x.e.k === st.pago || (st.pago === "pend" && (x.e.k === "vencido" || x.e.k === "pronto"))) && (!st.aus || aus(x)));
   const ord = {
@@ -32,16 +41,17 @@ export function render(el){
   }[st.orden] || ((x, y) => x.a.nombre.localeCompare(y.a.nombre, locale()));
   filtered.sort(ord);
   const counts = {activo: 0, congelado: 0, inactivo: 0};
-  for(const a of all) counts[a.estado] = (counts[a.estado] || 0) + 1;
+  for(const a of all){ const k = estadoEf(a); counts[k] = (counts[k] || 0) + 1; }
 
   const belts = a => (a.disciplinaIds || []).map(id => {
     const d = S.get("disciplinas", id); if(!d) return "";
     const g = S.rangoActual(a.id, id);
-    return `<span class="mini-belt" title="${esc(t(d.nombre))}: ${esc(g ? t(S.rankDef(d, g.rank).n) : t("sin grado"))}"><span class="dot" style="background:${d.color}"></span>${g ? belt(d, g.rank, g.grado, {w: 56, h: 11}) : `<span class="muted small">—</span>`}</span>`;
+    return `<span class="mini-belt" title="${esc(t(d.nombre))}: ${esc(g ? t(S.rankDef(d, g.rank).n) : t("sin grado"))}">${dtag(d)}${g ? belt(d, g.rank, g.grado, {w: 56, h: 11}) : `<span class="muted small">—</span>`}</span>`;
   }).join("");
   const sede = id => t(S.get("sedes", id)?.nombre || "");
+  const tags = a => (a.disciplinaIds || []).map(id => S.get("disciplinas", id)).filter(Boolean).map(dtag).join("");
   const blood = a => a.sangre ? `<span class="blood">${icon("drop")}${esc(a.sangre)}</span>` : "";
-  const svTxt = x => x.a.estado !== "activo" ? "" : !ult.has(x.a.id) ? t("Sin asistencias") : x.sv === 0 ? t("Vino hoy") : tn(x.sv, "Última clase hace 1 día", "Última clase hace {n} días");
+  const svTxt = x => estadoEf(x.a) !== "activo" ? "" : !ult.has(x.a.id) ? t("Sin asistencias") : x.sv === 0 ? t("Vino hoy") : tn(x.sv, "Última clase hace 1 día", "Última clase hace {n} días");
   const payBtn = ({a, e}, cls = "") => ["vencido", "pronto"].includes(e.k) ? `<button type="button" class="icon-btn ok ${cls}" data-pay="${a.id}" title="${t("Marcar pagado")}" aria-label="${esc(t("Marcar pagado") + ": " + a.nombre)}">${icon("cash")}</button>` : "";
   /* tarjeta: el enlace es el nombre (estirado sobre toda la tarjeta); el botón de pago queda fuera del <a> */
   const card = x => { const {a, e} = x; return `<div class="st-card st-card2">
@@ -49,14 +59,14 @@ export function render(el){
       <a class="st-name st-a" href="#/alumno/${a.id}">${esc(a.nombre)}</a>
       <span class="muted small st-line">${[a.nacimiento ? esc(tn(age(a.nacimiento), "1 año", "{n} años")) : "", blood(a), S.sedes().length > 1 ? esc(sede(a.sedeId)) : ""].filter(Boolean).join(" · ") || "&nbsp;"}</span>
       <div class="st-belts">${belts(a)}</div>
-      <div class="st-foot2">${pill(e.k, pillTxt(a, e))}<span class="muted small ${aus(x) ? "warn-t" : ""}">${esc(svTxt(x)) || "&nbsp;"}</span></div>
+      <div class="st-foot2">${pill(e.k, pillTxt(a, e))}${svTxt(x) ? `<span class="muted small ${aus(x) ? "warn-t" : ""}">${esc(svTxt(x))}</span>` : ""}</div>
       ${payBtn(x, "st-pay")}
     </div>`; };
   const rowH = x => { const {a, e} = x; return `<div class="li st-row"><a class="li-link" href="#/alumno/${a.id}">${avatar(a, 40)}
-      <div class="li-main"><b>${esc(a.nombre)}</b><span class="muted small">${[S.sedes().length > 1 ? esc(sede(a.sedeId)) : "", a.telefono ? esc(a.telefono) : "", esc(svTxt(x))].filter(Boolean).join(" · ")}</span></div></a>
+      <div class="li-main"><span class="st-nm"><b>${esc(a.nombre)}</b><span class="st-tags">${tags(a)}</span></span>
+        <span class="st-sub"><span title="${esc(pillTxt(a, e))}">${pill(e.k, e.txt)}</span><span class="muted small ${aus(x) ? "warn-t" : ""}">${[esc(svTxt(x)), S.sedes().length > 1 ? esc(sede(a.sedeId)) : ""].filter(Boolean).join(" · ")}</span></span></div></a>
       <div class="li-belts hide-s">${belts(a)}</div>
       <span class="hide-s">${blood(a)}</span>
-      <span title="${esc(pillTxt(a, e))}">${pill(e.k, e.txt)}</span>
       ${payBtn(x) || `<span class="icon-btn ghost-sp"></span>`}
     </div>`; };
   const discN = id => t(S.get("disciplinas", id)?.nombre || "");
@@ -69,6 +79,7 @@ export function render(el){
   el.innerHTML = `
   <div class="toolbar">
     <label class="search">${icon("search")}<input id="q" type="search" placeholder="${t("Buscar por nombre, documento o teléfono")}" value="${esc(st.q)}" aria-label="${t("Buscar")}"></label>
+    <button class="btn ghost st-bulk" data-bulk title="${t("Mensaje masivo por WhatsApp")}" aria-label="${t("Mensaje masivo por WhatsApp")}">${icon("whatsapp")}<span class="hide-s">${t("Mensaje masivo")}</span></button>
     <button class="btn primary hide-s" data-new>${icon("plus")}<span>${t("Nuevo alumno")}</span></button>
   </div>
   <div class="filters st-filters">
@@ -97,6 +108,7 @@ export function render(el){
   el.onclick = e => {
     if(e.target.closest("[data-new]")) return studentForm(null, {onSaved: a => { location.hash = "#/alumno/" + a.id; }});
     const p = e.target.closest("[data-pay]"); if(p){ e.preventDefault(); quickPay(S.get("alumnos", p.dataset.pay)); return; }
+    if(e.target.closest("[data-bulk]")){ import("../difusion.js").then(m => m.openDifusion({})).catch(() => toast(t("El mensaje masivo no está disponible ahora"), "warn")); return; }
     const rf = e.target.closest("[data-rmf]"); if(rf){ st[rf.dataset.rmf] = rf.dataset.rmf === "aus" ? false : ""; render(el); return; }
     if(e.target.closest("[data-filtros]")) return filtersSheet(el, {selDisc, selPago, selOrden, nAus});
     if(e.target.closest("[data-csv]")) exportCsv(filtered.map(x => x.a));
@@ -104,6 +116,9 @@ export function render(el){
   const qi = el.querySelector("#q");
   if(st.f){ st.f = false; qi.focus(); qi.setSelectionRange(st.q.length, st.q.length); }
 }
+
+/* etiqueta corta de disciplina (BJJ, MT, MMA) con su color: no depende solo del color */
+const dtag = d => `<span class="dtag" style="--dc:${esc(d.color || "#888")}" title="${esc(t(d.nombre))}">${esc(S.discCorto(d))}</span>`;
 
 /* hoja de filtros (móvil): disciplina, pago, orden y ausentes */
 function filtersSheet(el, {selDisc, selPago, selOrden, nAus}){

@@ -1,14 +1,28 @@
 import * as S from "../store.js";
-import {icon, avatar, belt, empty, pill, rankLabel, confirmDlg, toast} from "../ui.js";
+import {icon, avatar, belt, empty, pill, rankLabel, confirmDlg, toast, modal, shareOrDownload} from "../ui.js";
 import {esc, age, fmtDate, fmtDuration, money, waLink, today, addDays, daysBetween, relDays, clamp} from "../util.js";
 import {studentForm, paymentModal, promotionModal, quickPay} from "../forms.js";
 import {STATUS, planById, GEAR} from "../catalog.js";
 import {t, tn, lang} from "../i18n.js";
-import {deuda, pillTxt, estadoPago} from "../cobros.js";
+import {deuda, pillTxt, estadoPago, estadoEf} from "../cobros.js";
+import * as E from "../evaluacion.js";
+import {badges} from "./grados.js";
+import {fichaUrl} from "../ficha-link.js";
+
+/* módulos opcionales (tiquetera y carné, riesgo): si faltan, la ficha sigue sin esas tarjetas */
+const M = {};
+function opcionales(el, id, ctx){
+  const again = () => { if(el.isConnected && location.hash.startsWith("#/alumno/" + id)) render(el, [id], ctx); };
+  for(const [k, f] of [["clases", () => import("../clases.js")], ["ret", () => import("../retencion.js")]])
+    if(!(k in M)){ M[k] = null; f().then(m => { M[k] = m; again(); }).catch(() => {}); }
+  if(!E.listo()) E.precargar().then(ok => ok && again());
+}
+const TIPOS = {general: "General", tecnica: "Técnica", lesion: "Lesión", conducta: "Conducta"};
+const notasDe = id => S.all("notas").filter(n => n.alumnoId === id).sort((x, y) => (y.fecha || "").localeCompare(x.fecha || "") || y._c - x._c);
 
 /* pestaña elegida y historiales abiertos: se reinician al cambiar de alumno */
 let tab = "", tabDe = "", abiertos = new Set();
-const TABS = [["grados", "Grados", "belt"], ["asistencia", "Asistencia", "calendar"], ["pagos", "Pagos", "cash"], ["info", "Ficha", "users"], ["equipo", "Equipo", "bag"]];
+const TABS = [["grados", "Grados", "belt"], ["asistencia", "Asistencia", "calendar"], ["pagos", "Pagos", "cash"], ["notas", "Notas", "book"], ["info", "Ficha", "users"], ["equipo", "Equipo", "bag"]];
 const TL_MAX = 5;
 
 export function render(el, [id], ctx){
@@ -17,6 +31,7 @@ export function render(el, [id], ctx){
   const acad = S.academy(), cur = acad.moneda || "COP";
   const e = estadoPago(a, acad.avisoDias ?? 5), dd = deuda(a), debeTxt = pillTxt(a, e, dd), monto = dd.monto || S.valorPlan(a);
   if(tabDe !== id){ tabDe = id; abiertos = new Set(); tab = e.k === "vencido" ? "pagos" : "grados"; }
+  opcionales(el, id, ctx);
   if(ctx?.setTitle) ctx.setTitle(a.nombre); else { const ti = document.querySelector("#title"); if(ti) ti.textContent = a.nombre; }
   const stats = S.asistenciaStats(a.id);
   const sede = S.get("sedes", a.sedeId);
@@ -45,6 +60,10 @@ export function render(el, [id], ctx){
         </div>
         ${n ? `<div class="next ${n.listo ? "ready" : ""}"><div class="next-h"><span>${n.tipo === "grado" ? t("Siguiente grado") : t("Siguiente cinturón")}: <b>${esc(n.txt)}</b></span><span class="small">${n.listo ? `${icon("check")} ${t("Cumple el tiempo mínimo")}` : t("Recomendado desde {fecha}", {fecha: fmtDate(n.fecha)})}</span></div>
           <div class="progress"><span style="width:${pct}%"></span></div><span class="muted small">${t("{actual} de {minimo}", {actual: S.fmtMeses(n.meses), minimo: n.min ? S.fmtMeses(n.min) : t("sin mínimo")})}</span></div>` : ""}
+        ${(() => { const r = E.readiness(a, d), cur = E.listo() && E.curriculo(d, g.rank);
+          return `<div class="rd-card ${r?.listo ? "ready" : ""}">${r ? `<div class="rd-card-h"><b>${r.listo ? `${icon("check")} ${t("Listo para promoción")}` : t("Preparación para {rank}", {rank: esc(r.n.txt)})}</b></div>${badges(r)}
+            ${r.req?.criticosPend.length ? `<p class="small warn-t">${icon("star")} ${t("Críticos pendientes: {lista}", {lista: esc(r.req.criticosPend.slice(0, 3).map(x => x.txt).join(" · "))})}</p>` : ""}` : ""}
+            <div class="rd-act">${cur ? `<button class="btn small ghost" data-eval="${d.id}">${icon("target")}<span>${t("Evaluar")}</span></button>` : ""}<a class="btn small ghost" href="#/certificado/${a.id}/${d.id}">${icon("award")}<span>${t("Certificado")}</span></a></div></div>`; })()}
         <ol class="timeline">${h.slice().reverse().slice(0, abiertos.has(d.id) ? h.length : TL_MAX).map(x => `<li class="${rapid.has(x.id) ? "fast" : ""}">
           <span class="tl-belt">${belt(d, x.rank, x.grado, {w: 64, h: 12})}</span>
           <div><b>${esc(rankLabel(d, x))}</b> <span class="muted small">${fmtDate(x.fecha)}${x.profesor ? " · " + esc(x.profesor) : ""}${x.inicial ? " · " + t("al ingresar") : ""}</span>
@@ -56,11 +75,17 @@ export function render(el, [id], ctx){
     </div>`;
   }).join("") : empty("belt", t("Sin disciplinas"), t("Edita al alumno y elige qué disciplinas entrena."));
 
-  const pagos = S.pagosDe(a.id);
+  const pagos = S.pagosDe(a.id).slice(0, 24);
+  const tq = M.clases?.saldoTiquetera?.(a);
+  const tiqHtml = tq ? `<div class="tiq-card ${tq.vencida || !tq.saldo ? "bad" : tq.saldo <= 2 ? "low" : ""}"><div><b>${t("Tiquetera: {saldo} de {total} clases", {saldo: tq.saldo, total: tq.total})}</b>
+      <span class="muted small">${tn(tq.usadas, "1 usada", "{n} usadas")}${tq.vence ? " · " + (tq.vencida ? t("venció el {fecha}", {fecha: fmtDate(tq.vence)}) : t("vence el {fecha}", {fecha: fmtDate(tq.vence)})) : ""}</span>
+      <div class="progress thin"><span style="width:${tq.total ? clamp(tq.saldo / tq.total * 100, 0, 100) : 0}%"></span></div></div>
+      ${(tq.vencida || tq.saldo <= 2) && waLink(a.telefono || a.acudienteTel, "x") ? `<a class="btn small ghost" target="_blank" rel="noopener" href="${esc(waLink(a.telefono || a.acudienteTel, M.clases.msgRenovar(a, tq)))}">${icon("whatsapp")} ${t("Renovar")}</a>` : ""}</div>` : "";
   const pagosHtml = `<div class="pay-status ${e.k}"><div>${pill(e.k, debeTxt)}<span class="muted small">${e.vence ? (e.dias < 0 ? t("Venció el {fecha}", {fecha: fmtDate(e.vence)}) : t("Próximo pago: {fecha}", {fecha: fmtDate(e.vence)})) : ""}</span></div>
       <div class="row gap">${["vencido", "pronto"].includes(e.k) ? `<button class="btn ok" data-quick>${icon("check")} ${t("Pagó {valor}", {valor: money(monto, cur)})}</button>` : ""}<button class="btn ghost" data-pay>${icon("plus")} ${t("Otro pago")}</button></div></div>
     <p class="muted small">${t("Plan {plan}", {plan: esc(t(planById(a.plan).nombre).toLowerCase())})} · ${money(S.valorPlan(a), cur)}</p>
-    ${pagos.length ? `<div class="list">${pagos.map(p => `<div class="li" data-editp="${p.id}"><span class="li-ic">${icon("cash")}</span><div class="li-main"><b>${money(p.monto, cur)} · ${esc(t(p.concepto || "Pago"))}</b><span class="muted small">${fmtDate(p.fecha)} · ${esc(t(p.metodo || ""))}${p.hasta ? " · " + t("cubre hasta {fecha}", {fecha: fmtDate(p.hasta)}) : ""}${p.nota ? " · " + esc(p.nota) : ""}</span></div>${icon("edit", "muted")}</div>`).join("")}</div>`
+    ${tiqHtml}
+    ${pagos.length ? `<div class="list">${pagos.map(p => `<div class="li" data-editp="${p.id}"><span class="li-ic">${icon("cash")}</span><div class="li-main"><b>${money(p.monto, cur)} · ${esc(t(p.concepto || "Pago"))}</b><span class="muted small">${fmtDate(p.fecha)} · ${esc(t(p.metodo || ""))}${p.hasta ? " · " + t("cubre hasta {fecha}", {fecha: fmtDate(p.hasta)}) : ""}${p.nota ? " · " + esc(p.nota) : ""}</span></div><a class="icon-btn" href="#/recibo/${p.id}" title="${t("Ver recibo")}" aria-label="${t("Ver recibo")}">${icon("receipt")}</a>${icon("edit", "muted")}</div>`).join("")}</div>`
       : `<p class="muted">${t("Sin pagos registrados.")}</p>`}`;
 
   const equipoHtml = `<div class="gear-grid">${GEAR.map(g => { const x = a.equipo?.[g.k]; return `<div class="gear-it ${x?.tiene ? "has" : "no"}">${icon(x?.tiene ? "check" : "x")}<b>${esc(t(g.n))}</b><span class="muted small">${x?.tiene ? (x.talla ? t("Talla {talla}", {talla: esc(x.talla)}) : t("Tiene")) : t("No tiene")}</span></div>`; }).join("")}</div>
@@ -99,6 +124,20 @@ export function render(el, [id], ctx){
     <div class="list">${stats.clases.slice(0, 10).map(c => { const d = S.get("disciplinas", c.disciplinaId), sd = S.get("sedes", c.sedeId); return `<div class="li"><span class="li-ic">${icon("calendar")}</span><div class="li-main"><b>${fmtDate(c.fecha, true)}</b><span class="muted small">${d ? `<span class="disc-tag" style="--c:${d.color}">${esc(S.discCorto(d))}</span>${esc(t(d.nombre))}` : ""}${sd ? " · " + esc(sd.nombre) : ""}</span></div><span class="muted small">${esc(relDays(-daysBetween(c.fecha, hoy)))}</span></div>`; }).join("")}</div>`
     : `<p class="muted">${t("Todavía no tiene asistencias registradas.")}</p><a class="btn ghost" href="#/asistencia">${icon("calendar")} ${t("Pasar lista")}</a>`;
 
+  /* notas del profe: línea de tiempo con fecha y tipo; las archivadas se esconden */
+  const notas = notasDe(a.id), act = notas.filter(n => n.activa !== false), arch = notas.filter(n => n.activa === false);
+  const lesion = act.find(n => n.tipo === "lesion");
+  const notaLi = n => `<li class="nt-${esc(n.tipo || "general")}"><div class="nt-h"><span class="nt-tipo">${esc(t(TIPOS[n.tipo] || TIPOS.general))}</span><span class="muted small">${fmtDate(n.fecha)}</span>
+      <button class="btn-link small" data-arch="${n.id}">${n.activa === false ? t("Reactivar") : n.tipo === "lesion" ? t("Ya se recuperó") : t("Archivar")}</button></div><p class="pre">${esc(n.texto)}</p></li>`;
+  const notasHtml = `<form class="nt-add" data-nform>
+      <div class="chip-row" role="radiogroup" aria-label="${t("Tipo de nota")}">${Object.entries(TIPOS).map(([k, v], i) => `<label class="chip"><input type="radio" name="tipo" value="${k}" ${!i ? "checked" : ""}><span>${t(v)}</span></label>`).join("")}</div>
+      <label class="sr" for="ntTxt">${t("Nota")}</label><textarea id="ntTxt" name="texto" rows="2" placeholder="${t("Ej: le cuesta la base en la guardia; dolor en la rodilla izquierda")}"></textarea>
+      <div class="row gap"><input type="date" name="fecha" value="${today()}" aria-label="${t("Fecha")}"><button class="btn primary small" type="submit">${icon("plus")} ${t("Agregar nota")}</button></div></form>
+    ${act.length ? `<ol class="nt-tl">${act.map(notaLi).join("")}</ol>` : `<p class="muted">${t("Sin notas. Anota avances técnicos, lesiones o conducta para no olvidarlos.")}</p>`}
+    ${arch.length ? `<details class="nt-arch"><summary>${t("Archivadas ({n})", {n: arch.length})}</summary><ol class="nt-tl">${arch.map(notaLi).join("")}</ol></details>` : ""}`;
+  const rk = M.ret?.riesgo?.(a);
+  const waRiesgo = rk && rk.nivel !== "bajo" && rk.script && waLink(tel, rk.script);
+
   const tabs = TABS.map(([k]) => k);
   if(!tabs.includes(tab)) tab = "grados";
   const debe = e.k === "vencido";
@@ -110,7 +149,7 @@ export function render(el, [id], ctx){
     <div class="pf-photo">${avatar(a, 120)}</div>
     <div class="pf-main">
       <h2>${esc(a.nombre)}</h2>
-      <div class="pf-tags">${pill(a.estado === "activo" ? "aldia" : a.estado, t(STATUS[a.estado] || ""))}${pill(e.k, e.txt)}${sede ? `<span class="tag">${icon("map")}${esc(sede.nombre)}</span>` : ""}${a.nacimiento ? `<span class="tag">${tn(age(a.nacimiento), "1 año", "{n} años")}</span>` : ""}${a.sangre ? `<span class="tag blood">${icon("drop")}${esc(a.sangre)}</span>` : ""}
+      <div class="pf-tags">${pill(estadoEf(a) === "activo" ? "aldia" : estadoEf(a), t(STATUS[estadoEf(a)] || ""))}${pill(e.k, e.txt)}${sede ? `<span class="tag">${icon("map")}${esc(sede.nombre)}</span>` : ""}${a.nacimiento ? `<span class="tag">${tn(age(a.nacimiento), "1 año", "{n} años")}</span>` : ""}${a.sangre ? `<span class="tag blood">${icon("drop")}${esc(a.sangre)}</span>` : ""}${lesion ? `<button class="tag lesion" data-tab="notas" title="${esc(lesion.texto)}">${icon("alert")}${t("Lesión")}</button>` : ""}
         <span class="tag pf-last ${stats.dias >= 14 || !stats.ultima ? "lejos" : ""}">${icon("calendar")}${stats.ultima ? t("Última clase: {cuando}", {cuando: esc(ultTxt)}) : t("Sin clases registradas")}</span></div>
       <div class="pf-belts">${discs.map(d => { const g = S.rangoActual(a.id, d.id); return g ? `<span class="pf-belt" title="${esc(t(d.nombre))}">${belt(d, g.rank, g.grado, {w: 90, h: 16})}<small>${esc(t(d.nombre))}</small></span>` : ""; }).join("")}</div>
     </div>
@@ -118,16 +157,21 @@ export function render(el, [id], ctx){
       <button class="btn primary" data-edit>${icon("edit")} ${t("Editar")}</button>
       ${wa ? `<a class="btn ghost" href="${esc(wa)}" target="_blank" rel="noopener">${icon("whatsapp")} WhatsApp</a>` : ""}
       ${tel ? `<a class="btn ghost" href="tel:${esc(tel)}">${icon("phone")} ${t("Llamar")}</a>` : ""}
+      <button class="btn ghost" data-share>${icon("share")} ${t("Compartir ficha")}</button>
+      ${M.clases?.qrCardHTML ? `<button class="btn ghost" data-qr>${icon("qr")} ${t("Carné QR")}</button>` : ""}
     </div>
   </section>
   ${debe ? `<div class="pf-alert" role="alert"><b>${icon("alert")}${esc(debeTxt)}</b><div class="row">
       <button class="btn ok small" data-quick>${icon("check")} ${t("Pagó {valor}", {valor: money(monto, cur)})}</button>
       ${waCobro ? `<a class="btn ghost small" href="${esc(waCobro)}" target="_blank" rel="noopener">${icon("whatsapp")} WhatsApp</a>` : ""}</div></div>` : ""}
+  ${rk && rk.nivel !== "bajo" ? `<div class="pf-risk ${rk.nivel}"><div><b>${icon("alert")} ${rk.nivel === "alto" ? t("Riesgo alto de abandono") : t("Riesgo medio de abandono")}</b><span class="small muted">${esc(rk.motivos.join(" · "))}</span></div>
+    ${waRiesgo ? `<a class="btn ghost small" href="${esc(waRiesgo)}" target="_blank" rel="noopener">${icon("whatsapp")} ${t("Escribirle")}</a>` : ""}</div>` : ""}
   <div class="tabs pf-tabs" role="tablist" aria-label="${t("Secciones de la ficha")}">${TABS.map(([k, n, ic]) => `<button class="tab ${tab === k ? "on" : ""}" role="tab" id="pft-${k}" aria-selected="${tab === k}" aria-controls="pf-panel" tabindex="${tab === k ? 0 : -1}" data-tab="${k}">${icon(ic)}${t(n)}</button>`).join("")}</div>
-  <section class="card" role="tabpanel" id="pf-panel" aria-labelledby="pft-${tab}">${{grados: gradosHtml, asistencia: asisHtml, pagos: pagosHtml, info: infoHtml, equipo: equipoHtml}[tab]}</section>`;
+  <section class="card" role="tabpanel" id="pf-panel" aria-labelledby="pft-${tab}">${{grados: gradosHtml, asistencia: asisHtml, pagos: pagosHtml, notas: notasHtml, info: infoHtml, equipo: equipoHtml}[tab]}</section>`;
 
   el.onclick = ev => {
     const tg = ev.target;
+    if(tg.closest("a[href]")) return;
     const tb = tg.closest("[data-tab]"); if(tb){ tab = tb.dataset.tab; render(el, [id], ctx); return; }
     const tl = tg.closest("[data-tl]"); if(tl){ const k = tl.dataset.tl; abiertos.has(k) ? abiertos.delete(k) : abiertos.add(k); render(el, [id], ctx); return; }
     if(tg.closest("[data-edit]")) return studentForm(a, {onDeleted: () => { location.hash = "#/alumnos"; }});
@@ -136,6 +180,18 @@ export function render(el, [id], ctx){
     if(tg.closest("[data-quick]")) return quickPay(a);
     if(tg.closest("[data-pay]")) return paymentModal(a);
     const ep = tg.closest("[data-editp]"); if(ep) return paymentModal(a, S.get("pagos", ep.dataset.editp));
+    const evb = tg.closest("[data-eval]"); if(evb) return E.evaluarModal(a, S.get("disciplinas", evb.dataset.eval));
+    const ar = tg.closest("[data-arch]"); if(ar){ const n = S.get("notas", ar.dataset.arch); if(n) S.put("notas", {id: n.id, activa: n.activa === false}); return; }
+    if(tg.closest("[data-share]")) return compartirFicha(a);
+    if(tg.closest("[data-qr]")) return carne(a);
+  };
+  el.onsubmit = ev => {
+    if(!ev.target.matches("[data-nform]")) return;
+    ev.preventDefault();
+    const f = ev.target, texto = f.texto.value.trim();
+    if(!texto){ f.texto.focus(); return; }
+    S.put("notas", {academiaId: S.academy()?.id, alumnoId: a.id, fecha: f.fecha.value || today(), tipo: f.tipo.value || "general", texto, activa: true});
+    toast(t("Nota agregada"));
   };
   /* pestañas con flechas, Inicio y Fin (patrón ARIA tablist) */
   el.onkeydown = ev => {
@@ -148,5 +204,32 @@ export function render(el, [id], ctx){
     render(el, [id], ctx);
     el.querySelector(`#pft-${tab}`)?.focus();
   };
-  return () => { el.onkeydown = null; };
+  return () => { el.onkeydown = null; el.onsubmit = null; };
+}
+
+/* carné con QR para imprimir o mostrar en el kiosco */
+function carne(a){
+  if(!M.clases?.qrCardHTML) return;
+  const m = modal({title: t("Carné QR"), body: `<div class="carne-prev">${M.clases.qrCardHTML(a)}</div><p class="muted small">${t("El alumno lo muestra en el modo kiosco para registrar su llegada.")}</p>`,
+    foot: `<button class="btn ghost" data-close>${t("Cerrar")}</button><button class="btn primary" data-p>${icon("print")} ${t("Imprimir")}</button>`});
+  m.foot.querySelector("[data-p]").onclick = () => { m.close(); setTimeout(() => M.clases.printQr ? M.clases.printQr(a) : window.print(), 250); };
+}
+
+/* enlace de solo lectura con cinturones, asistencia y próximo pago, para mandar por WhatsApp */
+function compartirFicha(a){
+  const tel = a.telefono || a.acudienteTel, conFoto = !!S.foto(a.id);
+  const m = modal({title: t("Compartir ficha"), body: `<p>${t("Se crea un enlace con sus cinturones, asistencia y próximo pago. No incluye documento, teléfono, salud ni notas.")}</p>
+    ${conFoto ? `<label class="check"><input type="checkbox" data-foto> <span>${t("Incluir la foto (el enlace queda más largo)")}</span></label>` : ""}
+    <p class="muted small" data-len></p>`,
+    foot: `<button class="btn ghost" data-copy>${icon("copy")} ${t("Copiar")}</button><button class="btn ghost" data-open>${icon("link")} ${t("Abrir")}</button>${tel ? `<button class="btn primary" data-wa>${icon("whatsapp")} WhatsApp</button>` : `<button class="btn primary" data-sh>${icon("share")} ${t("Compartir")}</button>`}`});
+  let url = "";
+  const gen = async () => { url = await fichaUrl(a, {foto: !!m.body.querySelector("[data-foto]")?.checked}); m.body.querySelector("[data-len]").textContent = tn(url.length, "Enlace de 1 carácter", "Enlace de {n} caracteres"); return url; };
+  const txt = () => t("Hola {nombre}, esta es tu ficha en {academia}:", {nombre: a.nombre.split(" ")[0], academia: S.academy()?.nombre || ""});
+  gen().catch(() => toast(t("No se pudo crear el enlace"), "error"));
+  m.body.onchange = () => gen().catch(() => {});
+  const q = s => m.foot.querySelector(s);
+  q("[data-copy]").onclick = async () => { await gen(); try{ await navigator.clipboard.writeText(url); toast(t("Enlace copiado")); }catch(e){ shareOrDownload({text: url}); } };
+  q("[data-open]").onclick = async () => { await gen(); window.open(url, "_blank", "noopener"); };
+  if(q("[data-wa]")) q("[data-wa]").onclick = async () => { await gen(); window.open(waLink(tel, txt() + "\n" + url), "_blank", "noopener"); m.close(); };
+  if(q("[data-sh]")) q("[data-sh]").onclick = async () => { await gen(); await shareOrDownload({title: t("Ficha del alumno"), text: txt(), url}); m.close(); };
 }

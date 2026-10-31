@@ -3,6 +3,8 @@
      privada dentro del Drive de quien entra; no puede leer los demás archivos de la persona.
    - "mma-academia.json": todos los datos (store.js). Al sincronizar se baja, se mezcla registro a registro (gana el
      cambio más reciente) y, si este aparato tenía algo nuevo, se sube la mezcla.
+   - "mma-academia-x.json": copia de las colecciones que la primera versión no conocía (horario, interesados, notas…).
+     Un aparato con esa versión sube mma-academia.json sin ellas; este archivo no lo toca, así no se pierden.
    - "foto-<idAlumno>.json": una por foto, para no subir todas cada vez. El alumno guarda fotoU (cuándo cambió su foto).
    - El permiso dura ~1 hora; renovarlo abre (y cierra sola) una ventanita de Google, que el navegador solo deja abrir
      dentro de un toque. Se renueva de paso en un toque normal (como mucho cada 45 min) o con «Reconectar». */
@@ -15,7 +17,7 @@ const SCOPE = "https://www.googleapis.com/auth/drive.appdata";
 const GSI = "https://accounts.google.com/gsi/client";
 const API = "https://www.googleapis.com/drive/v3/files", UP = "https://www.googleapis.com/upload/drive/v3/files";
 const ABOUT = "https://www.googleapis.com/drive/v3/about?fields=user(emailAddress,displayName,photoLink)";
-const NAME = "mma-academia.json";
+const NAME = "mma-academia.json", XNAME = "mma-academia-x.json";
 const MKEY = "mma:sync", TKEY = "mma:tok", QKEY = "mma:fotoQ";
 const MIN = 6e4;
 
@@ -148,20 +150,28 @@ async function syncOnce(){
   setPhase("syncing");
   const files = await listFiles();
   const byName = new Map(files.map(f => [f.name, f]));
-  const main = byName.get(NAME);
+  const main = byName.get(NAME), xf = byName.get(XNAME);
   const m = meta();
-  let fileId = main ? main.id : null, remoteMod = m.remoteMod || "";
+  let fileId = main ? main.id : null, remoteMod = m.remoteMod || "", xId = xf ? xf.id : null, xMod = m.xMod || "";
   /* sin cambios en Drive (misma modifiedTime que la última vez) ni en este aparato: no hace falta bajar ni subir */
-  const same = main && main.modifiedTime && m.remoteMod === main.modifiedTime && m.fileId === main.id && !m.dirty;
+  const same = main && main.modifiedTime && m.remoteMod === main.modifiedTime && m.fileId === main.id && !m.dirty
+    && (xf ? xf.modifiedTime && m.xMod === xf.modifiedTime && m.xId === xf.id : !S.colsExtra().some(c => S.all(c).length));
   if(!same){
-    let remote = null;
+    let remote = null, rx = null;
     /* flush: lo mezclado queda en localStorage antes de anotar remoteMod; si la página muere antes, no se salta la bajada */
     if(main){ remote = await download(main.id); S.merge(remote); S.flush(); remoteMod = main.modifiedTime || ""; }
+    /* las colecciones nuevas, también aparte: un aparato con la versión vieja no las conoce y las quita de la principal */
+    if(xf){ rx = await download(xf.id); S.merge(rx); S.flush(); xMod = xf.modifiedTime || ""; }
+    const extra = S.colsExtra(), xAhead = xf ? S.aheadOf(rx, extra) : extra.some(c => S.all(c).length);
+    if(!main || S.aheadOf(remote) || xAhead) S.compact();
     if(!main || S.aheadOf(remote)){
-      S.compact();
       const snap = S.snapshot();
       const r = await upload(fileId, NAME, Object.assign(snap, {saved: new Date().toISOString()}), {v: S.VER});
       fileId = r.id; remoteMod = r.modifiedTime || "";
+    }
+    if(xAhead){
+      const r = await upload(xId, XNAME, Object.assign(S.snapshot(extra), {saved: new Date().toISOString()}), {v: S.VER});
+      xId = r.id; xMod = r.modifiedTime || "";
     }
   }
   /* fotos: subir las de este aparato, bajar las nuevas de Google */
@@ -187,7 +197,7 @@ async function syncOnce(){
     if(mm && S.isDeleted("alumnos", mm[1])) await remove(f.id);
   }
   const fresh = meta();
-  setMeta({fileId, remoteMod, lastSync: now(), dirty: fresh.dirty && fresh.lastLocal > m.lastLocal ? true : false});
+  setMeta({fileId, remoteMod, xId, xMod, lastSync: now(), dirty: fresh.dirty && fresh.lastLocal > m.lastLocal ? true : false});
   setPhase("ok");
 }
 const MSG = {

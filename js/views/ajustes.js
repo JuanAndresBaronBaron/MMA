@@ -5,11 +5,13 @@ import {esc, download, today, fmtDate} from "../util.js";
 import {themePref, setTheme, gIcon} from "../shell.js";
 import {loadDemo, removeDemo, hasDemo} from "../demo.js";
 import {GOOGLE_CLIENT_ID} from "../config.js";
+import {installState, promptInstall, iosStepsHTML} from "../install.js";
 import {t, tn, lang, locale, setLang, LANGS} from "../i18n.js";
 
 export function render(el){
   const st = Sync.status();
   const n = c => S.all(c).length;
+  const inst = installState();
   const last = st.lastSync ? new Date(st.lastSync).toLocaleString(locale(), {dateStyle: "medium", timeStyle: "short"}) : t("nunca");
 
   el.innerHTML = `
@@ -49,6 +51,20 @@ export function render(el){
   </section>
 
   <section class="card">
+    <header class="card-h"><h3>${icon("download")} ${t("Instalar app")}</h3>${inst === "installed" ? `<span class="pill aldia">${t("Instalada")}</span>` : ""}</header>
+    ${inst === "installed" ? `<p class="muted small">${t("Ya usas AcademiaPro como app en este aparato.")}</p>`
+    : inst === "ios" ? `<p class="muted small">${t("En iPhone o iPad se instala desde Safari:")}</p>${iosStepsHTML()}`
+    : `<p class="muted small">${t("Ábrela como una app: ícono en tu pantalla, pantalla completa y funciona sin internet.")}</p>
+      <button class="btn primary" data-install>${icon("download")} ${t("Instalar app")}</button>`}
+  </section>
+
+  <section class="card">
+    <header class="card-h"><h3>${icon("keyboard")} ${t("Atajos y búsqueda")}</h3></header>
+    <p class="muted small">${t("Busca alumnos, pagos, técnicas y acciones desde cualquier pantalla con Ctrl+K (o Cmd+K en Mac) o la lupa de arriba.")}</p>
+    <div class="row gap wrap"><button class="btn ghost small" data-palette>${icon("search")} ${t("Abrir buscador")}</button><button class="btn ghost small" data-keys>${icon("keyboard")} ${t("Ver atajos")}</button></div>
+  </section>
+
+  <section class="card">
     <header class="card-h"><h3>${icon("info")} ${t("Avanzado")}</h3></header>
     <p class="muted small">${t("ID de cliente de Google en uso:")} <code class="break">${esc(Sync.clientId())}</code></p>
     <div class="row gap wrap">
@@ -64,6 +80,9 @@ export function render(el){
     if(tg.closest("[data-reconnect]")){ await Sync.reconnect(); render(el); return; }
     if(tg.closest("[data-sync]")){ await Sync.sync(); toast(Sync.status().phase === "ok" ? t("Sincronizado") : Sync.status().msg, Sync.status().phase === "ok" ? "ok" : "warn"); render(el); return; }
     if(tg.closest("[data-disconnect]")){ if(await confirmDlg(t("Los datos quedan en este aparato y en tu Drive. Podrás volver a conectar cuando quieras."), {ok: t("Desconectar"), danger: false})){ Sync.disconnect(); render(el); } return; }
+    if(tg.closest("[data-install]")){ if(await promptInstall()) render(el); return; }
+    if(tg.closest("[data-palette]")){ import("../palette.js").then(m => m.openPalette()).catch(() => {}); return; }
+    if(tg.closest("[data-keys]")){ import("../palette.js").then(m => m.atajos()).catch(() => {}); return; }
     if(tg.closest("[data-export]")){ download(`academia-copia-${today()}.json`, JSON.stringify(S.snapshot())); return; }
     if(tg.closest("[data-demo]")){ const k = loadDemo(); k ? toast(t("Alumnos de ejemplo agregados")) : toast(t("Primero crea una sede y una disciplina en Academia."), "warn"); render(el); return; }
     if(tg.closest("[data-undemo]")){

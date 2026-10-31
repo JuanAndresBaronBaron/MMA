@@ -115,3 +115,25 @@ export function download(name, text, type = "application/json"){
 export function csv(rows){
   return "﻿" + rows.map(r => r.map(c => { const s = String(c ?? ""); return /[",;\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; }).join(";")).join("\n");
 }
+/* descarga un texto como archivo (CSV, ICS, JSON…) */
+export const downloadText = (name, mime, text) => download(name, text, mime);
+/* enlace de WhatsApp: sin «+» y con 10 cifras se asume Colombia (57). Sin número abre el selector de contacto. */
+export function waUrl(phone, text){
+  const raw = String(phone || "").trim();
+  let d = phoneDigits(raw);
+  if(d && !raw.startsWith("+") && d.length === 10) d = "57" + d;
+  return `https://wa.me/${d}${text ? `?text=${encodeURIComponent(text)}` : ""}`;
+}
+/* base64 apto para URL (sin relleno), para enlaces compartibles */
+export function b64urlEncode(bytes){
+  const b = bytes instanceof Uint8Array ? bytes : new TextEncoder().encode(String(bytes));
+  let s = ""; for(let i = 0; i < b.length; i += 0x8000) s += String.fromCharCode.apply(null, b.subarray(i, i + 0x8000));
+  return btoa(s).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+}
+export function b64urlDecode(str){
+  const s = String(str || "").replace(/-/g, "+").replace(/_/g, "/");
+  const bin = atob(s + "===".slice((s.length + 3) % 4));
+  const out = new Uint8Array(bin.length);
+  for(let i = 0; i < bin.length; i++) out[i] = bin.charCodeAt(i);
+  return out;
+}

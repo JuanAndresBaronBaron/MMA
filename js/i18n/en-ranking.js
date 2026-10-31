@@ -8,4 +8,8 @@ export default {
   "Orden: cinturón, luego grado y, a igual grado, quien lo tiene desde hace más tiempo.": "Order: belt, then stripe and, at the same stripe, whoever has held it longest.",
   "Nadie entrena esta disciplina": "No one trains this discipline",
   "Asigna la disciplina a tus alumnos para verlos en el ranking.": "Assign the discipline to your students to see them in the ranking.",
+  "Puesto {n}": "Place {n}",
+  "1.º": "1st",
+  "2.º": "2nd",
+  "3.º": "3rd",
 };

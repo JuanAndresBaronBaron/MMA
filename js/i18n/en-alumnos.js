@@ -58,4 +58,8 @@ export default {
   "Quitar filtro {f}": "Remove filter {f}",
   "Quitar filtros": "Clear filters",
   "Aplicar": "Apply",
+  // W4 ronda 3
+  "Mensaje masivo por WhatsApp": "Bulk WhatsApp message",
+  "Mensaje masivo": "Bulk message",
+  "El mensaje masivo no está disponible ahora": "Bulk messaging is not available right now",
 };

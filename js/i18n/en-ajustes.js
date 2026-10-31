@@ -55,4 +55,13 @@ export default {
   "Oscuro": "Dark",
   "Mostrar primeros pasos": "Show getting started",
   "Primeros pasos visibles en Inicio": "Getting started is back on Home",
+  "Instalar app": "Install app",
+  "Instalada": "Installed",
+  "Ya usas AcademiaPro como app en este aparato.": "You already use AcademiaPro as an app on this device.",
+  "En iPhone o iPad se instala desde Safari:": "On iPhone or iPad, install it from Safari:",
+  "Ábrela como una app: ícono en tu pantalla, pantalla completa y funciona sin internet.": "Open it like an app: an icon on your screen, full screen and it works offline.",
+  "Atajos y búsqueda": "Shortcuts and search",
+  "Busca alumnos, pagos, técnicas y acciones desde cualquier pantalla con Ctrl+K (o Cmd+K en Mac) o la lupa de arriba.": "Search students, payments, techniques and actions from any screen with Ctrl+K (Cmd+K on Mac) or the magnifier at the top.",
+  "Abrir buscador": "Open search",
+  "Ver atajos": "See shortcuts",
 };

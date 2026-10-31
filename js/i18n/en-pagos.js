@@ -54,4 +54,12 @@ export default {
   "Listo": "Done",
   "1 recordatorio enviado": "1 reminder sent",
   "{n} recordatorios enviados": "{n} reminders sent",
+  // W4 ronda 3
+  "Ver último recibo": "View last receipt",
+  "Entendido, ocultar": "Got it, hide",
+  "Tiquetera: 1 clase": "Class pack: 1 class",
+  "Tiquetera: {n} clases": "Class pack: {n} classes",
+  "Imprimir último recibo": "Print last receipt",
+  "Tiquetera vencida": "Class pack expired",
+  "Reportes": "Reports",
 };

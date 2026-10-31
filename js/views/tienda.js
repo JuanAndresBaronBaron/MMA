@@ -4,11 +4,12 @@ import {esc, waLink} from "../util.js";
 import {GEAR} from "../catalog.js";
 import {t, locale} from "../i18n.js";
 import {studentForm} from "../forms.js";
+import {estadoEf} from "../cobros.js";
 
 export function render(el, [k]){
   const gear = GEAR.find(g => g.k === k) || GEAR[0];
   const acad = S.academy();
-  const activos = S.alumnos().filter(a => a.estado === "activo");
+  const activos = S.alumnos().filter(a => estadoEf(a) === "activo");
   const sin = activos.filter(a => !a.equipo?.[gear.k]?.tiene).sort((x, y) => x.nombre.localeCompare(y.nombre, locale()));
   const con = activos.filter(a => a.equipo?.[gear.k]?.tiene);
   const tallas = {};
@@ -19,11 +20,11 @@ export function render(el, [k]){
   const msg = a => tpl.replace(/\{nombre\}/g, a.nombre.split(" ")[0]).replace(/\{talla\}/g, (a.equipo?.[gear.k]?.talla || a.talla) ? " " + t("en talla {talla}", {talla: a.equipo?.[gear.k]?.talla || a.talla}) : "");
 
   el.innerHTML = `
-  <div class="filters"><div class="chips">${GEAR.map(g => `<a class="chip ${g.k === gear.k ? "on" : ""}" href="#/tienda/${g.k}"><span>${esc(t(g.n))} <i>${activos.filter(a => !a.equipo?.[g.k]?.tiene).length}</i></span></a>`).join("")}</div></div>
-  <div class="kpis three">
+  <div class="filters tn-filters"><div class="chip-row" role="navigation" aria-label="${t("Productos")}">${GEAR.map(g => `<a class="chip ${g.k === gear.k ? "on" : ""}" href="#/tienda/${g.k}"><span>${esc(t(g.n))} <i>${activos.filter(a => !a.equipo?.[g.k]?.tiene).length}</i></span></a>`).join("")}</div></div>
+  <div class="kpis three tn-kpis">
     <div class="kpi"><span class="kpi-ic c3">${icon("bag")}</span><div><b>${sin.length}</b><span>${esc(t("Sin {producto}", {producto: gn}))}</span></div></div>
     <div class="kpi"><span class="kpi-ic c1">${icon("check")}</span><div><b>${con.length}</b><span>${t("Ya tienen")}</span></div></div>
-    <div class="kpi"><span class="kpi-ic c2">${icon("list")}</span><div><b class="kpi-tallas">${Object.keys(tallas).length ? Object.entries(tallas).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([tl, n]) => `${esc(tl)}×${n}`).join(" ") : "—"}</b><span>${t("Tallas más pedidas")}</span></div></div>
+    <div class="kpi"><span class="kpi-ic c2">${icon("list")}</span><div><span class="kpi-tallas">${Object.keys(tallas).length ? Object.entries(tallas).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([tl, n]) => `<span class="tn-size"><b>${esc(tl)}</b><i>×${n}</i></span>`).join("") : "<b>—</b>"}</span><span>${t("Tallas que faltan")}</span></div></div>
   </div>
   <section class="card">
     <header class="card-h"><h3>${icon("whatsapp")} ${t("Mensaje para ofrecer")}</h3></header>

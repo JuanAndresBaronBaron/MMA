@@ -35,4 +35,11 @@ export default {
   "Academia actualizada": "Academy updated",
   "Otra (personalizada)": "Other (custom)",
   "¿Qué disciplina agregas?": "Which discipline are you adding?",
+  "Horario de clases": "Class schedule",
+  "Ver horario": "View schedule",
+  "Crear horario": "Create schedule",
+  "1 clase por semana": "1 class per week",
+  "{n} clases por semana": "{n} classes per week",
+  "Sin clases en el horario": "No classes on the schedule",
+  "Arma el horario semanal de cada sede: la asistencia abre sola la clase que está empezando y puedes usar el modo kiosco para que los alumnos se registren al llegar.": "Set up each location's weekly schedule: attendance opens the class that is starting, and you can use kiosk mode so students check themselves in when they arrive.",
 };

@@ -5,13 +5,14 @@ import {sedeModal, disciplineModal} from "../forms.js";
 import {DISCIPLINE_PRESETS, CURRENCIES} from "../catalog.js";
 import {createAcademy} from "../shell.js";
 import {t, tn} from "../i18n.js";
+import {estadoEf} from "../cobros.js";
 
 export function render(el){
   const a = S.academy(), cur = a.moneda || "COP";
-  const sedes = S.sedes(), discs = S.disciplinas();
-  const nAl = sid => S.alumnos({sede: sid}).filter(x => x.estado === "activo").length;
+  const sedes = S.sedes(), discs = S.disciplinas(), clases = S.clases();
+  const nAl = sid => S.alumnos({sede: sid}).filter(x => estadoEf(x) === "activo").length;
   const nAc = id => S.inAcad("alumnos", id).length;
-  const nDisc = did => S.alumnos({sede: ""}).filter(x => x.estado === "activo" && (x.disciplinaIds || []).includes(did)).length;
+  const nDisc = did => S.alumnos({sede: ""}).filter(x => estadoEf(x) === "activo" && (x.disciplinaIds || []).includes(did)).length;
 
   el.innerHTML = `
   <section class="card acad-card">
@@ -28,6 +29,12 @@ export function render(el){
       <div class="mini-tags">${S.discsOfSede(s.id).map(d => `<span class="tag" style="--dc:${d.color}"><span class="dot" style="background:${d.color}"></span>${esc(t(d.nombre))}</span>`).join("") || `<span class="muted small">${t("Sin disciplinas")}</span>`}</div>
       ${s.horario ? `<pre class="small muted sched">${esc(s.horario)}</pre>` : ""}
     </button>`).join("")}</div>
+  </section>
+
+  <section class="card hz-acad">
+    <header class="card-h"><h3>${icon("clock")} ${t("Horario de clases")} <span class="count-b">${clases.length}</span></h3><a class="btn small ghost" href="#/horario">${clases.length ? t("Ver horario") : t("Crear horario")}</a></header>
+    ${clases.length ? `<div class="list">${sedes.map(s => { const n = clases.filter(c => c.sedeId === s.id).length; return `<a class="li" href="#/horario" data-hz-sede="${s.id}">${icon("map")}<div class="li-main"><b>${esc(s.nombre)}</b><span class="muted small">${n ? tn(n, "1 clase por semana", "{n} clases por semana") : t("Sin clases en el horario")}</span></div>${icon("chevron", "muted")}</a>`; }).join("")}</div>`
+    : `<p class="muted small">${t("Arma el horario semanal de cada sede: la asistencia abre sola la clase que está empezando y puedes usar el modo kiosco para que los alumnos se registren al llegar.")}</p>`}
   </section>
 
   <section class="card">
@@ -55,9 +62,10 @@ export function render(el){
       {k: "lema", label: t("Lema / descripción")},
     ], danger: S.academies().length > 1 ? {label: t("Eliminar academia"), fn: async () => {
       if(!await confirmDlg(t("Se eliminará {nombre} con todas sus sedes, alumnos y pagos. No se puede deshacer.", {nombre: a.nombre}))) return false;
-      for(const c of ["sedes", "disciplinas", "alumnos", "pagos", "asistencias"]) for(const r of S.inAcad(c, a.id)) S.del(c, r.id);
+      for(const c of ["sedes", "disciplinas", "alumnos", "pagos", "asistencias", "clases", "leads", "evaluaciones", "notas"]) for(const r of S.inAcad(c, a.id)) S.del(c, r.id);
       S.del("academias", a.id); S.setPref("academia", ""); S.setPref("sede", ""); return true;
     }} : null, onSave: v => { S.put("academias", Object.assign({id: a.id}, v)); toast(t("Academia actualizada")); }});
+    const hz = tg.closest("[data-hz-sede]"); if(hz && sedes.length > 1) S.setPref("sede", hz.dataset.hzSede);
     if(tg.closest("[data-new-sede]")) return sedeModal();
     const s = tg.closest("[data-sede]"); if(s) return sedeModal(S.get("sedes", s.dataset.sede));
     const d = tg.closest("[data-disc]"); if(d) return disciplineModal(S.get("disciplinas", d.dataset.disc));

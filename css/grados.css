@@ -1,0 +1,131 @@
+/* Grados: preparación, evaluación del currículo, impresión y podio del ranking */
+.sr{position:absolute!important;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* insignias de preparación */
+.rbs{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.rb{display:inline-flex;align-items:center;gap:3px;font-size:11.5px;font-weight:650;line-height:1;padding:4px 7px;border-radius:999px;white-space:nowrap;border:1px solid var(--line);color:var(--muted);background:var(--surface2)}
+.rb .ic{width:12px;height:12px}
+.rb.ok{color:color-mix(in srgb,var(--ok) 80%,var(--text));background:color-mix(in srgb,var(--ok) 13%,transparent);border-color:color-mix(in srgb,var(--ok) 30%,transparent)}
+.rb.warn{color:color-mix(in srgb,var(--warn) 75%,var(--text));background:color-mix(in srgb,var(--warn) 13%,transparent);border-color:color-mix(in srgb,var(--warn) 30%,transparent)}
+
+/* filas de Listos / Casi listos: una por alumno, una línea por disciplina */
+.rd-row{align-items:flex-start}
+.rd-row > .li-main{min-width:0;flex:1}
+.rd-name{color:inherit;text-decoration:none}
+.rd-name:hover b{text-decoration:underline}
+.rd-line{display:flex;gap:8px;align-items:flex-start;justify-content:space-between;padding-top:6px;margin-top:6px;border-top:1px dashed var(--line)}
+.rd-line:first-of-type{border-top:0;margin-top:2px;padding-top:2px}
+.rd-info{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.rd-info > .muted.small{white-space:normal}
+.rd-act{display:flex;gap:6px;flex:none;align-items:center}
+.rd-act .btn .ic{width:15px;height:15px}
+.rd-line{flex-wrap:wrap}
+.rd-info{flex:1 1 170px}
+.rd-act{align-self:flex-end;margin-left:auto}
+.rd-act .btn{min-height:40px}
+.gr-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.gr-h .btn{margin-left:auto}
+.tbl-wrap{overflow-x:auto;max-width:100%}
+
+/* modal Evaluar */
+.ev-sum{position:sticky;top:-6px;z-index:2;background:var(--surface);padding:10px 0 6px;margin:8px 0 4px;box-shadow:0 8px 8px -8px rgba(0,0,0,.35)}
+@media (max-width:520px){ .ev-modal [data-wa] span{display:none} }
+.ev-sum-h{display:flex;justify-content:space-between;gap:8px;align-items:baseline;flex-wrap:wrap;margin-bottom:6px}
+.ev-sum-h .ic{width:14px;height:14px;vertical-align:-2px}
+.progress.ok span{background:var(--ok)}
+.ev-tools{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:4px 0 10px}
+.ev-blk{margin:0 0 14px}
+.ev-blk h4{display:flex;align-items:center;gap:8px;margin:12px 0 4px;font-size:14.5px}
+.ev-g{font-size:11px;font-weight:750;padding:2px 7px;border-radius:6px;background:var(--surface2);border:1px solid var(--line);color:var(--muted);white-space:nowrap}
+.ev-cat{margin:10px 0 4px;font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--muted)}
+.ev-it{padding:8px 0;border-bottom:1px solid var(--line)}
+.ev-it p{margin:0 0 6px;font-size:14px;line-height:1.35}
+.ev-crit{display:inline-flex;vertical-align:-2px;margin-right:4px;color:#d4a017}
+.ev-crit .ic{width:15px;height:15px;fill:currentColor}
+.ev-seg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border:1px solid var(--line2,var(--line));border-radius:10px;overflow:hidden}
+.ev-seg label{position:relative;display:flex;cursor:pointer;min-width:0}
+.ev-seg label + label{border-left:1px solid var(--line)}
+.ev-seg input{position:absolute;opacity:0;pointer-events:none}
+.ev-seg span{flex:1;display:grid;place-items:center;text-align:center;font-size:11.5px;font-weight:600;padding:9px 2px;min-height:40px;line-height:1.1;color:var(--muted);overflow-wrap:anywhere}
+.ev-seg input:focus-visible + span{outline:2px solid var(--accent);outline-offset:-2px}
+.ev-seg .n0 input:checked + span{background:var(--surface2);color:var(--text)}
+.ev-seg .n1 input:checked + span{background:color-mix(in srgb,var(--warn) 22%,transparent);color:var(--text)}
+.ev-seg .n2 input:checked + span{background:color-mix(in srgb,#38bdf8 25%,transparent);color:var(--text)}
+.ev-seg .n3 input:checked + span{background:color-mix(in srgb,var(--ok) 28%,transparent);color:var(--text)}
+.ev-it[data-n="3"] p{color:var(--muted)}
+
+/* readiness en la ficha del alumno */
+.rd-card{margin-top:10px;padding:10px 12px;border:1px solid var(--line);border-radius:12px;background:var(--surface2)}
+.rd-card.ready{border-color:color-mix(in srgb,var(--ok) 45%,transparent);background:color-mix(in srgb,var(--ok) 8%,var(--surface2))}
+.rd-card-h{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.rd-card .rd-act{margin-top:8px;flex-wrap:wrap}
+.rd-card .rd-act .btn{flex:0 1 auto}
+
+/* currículo imprimible: solo existe al imprimir */
+.print-cur{display:none}
+@media print{
+  body.printing-cur > *:not(.print-cur){display:none!important}
+  body.printing-cur{background:#fff!important;color:#000!important}
+  body.printing-cur .print-cur,body.printing-cur .print-cur *{visibility:visible!important}
+  .print-cur{display:block;page:cur;font:12px/1.4 Inter,system-ui,sans-serif;color:#000}
+  .print-cur header{border-bottom:2px solid #000;margin-bottom:10px;padding-bottom:6px}
+  .print-cur h1{font-size:20px;margin:2px 0}
+  .print-cur h2{font-size:16px;margin:14px 0 4px;display:flex;align-items:center;gap:8px;break-after:avoid}
+  .print-cur h2 small{font-weight:500;font-size:11px;color:#444}
+  .print-cur h3{font-size:13px;margin:8px 0 2px;break-after:avoid}
+  .print-cur ul{list-style:none;margin:0;padding:0;columns:2;column-gap:20px}
+  .print-cur li{break-inside:avoid;padding:2px 0;display:flex;gap:6px;align-items:flex-start}
+  .print-cur li small{color:#555}
+  .pc-box{flex:none;width:11px;height:11px;border:1.4px solid #000;border-radius:2px;margin-top:2px}
+  .pc-rank{break-inside:auto}
+  @page cur{size:A4 portrait;margin:12mm}
+  html:has(body.printing-cur){background:#fff!important}
+}
+
+/* ---------- podio del ranking ---------- */
+.pod-wrap{align-items:end}
+.pod-base{display:grid;place-items:center;font-weight:850;font-size:30px;line-height:1;color:rgba(0,0,0,.55);border:0;background:none;position:relative}
+.pod-base small{display:block;font-size:11px;font-weight:650;color:inherit;opacity:.85;margin-top:2px}
+.p1 .pod-base{height:96px;background:linear-gradient(180deg,#f7d774,#c9971a)}
+.p2 .pod-base{height:72px;background:linear-gradient(180deg,#e9ecf1,#a3aab5)}
+.p3 .pod-base{height:54px;background:linear-gradient(180deg,#eab38a,#a8652f)}
+.pod-base .pod-n{display:flex;flex-direction:column;align-items:center}
+.pod .pod-medal{display:none}
+.p1 .avatar{box-shadow:0 0 0 3px #e3b53a}
+.p2 .avatar{box-shadow:0 0 0 3px #b8bec8}
+.p3 .avatar{box-shadow:0 0 0 3px #c07a45}
+.pod b{max-width:100%;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+@media (max-width:520px){
+  .p1 .pod-base{height:76px} .p2 .pod-base{height:56px} .p3 .pod-base{height:42px}
+  .pod-base{font-size:24px}
+}
+
+/* ---------- ficha del alumno: lesión, riesgo, tiquetera y notas ---------- */
+.tag.lesion{color:var(--err);background:var(--err-bg);border-color:color-mix(in srgb,var(--err) 35%,transparent);cursor:pointer;font:inherit;font-size:12px;font-weight:700}
+.pf-risk{display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:space-between;margin:0 0 12px;padding:10px 14px;border-radius:var(--r2);background:color-mix(in srgb,var(--warn) 10%,var(--surface));border:1px solid color-mix(in srgb,var(--warn) 32%,transparent)}
+.pf-risk.alto{background:color-mix(in srgb,var(--err) 9%,var(--surface));border-color:color-mix(in srgb,var(--err) 30%,transparent)}
+.pf-risk > div{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 200px}
+.pf-risk b{display:flex;align-items:center;gap:6px;color:var(--warn)}
+.pf-risk.alto b{color:var(--err)}
+.pf-risk b .ic{width:16px;height:16px}
+.tiq-card{display:flex;align-items:center;gap:10px;justify-content:space-between;flex-wrap:wrap;padding:10px 12px;margin:0 0 12px;border-radius:var(--r2);border:1px solid var(--line);background:var(--surface2)}
+.tiq-card > div{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1 1 180px}
+.tiq-card.low{border-color:color-mix(in srgb,var(--warn) 45%,transparent)}
+.tiq-card.bad{border-color:color-mix(in srgb,var(--err) 45%,transparent)}
+.tiq-card .progress.thin{max-width:none}
+.nt-add{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.nt-add textarea{width:100%;min-height:64px;border:1px solid var(--line);border-radius:var(--r2);background:var(--bg2);padding:10px;resize:vertical}
+.nt-add input[type=date]{min-height:40px;border:1px solid var(--line);border-radius:var(--r2);background:var(--bg2);padding:0 10px;max-width:100%}
+.nt-add .row{display:flex;justify-content:space-between;flex-wrap:wrap}
+.nt-tl{list-style:none;margin:0;padding:0 0 0 14px;border-left:2px solid var(--line);display:flex;flex-direction:column;gap:12px}
+.nt-tl li{position:relative;--nc:var(--muted)}
+.nt-tl li::before{content:"";position:absolute;left:-21px;top:5px;width:12px;height:12px;border-radius:50%;background:var(--nc);box-shadow:0 0 0 3px var(--surface)}
+.nt-tl .nt-tecnica{--nc:var(--info)} .nt-tl .nt-lesion{--nc:var(--err)} .nt-tl .nt-conducta{--nc:var(--warn)}
+.nt-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.nt-h .btn-link{margin-left:auto}
+.nt-tipo{font-size:11.5px;font-weight:750;text-transform:uppercase;letter-spacing:.04em;color:var(--nc)}
+.nt-tl p{margin:3px 0 0;overflow-wrap:anywhere}
+.nt-arch{margin-top:14px}
+.nt-arch summary{cursor:pointer;color:var(--muted);font-weight:600;margin-bottom:10px}
+.nt-arch li{opacity:.7}
+.carne-prev{display:flex;justify-content:center;padding:4px 0 10px}

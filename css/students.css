@@ -15,11 +15,23 @@
 .student-form .ranks-init:empty{display:none}
 .rank-init select:disabled{opacity:.5}
 
+/* congelado con fechas, precio por defecto y pie del alumno nuevo en una fila */
+.frz{flex:1 1 100%;display:flex;flex-wrap:wrap;gap:12px;padding:10px 12px;border-radius:12px;background:var(--surface2);border:1px dashed var(--line2)}
+.sf-foot{display:flex;align-items:center;gap:12px;width:100%;flex-wrap:nowrap}
+.sf-foot .sf-pay{flex:1;min-width:0;font-size:14px}
+.sf-foot .sf-pay span{overflow:hidden;text-overflow:ellipsis}
+.sf-foot .btn-link{flex:none}
+.sf-foot .btn.primary{flex:none}
+/* disciplina: columna de clases mínimas */
+.re-head,.re-row{grid-template-columns:minmax(110px,2fr) 48px 64px 72px 80px 70px 70px}
+
 /* ---------- aviso de pago rápido: chips de método ---------- */
 .toast.has-chips{flex-wrap:wrap;max-width:100%}
-.toast-chips{display:flex;gap:6px;flex-basis:100%;padding-left:28px}
+.toast-chips{display:flex;flex-wrap:wrap;gap:6px;flex-basis:100%;padding-left:28px}
 .toast-chip{border:1px solid #3a4258;background:transparent;color:#cfd5e2;border-radius:999px;padding:5px 11px;font:inherit;font-size:12.5px;font-weight:650;cursor:pointer;min-height:32px}
 .toast-chip.on{background:#fff;color:#1d2230;border-color:#fff}
+.toast-rec{display:inline-flex;align-items:center;gap:5px;text-decoration:none;margin-left:auto}
+.toast-rec .ic{width:14px;height:14px}
 .toast-chip:focus-visible{outline:2px solid #fff;outline-offset:2px}
 @media (pointer:coarse){ .toast-chip{min-height:40px;padding:6px 14px} }
 
@@ -33,12 +45,21 @@
 .debt-opt.primary{border-color:var(--ok);background:var(--ok-bg)}
 .debt-opt.primary b{color:var(--ok)}
 
-/* ---------- filas de Pagos en 2 líneas ---------- */
+/* ---------- Pagos: pestañas con enlace a Reportes, consejo de un solo uso ---------- */
+.pay-tabs{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.pay-tabs .tabs{margin-bottom:0;flex:1;min-width:0}
+.pay-rep{flex:none}
+.pay-tip{display:flex;align-items:flex-start;gap:10px;background:var(--info-bg);border-radius:12px;padding:10px 6px 10px 12px;margin:0 0 12px}
+.pay-tip > .ic{color:var(--info);flex:none;margin-top:2px}
+.pay-tip p{margin:0;flex:1;font-size:13px;line-height:1.45}
+.pay-tip .icon-btn{flex:none;margin-top:-4px}
+
+/* ---------- filas de Pagos en 2 líneas: nombre arriba, píldora y valor abajo ---------- */
 .pay-row{gap:8px}
-.pr-link{flex:1;min-width:0;display:grid;grid-template-columns:40px minmax(0,1fr) auto;grid-template-areas:"av nm amt" "av mt mt";column-gap:12px;row-gap:3px;align-items:center}
+.pr-link{flex:1;min-width:0;display:grid;grid-template-columns:40px minmax(0,1fr) auto;grid-template-areas:"av nm nm" "av mt amt";column-gap:12px;row-gap:3px;align-items:center}
 .pr-link > .avatar{grid-area:av}
 .pr-name{grid-area:nm;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
-.pr-amt{grid-area:amt;font-weight:700;font-size:14px;white-space:nowrap}
+.pr-amt{grid-area:amt;font-weight:700;font-size:14px;white-space:nowrap;justify-self:end;align-self:start;font-variant-numeric:tabular-nums}
 .pr-amt.err{color:var(--err)}
 .pr-meta{grid-area:mt;display:flex;align-items:center;gap:6px 8px;flex-wrap:wrap;min-width:0}
 .pr-meta .muted{min-width:0;overflow-wrap:anywhere}
@@ -62,7 +83,6 @@
 .remind-it input{width:18px;height:18px;flex:none;accent-color:var(--accent)}
 .remind-it.sent{opacity:.65}
 .remind-ok{color:var(--ok);display:inline-flex}
-.remind-ok[hidden]{display:none}
 
 /* ---------- lista de alumnos ---------- */
 .f-desk{display:contents}
@@ -80,10 +100,27 @@
 .st-card2 .st-belts{min-height:36px;justify-content:flex-start}
 .st-foot2{display:grid;gap:5px;justify-items:center;margin-top:auto;min-height:48px;align-content:start}
 .st-foot2 .pill{white-space:normal;text-align:center;justify-content:center}
-.st-row .li-link{flex:1}
+.st-row .li-link{flex:1;min-width:0}
+/* etiqueta corta de disciplina (BJJ, MT, MMA) */
+.dtag{display:inline-flex;align-items:center;height:18px;padding:0 6px;border-radius:5px;font-size:10.5px;font-weight:800;letter-spacing:.03em;color:var(--text);
+  background:color-mix(in srgb,var(--dc) 22%,var(--surface));border:1px solid color-mix(in srgb,var(--dc) 55%,transparent);flex:none;white-space:nowrap}
+.mini-belt{gap:5px}
+.st-nm{display:flex;align-items:center;gap:6px;min-width:0}
+.st-nm b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0;flex:0 1 auto}
+.st-tags{display:none;gap:3px;flex:none}
+.st-tags:empty{display:none}
+.st-sub{display:flex;align-items:center;gap:6px;min-width:0;flex-wrap:nowrap}
+.st-sub .pill{flex:none}
+.st-sub .muted{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.st-foot2{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:4px 6px}
+.st-bulk{flex:none}
 
 /* ---------- tienda ---------- */
-.kpi b.kpi-tallas{white-space:normal;font-size:16px;line-height:1.3}
+.kpi .kpi-tallas{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:4px}
+.tn-size{display:inline-flex;align-items:baseline;gap:2px;border:1px solid var(--line2);background:var(--surface2);border-radius:7px;padding:2px 7px;font-size:13px;color:var(--text)}
+.kpi .tn-size b{display:inline;font-size:13px;font-weight:800;letter-spacing:0}
+.tn-size i{font-style:normal;font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums}
+.tn-filters .chip-row{flex:1 1 100%}
 .tn-act{flex:none}
 
 @media (max-width:760px){
@@ -91,16 +128,38 @@
   .st-filters .f-btn.only-m{display:inline-flex!important}
   .st-filters .seg.small:first-child{flex:1 1 100%;overflow-x:auto}
   .pay-row{padding:10px 4px}
-  .pr-name{white-space:normal;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;line-clamp:2;overflow-wrap:anywhere;line-height:1.25}
-  .pr-amt{font-size:13.5px;align-self:start}
+  /* en el celular el valor sube a la línea del nombre para que la píldora tenga todo el ancho */
+  .pr-link{grid-template-areas:"av nm amt" "av mt mt"}
+  .pr-amt{font-size:13.5px}
+  .pr-meta .muted.small{flex-basis:100%}
+  /* indicadores en tira horizontal de ~64 px */
+  .kpis.pay-kpis{display:flex;overflow-x:auto;gap:8px;margin:0 -14px 14px;padding:0 14px 4px;scroll-snap-type:x proximity;scroll-padding-inline:14px;scrollbar-width:none}
+  .kpis.pay-kpis::-webkit-scrollbar{display:none}
+  .pay-kpis .kpi{flex:0 0 auto;height:64px;padding:8px 16px 8px 8px;gap:10px;border-radius:999px;scroll-snap-align:start;max-width:78vw;flex-direction:row;align-items:center}
+  .pay-kpis .kpi div{width:auto}
+  .pay-kpis .kpi-ic{width:44px;height:44px;border-radius:50%}
+  .pay-kpis .kpi b{font-size:17px}
+  .pay-kpis .kpi span{font-size:12px;white-space:nowrap}
+  .pay-tabs{gap:8px}
+  .pay-rep span{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
+  .pay-rep{width:44px;height:44px;padding:0;justify-content:center}
   .pay-row .paycheck{width:44px;height:44px}
   .tn-li{gap:8px}
-  .tn-act .btn span{display:none}
+  /* sin baldosa huérfana: la de tallas ocupa la fila entera */
+  .tn-kpis .kpi:last-child{grid-column:1/-1}
+  .tn-act .btn span{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap;border:0}
   .tn-act .btn{width:44px;height:44px;padding:0}
   .st-card2 .st-pay{top:6px;right:6px}
+  .st-tags{display:inline-flex}
+  .st-bulk{width:44px;height:44px;padding:0;justify-content:center}
   .student-form .rank-init{grid-template-columns:10px minmax(0,1fr) minmax(0,1fr)}
   .student-form .rank-init b{grid-column:2/4}
   .student-form .rank-init select[name^=rk_]{grid-column:1/3}
   .student-form .rank-init input{grid-column:1/-1}
-  .modal-f:has([data-savepay]) .btn,.modal-f:has([data-inact]) .btn{flex:1 1 auto}
+  .modal-f:has([data-inact]) .btn{flex:1 1 auto}
+  .sf-foot{gap:10px}
+  .sf-foot .sf-pay{font-size:13.5px}
+  .re-row{grid-template-columns:1fr 44px 56px 56px}
+  .re-row input[data-f=cl]{grid-column:2/4}
+  .re-row .re-act{grid-column:4/5}
 }

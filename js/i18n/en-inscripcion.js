@@ -1,0 +1,20 @@
+/* Traducciones al inglés: página pública de inscripción (inscripcion.html). */
+export default {
+  "Página de inscripción": "Sign-up",
+  "Este link no es válido": "This link isn't valid",
+  "Pídele a la academia que te comparta su link de inscripción de nuevo.": "Ask the academy to share their sign-up link again.",
+  "Elige una opción": "Choose an option",
+  "Déjanos tus datos y te escribimos para agendar tu primera clase.": "Leave your details and we'll message you to book your first class.",
+  "¿Qué quieres entrenar?": "What do you want to train?",
+  "¿Cómo nos conociste?": "How did you hear about us?",
+  "Ej: quiero empezar en las noches, nunca he entrenado": "E.g. I'd like to start in the evenings, I've never trained",
+  "Enviar por WhatsApp": "Send via WhatsApp",
+  "Al enviar se abre WhatsApp con tus datos. Nada se guarda en esta página.": "Sending opens WhatsApp with your details. Nothing is stored on this page.",
+  "Hecho con AcademiaPro": "Made with AcademiaPro",
+  "Escribe tu nombre y tu teléfono.": "Enter your name and phone number.",
+  "Revisa el número de teléfono.": "Check the phone number.",
+  "Me lo recomendaron": "Someone recommended it",
+  "Volante o afiche": "Flyer or poster",
+  "Pasaba por ahí": "Walked by",
+  "Página web o Google": "Website or Google",
+};

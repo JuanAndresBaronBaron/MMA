@@ -2,6 +2,7 @@ import * as S from "../store.js";
 import {icon, avatar, belt, empty, rankLabel} from "../ui.js";
 import {esc, fmtDuration, fmtDate} from "../util.js";
 import {t} from "../i18n.js";
+import {estadoEf} from "../cobros.js";
 
 const st = {disc: "", vista: "podio"};
 
@@ -11,7 +12,7 @@ export function render(el){
   if(!discs.find(d => d.id === st.disc)) st.disc = discs[0].id;
   const d = S.get("disciplinas", st.disc);
   /* orden: cinturón, grado y antigüedad en ese grado (quien lo tiene hace más tiempo va primero) */
-  const rows = S.alumnos().filter(a => a.estado === "activo" && (a.disciplinaIds || []).includes(d.id)).map(a => {
+  const rows = S.alumnos().filter(a => estadoEf(a) === "activo" && (a.disciplinaIds || []).includes(d.id)).map(a => {
     const h = S.gradosDe(a.id, d.id);
     const g = h[h.length - 1];
     return {a, g, ini: g ? S.inicioCinturon(h) : null};
@@ -22,14 +23,13 @@ export function render(el){
   });
   const ranked = rows.filter(r => r.g);
   const top = ranked.slice(0, 3);
-  const pod = (r, i) => r ? `<a class="pod p${i + 1}" href="#/alumno/${r.a.id}">
-      <span class="pod-medal">${i + 1}</span>
-      ${avatar(r.a, i === 0 ? 112 : 88)}
+  /* podio: pedestal con el puesto, más alto el 1.º; solo si hay al menos 3 con grado */
+  const pod = (r, i) => `<a class="pod p${i + 1}" href="#/alumno/${r.a.id}">
+      ${avatar(r.a, i === 0 ? 96 : 76)}
       <b>${esc(r.a.nombre)}</b>
-      <span class="pod-belt">${belt(d, r.g.rank, r.g.grado, {w: 120, h: 20})}</span>
+      <span class="pod-belt">${belt(d, r.g.rank, r.g.grado, {w: 110, h: 18})}</span>
       <span class="muted small">${esc(rankLabel(d, r.g))}</span>
-      <div class="pod-base"></div></a>` : `<div class="pod p${i + 1} empty"></div>`;
-
+      <div class="pod-base" aria-label="${t("Puesto {n}", {n: i + 1})}"><span class="pod-n">${t(["1.º", "2.º", "3.º"][i])}</span></div></a>`;
   let lastRank = -1, n = 0;
   const list = rows.map(r => {
     n++;
@@ -53,10 +53,10 @@ export function render(el){
     ${discs.map(x => `<label class="chip" style="--dc:${x.color}"><input type="radio" name="disc" value="${x.id}" ${st.disc === x.id ? "checked" : ""}><span>${esc(t(x.nombre))}</span></label>`).join("")}
   </div></div>
   ${rows.length ? `
-  <section class="podium card">
+  ${top.length >= 3 ? `<section class="podium card">
     <h3 class="pod-title">${icon("trophy")} ${esc(t(d.nombre))}${S.curSede() ? " · " + esc(S.get("sedes", S.curSede()).nombre) : ""}</h3>
     <div class="pod-wrap">${pod(top[1], 1)}${pod(top[0], 0)}${pod(top[2], 2)}</div>
-  </section>
+  </section>` : ""}
   <section class="card flush ranking">${list}</section>
   <p class="muted small">${t("Orden: cinturón, luego grado y, a igual grado, quien lo tiene desde hace más tiempo.")}</p>`
   : empty("users", t("Nadie entrena esta disciplina"), t("Asigna la disciplina a tus alumnos para verlos en el ranking."))}`;

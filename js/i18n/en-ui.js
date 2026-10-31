@@ -14,4 +14,8 @@ export default {
   "Nada para elegir": "Nothing to choose from",
   "Guardar": "Save",
   "Completa los campos obligatorios": "Fill in the required fields",
+  "Archivo descargado": "File downloaded",
+  "{n} archivos descargados": "{n} files downloaded",
+  "Copiado. Pégalo donde quieras.": "Copied. Paste it anywhere.",
+  "No se pudo compartir en este aparato": "Couldn't share on this device",
 };
