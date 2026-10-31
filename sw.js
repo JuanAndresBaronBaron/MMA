@@ -3,7 +3,7 @@
    Al cambiar archivos, subir VERSION. */
 const VERSION = 4;
 const CACHE = "mma-v" + VERSION;
-const SHELL = ["./", "index.html", "privacy.html", "manifest.webmanifest", "css/app.css", "css/entreno.css", "icons/icon.svg", "icons/icon-192.png",
+const SHELL = ["./", "index.html", "privacy.html", "manifest.webmanifest", "css/app.css", "css/entreno.css", "css/dash.css", "css/tracking.css", "css/students.css", "icons/icon.svg", "icons/icon-192.png",
   "js/app.js", "js/util.js", "js/catalog.js", "js/store.js", "js/sync.js", "js/config.js", "js/ui.js", "js/forms.js", "js/demo.js",
   "js/views/dashboard.js", "js/views/alumnos.js", "js/views/alumno.js", "js/views/pagos.js", "js/views/grados.js", "js/views/ranking.js",
   "js/views/asistencia.js", "js/views/tienda.js", "js/views/academia.js", "js/views/ajustes.js", "js/views/entreno.js", "js/entreno/index.js",
