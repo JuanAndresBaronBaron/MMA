@@ -279,4 +279,6 @@ export default {
   "Anterior": "Previous", "Cómo avanzar": "How to progress",
   /* lectura en voz alta */
   "Términos de la lista": "Terms in the list",
+  /* imágenes de técnica (boxeo) */
+  "Ampliar imagen": "Enlarge image", "Imagen {n} de {m}": "Image {n} of {m}",
 };

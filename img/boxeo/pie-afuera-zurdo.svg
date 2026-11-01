@@ -1,0 +1,79 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#FFFFFF" stroke-opacity="0.05" stroke-width="1"/>
+    </pattern>
+    <pattern id="hatch" width="14" height="14" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <line x1="0" y1="0" x2="0" y2="14" stroke="#C8102E" stroke-opacity="0.35" stroke-width="4"/>
+    </pattern>
+    <path id="sole" d="M6,-84 C26,-84 37,-66 35,-42 C33,-20 22,-4 20,14 C18,32 26,50 24,66 C22,82 10,88 0,88 C-14,88 -25,80 -25,64 C-25,46 -29,22 -33,0 C-37,-24 -37,-50 -31,-64 C-25,-78 -10,-84 6,-84 Z"/>
+    <marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#E8E4DC"/></marker>
+    <marker id="ahr" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#C8102E"/></marker>
+    <marker id="aho" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#8FA35A"/></marker>
+    <clipPath id="heel"><rect x="-40" y="46" width="80" height="50"/></clipPath>
+  </defs>
+  <rect x="0" y="0" width="800" height="600" rx="28" fill="#1A1A1A"/>
+  <rect x="0" y="0" width="800" height="600" rx="28" fill="url(#grid)"/>
+
+  <!-- danger zone: southpaw's rear (left) hand, on the orthodox fighter's right -->
+  <path d="M500,175 L760,330 L760,560 L560,560 Z" fill="url(#hatch)"/>
+  <path d="M500,175 L760,330 L760,560 L560,560 Z" fill="#C8102E" fill-opacity="0.10" stroke="#C8102E" stroke-opacity="0.55" stroke-width="2.5" stroke-dasharray="8 8" stroke-linejoin="round"/>
+  <!-- southpaw rear glove -->
+  <circle cx="528" cy="196" r="18" fill="#3A3A3C" stroke="#C8102E" stroke-width="3"/>
+
+  <!-- SOUTHPAW (top, facing down): right foot forward, left foot back -->
+  <!-- body / target -->
+  <g transform="translate(455,165)">
+    <circle r="40" fill="#3A3A3C" stroke="#8E8E93" stroke-width="2"/>
+    <circle r="22" fill="none" stroke="#C8102E" stroke-width="3"/>
+    <circle r="7" fill="#C8102E"/>
+  </g>
+  <!-- lead (right) foot pointing down -->
+  <g transform="translate(390,250) rotate(180) scale(0.6)">
+    <use href="#sole" transform="scale(-1,1)" fill="#3A3A3C" stroke="#8E8E93" stroke-width="3.5"/>
+  </g>
+  <!-- rear (left) foot turned out -->
+  <g transform="translate(545,95) rotate(135) scale(0.6)">
+    <use href="#sole" fill="#3A3A3C" stroke="#8E8E93" stroke-width="3.5"/>
+  </g>
+
+  <!-- ORTHODOX START: faded outlines, lead foot inside, in line with the southpaw lead foot -->
+  <g fill="none" stroke-width="4.5" stroke-dasharray="10 8" opacity="0.7">
+    <use href="#sole" transform="translate(395,395) rotate(0) scale(0.6)" stroke="#E35A6E"/>
+    <use href="#sole" transform="translate(545,505) rotate(45) scale(0.6) scale(-1,1)" stroke="#9FB0C0"/>
+  </g>
+
+  <!-- step 1: lead foot steps OUTSIDE the southpaw lead foot -->
+  <path d="M378,350 Q340,318 318,322" fill="none" stroke="#E8E4DC" stroke-width="5" stroke-linecap="round" marker-end="url(#ah)"/>
+
+  <!-- rear foot follows -->
+  <path d="M520,520 Q490,535 468,515" fill="none" stroke="#9FB0C0" stroke-width="4" stroke-linecap="round" stroke-dasharray="2 8" opacity="0.8"/>
+
+  <!-- highlight: outside foot -->
+  <ellipse cx="290" cy="355" rx="44" ry="70" fill="#B5A160" fill-opacity="0.12" stroke="#B5A160" stroke-width="3" stroke-dasharray="6 6"/>
+
+  <!-- step 2: right hand straight down the centre to the target -->
+  <line x1="380" y1="418" x2="446" y2="214" stroke="#C8102E" stroke-width="6" stroke-linecap="round" marker-end="url(#ahr)"/>
+
+  <!-- ORTHODOX END: solid, lead foot outside -->
+  <g transform="translate(290,355) rotate(8) scale(0.6)">
+    <use href="#sole" fill="#C8102E" stroke="#F2B8C0" stroke-width="3"/>
+  </g>
+  <g transform="translate(440,470) rotate(45) scale(0.6)">
+    <use href="#sole" transform="scale(-1,1)" fill="#6B7F92" stroke="#C9D3DC" stroke-width="3"/>
+    <g clip-path="url(#heel)"><use href="#sole" transform="scale(-1,1)" fill="#2B333B" opacity="0.75"/></g>
+    <g stroke="#C9D3DC" stroke-width="3.5" stroke-linecap="round" opacity="0.9">
+      <line x1="-14" y1="58" x2="14" y2="58"/><line x1="-16" y1="68" x2="16" y2="68"/><line x1="-12" y1="78" x2="12" y2="78"/>
+    </g>
+  </g>
+
+  <!-- step 3: exit to the orthodox fighter's left, away from the danger zone -->
+  <path d="M250,450 Q170,500 110,420" fill="none" stroke="#8FA35A" stroke-width="6" stroke-linecap="round" marker-end="url(#aho)"/>
+
+  <!-- step markers -->
+  <g font-family="-apple-system, Helvetica, Arial, sans-serif" font-size="20" font-weight="700" text-anchor="middle" fill="#FFFFFF">
+    <circle cx="365" cy="300" r="16" fill="#E8E4DC"/><text x="365" y="307" fill="#1A1A1A">1</text>
+    <circle cx="448" cy="330" r="16" fill="#C8102E"/><text x="448" y="337">2</text>
+    <circle cx="160" cy="505" r="16" fill="#8FA35A"/><text x="160" y="512" fill="#1A1A1A">3</text>
+  </g>
+</svg>

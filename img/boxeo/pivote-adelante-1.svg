@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#FFFFFF" stroke-opacity="0.05" stroke-width="1"/>
+    </pattern>
+    <path id="sole" d="M6,-84 C26,-84 37,-66 35,-42 C33,-20 22,-4 20,14 C18,32 26,50 24,66 C22,82 10,88 0,88 C-14,88 -25,80 -25,64 C-25,46 -29,22 -33,0 C-37,-24 -37,-50 -31,-64 C-25,-78 -10,-84 6,-84 Z"/>
+    <marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#E8E4DC"/>
+    </marker>
+    <marker id="ahb" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#B5A160"/>
+    </marker>
+    <marker id="ahg" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#8E8E93"/>
+    </marker>
+    <clipPath id="heel"><rect x="-40" y="46" width="80" height="50"/></clipPath>
+  </defs>
+  <rect x="0" y="0" width="800" height="600" rx="28" fill="#1A1A1A"/>
+  <rect x="0" y="0" width="800" height="600" rx="28" fill="url(#grid)"/>
+  <g transform="translate(64,64)">
+    <circle r="30" fill="#C8102E"/>
+    <text y="11" text-anchor="middle" font-family="-apple-system, Helvetica, Arial, sans-serif" font-size="32" font-weight="700" fill="#FFFFFF">1</text>
+  </g>
+  <g transform="translate(340,92)">
+    <circle r="40" fill="#3A3A3C" stroke="#8E8E93" stroke-width="2"/>
+    <circle r="22" fill="none" stroke="#B5A160" stroke-width="3"/>
+    <circle r="9" fill="#B5A160"/>
+  </g>
+  <line x1="360.0" y1="135.6" x2="381.7" y2="183.2" stroke="#8E8E93" stroke-width="4" stroke-dasharray="12 10" stroke-linecap="round" marker-end="url(#ahg)"/>
+  <use href="#sole" transform="translate(380.0,300.0) rotate(0) scale(0.85)" fill="#C8102E" stroke="#F2B8C0" stroke-width="2.4"/>
+  <g transform="translate(550.0,430.0) rotate(45) scale(0.85)">
+    <use href="#sole" transform="scale(-1,1)" fill="#6B7F92" stroke="#C9D3DC" stroke-width="2.4"/>
+    <g clip-path="url(#heel)"><use href="#sole" transform="scale(-1,1)" fill="#2B333B" opacity="0.75"/></g>
+    <g stroke="#C9D3DC" stroke-width="2.5" stroke-linecap="round" opacity="0.9">
+      <line x1="-14" y1="58" x2="14" y2="58"/><line x1="-16" y1="68" x2="16" y2="68"/><line x1="-12" y1="78" x2="12" y2="78"/>
+    </g>
+  </g>
+  <line x1="424.2" y1="336.0" x2="505.8" y2="394.0" stroke="#B5A160" stroke-width="7" stroke-linecap="round" opacity="0.9"/>
+  <circle cx="465.0" cy="365.0" r="11" fill="#1A1A1A" stroke="#B5A160" stroke-width="4"/>
+  <line x1="458.3" y1="350.5" x2="413.0" y2="251.3" stroke="#B5A160" stroke-width="5" stroke-linecap="round" marker-end="url(#ahb)"/>
+</svg>

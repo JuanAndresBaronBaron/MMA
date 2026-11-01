@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#FFFFFF" stroke-opacity="0.05" stroke-width="1"/>
+    </pattern>
+    <path id="sole" d="M6,-84 C26,-84 37,-66 35,-42 C33,-20 22,-4 20,14 C18,32 26,50 24,66 C22,82 10,88 0,88 C-14,88 -25,80 -25,64 C-25,46 -29,22 -33,0 C-37,-24 -37,-50 -31,-64 C-25,-78 -10,-84 6,-84 Z"/>
+    <marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 Z" fill="#E8E4DC"/>
+    </marker>
+    <clipPath id="heelL"><rect x="-40" y="46" width="80" height="50"/></clipPath>
+  </defs>
+
+  <rect x="0" y="0" width="800" height="600" rx="28" fill="#1A1A1A"/>
+  <rect x="0" y="0" width="800" height="600" rx="28" fill="url(#grid)"/>
+
+  <!-- opponent / target -->
+  <g transform="translate(300,62)">
+    <circle r="34" fill="#3A3A3C" stroke="#8E8E93" stroke-width="2"/>
+    <circle r="20" fill="none" stroke="#C8102E" stroke-width="3"/>
+    <circle r="7" fill="#C8102E"/>
+  </g>
+
+  <!-- forward arrow from lead toe to target -->
+  <line x1="300" y1="158" x2="300" y2="112" stroke="#E8E4DC" stroke-width="4" stroke-linecap="round" marker-end="url(#ah)"/>
+
+  <!-- "same line" reference: straight line behind lead foot, crossed out -->
+  <line x1="300" y1="330" x2="300" y2="540" stroke="#8E8E93" stroke-width="3" stroke-dasharray="4 10" stroke-linecap="round" opacity="0.7"/>
+  <g transform="translate(300,470)" stroke="#C8102E" stroke-width="6" stroke-linecap="round">
+    <line x1="-20" y1="-20" x2="20" y2="20"/>
+    <line x1="20" y1="-20" x2="-20" y2="20"/>
+  </g>
+
+  <!-- correct diagonal joining the feet -->
+  <line x1="300" y1="250" x2="490" y2="405" stroke="#B5A160" stroke-width="4" stroke-dasharray="12 10" stroke-linecap="round"/>
+  <circle cx="300" cy="250" r="6" fill="#B5A160"/>
+  <circle cx="490" cy="405" r="6" fill="#B5A160"/>
+
+  <!-- Philly shell ghost variant (olive, dashed): lead foot turned slightly in, narrower base -->
+  <g fill="none" stroke="#8F9A5C" stroke-width="3" stroke-dasharray="7 7" opacity="0.85">
+    <use href="#sole" transform="translate(306,252) rotate(18)"/>
+    <use href="#sole" transform="translate(452,410) rotate(45) scale(-1,1)"/>
+  </g>
+
+  <!-- lead (left) foot: crimson, toe forward -->
+  <g transform="translate(300,250)">
+    <use href="#sole" fill="#C8102E" stroke="#F2B8C0" stroke-width="2"/>
+  </g>
+
+  <!-- rear (right) foot: steel, turned 45 out, heel raised -->
+  <g transform="translate(490,405) rotate(45)">
+    <use href="#sole" transform="scale(-1,1)" fill="#6B7F92" stroke="#C9D3DC" stroke-width="2"/>
+    <g clip-path="url(#heelL)">
+      <use href="#sole" transform="scale(-1,1)" fill="#2B333B" opacity="0.75"/>
+    </g>
+    <g stroke="#C9D3DC" stroke-width="2.5" stroke-linecap="round" opacity="0.9">
+      <line x1="-14" y1="58" x2="14" y2="58"/>
+      <line x1="-16" y1="68" x2="16" y2="68"/>
+      <line x1="-12" y1="78" x2="12" y2="78"/>
+    </g>
+    <!-- small up arrow: heel lifted -->
+  </g>
+
+  <!-- 45 degree angle on rear foot -->
+  <line x1="490" y1="405" x2="490" y2="270" stroke="#E8E4DC" stroke-width="2" stroke-dasharray="5 6" opacity="0.6"/>
+  <line x1="490" y1="405" x2="585" y2="310" stroke="#E8E4DC" stroke-width="2" stroke-dasharray="5 6" opacity="0.6"/>
+  <path d="M490,295 A110,110 0 0 1 567.8,327.2" fill="none" stroke="#E8E4DC" stroke-width="3" marker-end="url(#ah)"/>
+  <text x="560" y="272" font-family="-apple-system, Helvetica, Arial, sans-serif" font-size="30" font-weight="700" fill="#E8E4DC">45</text>
+  <circle cx="602" cy="252" r="5" fill="none" stroke="#E8E4DC" stroke-width="2.5"/>
+
+  <!-- shoulder-width dimension -->
+  <g stroke="#B5A160" stroke-width="3" stroke-linecap="round">
+    <line x1="300" y1="548" x2="490" y2="548" marker-start="url(#ah)" marker-end="url(#ah)"/>
+    <line x1="300" y1="534" x2="300" y2="562"/>
+    <line x1="490" y1="534" x2="490" y2="562"/>
+  </g>
+  <line x1="490" y1="500" x2="490" y2="530" stroke="#B5A160" stroke-width="2" stroke-dasharray="4 6" opacity="0.7"/>
+</svg>

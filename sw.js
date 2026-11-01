@@ -1,7 +1,7 @@
 /* Funciona sin internet: la app se guarda en caché. Primero la red (siempre la última versión) y, sin conexión, la
    caché. Los datos del usuario no pasan por aquí (están en localStorage/IndexedDB y en su Google Drive).
    Al cambiar archivos, subir VERSION. */
-const VERSION = 13;
+const VERSION = 14;
 const CACHE = "mma-v" + VERSION;
 const SHELL = ["./", "index.html", "privacy.html", "inscripcion.html", "ficha.html", "manifest.webmanifest", "icons/icon.svg", "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-192-maskable.png", "icons/icon-512-maskable.png", "icons/sc-alumno.png", "icons/sc-lista.png", "icons/sc-horario.png",
   "css/app.css", "css/entreno.css", "css/dash.css", "css/tracking.css", "css/students.css",
@@ -13,7 +13,7 @@ const SHELL = ["./", "index.html", "privacy.html", "inscripcion.html", "ficha.ht
   "js/views/asistencia.js", "js/views/tienda.js", "js/views/academia.js", "js/views/ajustes.js", "js/views/entreno.js",
   "js/views/horario.js", "js/views/kiosko.js", "js/views/leads.js", "js/views/reportes.js", "js/views/recibo.js", "js/views/certificado.js", "js/views/frases.js", "js/frases/data.js",
   "js/entreno/index.js", "js/entreno/timer.js", "js/entreno/bjj.js", "js/entreno/muaythai.js", "js/entreno/lucha.js", "js/entreno/mma.js", "js/entreno/boxeo.js",
-  "js/entreno/stats.js", "js/entreno/logros.js", "js/entreno/repaso.js", "js/entreno/diario.js", "js/entreno/boxeo-fund.js", "js/entreno/salud.js", "js/entreno/fisico.js",
+  "js/entreno/stats.js", "js/entreno/logros.js", "js/entreno/repaso.js", "js/entreno/diario.js", "js/entreno/boxeo-fund.js", "js/entreno/boxeo-img.js", "js/entreno/salud.js", "js/entreno/fisico.js",
   "js/entreno/kids.js", "js/entreno/defensa.js", "js/entreno/glosario.js", "js/entreno/semana.js", "js/entreno/curriculos.js",
   "philly/index.html", "philly/philly.css", "philly/philly.js", "philly/data.js",
   "js/i18n.js", ...["app", "ui", "util", "store", "sync", "forms", "catalog", "dashboard", "alumnos", "alumno", "pagos", "grados", "ranking", "asistencia", "tienda", "academia", "ajustes", "entreno",
@@ -30,6 +30,14 @@ self.addEventListener("fetch", e => {
   if(e.request.method !== "GET" || url.origin !== location.origin) return;
   e.respondWith((async () => {
     const c = await caches.open(CACHE);
+    /* imágenes (img/…): no van en SHELL para que la instalación sea liviana; primero la caché y, si no está, la red,
+       y se guardan la primera vez que se ven. Al subir VERSION se vuelven a pedir. */
+    if(url.pathname.includes("/img/")){
+      const hit = await c.match(url.origin + url.pathname);
+      if(hit) return hit;
+      try{ const r = await fetch(e.request); if(r.ok) c.put(url.origin + url.pathname, r.clone()); return r; }
+      catch(err){ return Response.error(); }
+    }
     try{
       const r = await fetch(e.request, {cache: "no-cache"});
       if(r.ok) c.put(url.origin + url.pathname, r.clone());

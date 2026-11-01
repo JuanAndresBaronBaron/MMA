@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M40 0H0V40" fill="none" stroke="#FFFFFF" stroke-opacity="0.05" stroke-width="1"/></pattern>
+    <pattern id="hatch" width="16" height="16" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="16" stroke="#C8102E" stroke-width="5" stroke-opacity="0.45"/></pattern>
+    <path id="sole" d="M6,-84 C26,-84 37,-66 35,-42 C33,-20 22,-4 20,14 C18,32 26,50 24,66 C22,82 10,88 0,88 C-14,88 -25,80 -25,64 C-25,46 -29,22 -33,0 C-37,-24 -37,-50 -31,-64 C-25,-78 -10,-84 6,-84 Z"/>
+    <clipPath id="heel"><rect x="-40" y="46" width="80" height="50"/></clipPath>
+    <clipPath id="card"><rect width="800" height="600" rx="28"/></clipPath>
+    <marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="context-stroke"/></marker>
+    <marker id="aw" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#E8E4DC"/></marker>
+    <marker id="ab" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4" markerHeight="4" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#B5A160"/></marker>
+  </defs>
+  <rect width="800" height="600" rx="28" fill="#1A1A1A"/>
+  <rect width="800" height="600" rx="28" fill="url(#grid)"/>
+  <g clip-path="url(#card)">
+    <path d="M30,70 A370,370 0 1 0 770,70 A370,370 0 1 0 30,70 Z M144,70 A256,256 0 1 1 656,70 A256,256 0 1 1 144,70 Z" fill="#6B7F92" fill-opacity="0.16" fill-rule="evenodd"/>
+    <path d="M144,70 A256,256 0 1 0 656,70 A256,256 0 1 0 144,70 Z M260,70 A140,140 0 1 1 540,70 A140,140 0 1 1 260,70 Z" fill="#C8102E" fill-opacity="0.18" fill-rule="evenodd"/>
+    <path d="M144,70 A256,256 0 1 0 656,70 A256,256 0 1 0 144,70 Z M260,70 A140,140 0 1 1 540,70 A140,140 0 1 1 260,70 Z" fill="url(#hatch)" fill-opacity="1" fill-rule="evenodd"/>
+    <path d="M260,70 A140,140 0 1 0 540,70 A140,140 0 1 0 260,70 Z M399.99,70 A0.01,0.01 0 1 1 400.01,70 A0.01,0.01 0 1 1 399.99,70 Z" fill="#8F9A5C" fill-opacity="0.22" fill-rule="evenodd"/>
+    <g fill="none" stroke-width="3">
+      <circle cx="400" cy="70" r="140" stroke="#8F9A5C"/>
+      <circle cx="400" cy="70" r="256" stroke="#C8102E"/>
+      <circle cx="400" cy="70" r="370" stroke="#6B7F92" stroke-dasharray="10 8"/>
+    </g>
+  </g>
+  <line x1="440" y1="93" x2="715" y2="252" stroke="#B5A160" stroke-width="4" stroke-linecap="round" marker-end="url(#ab)"/>
+  <line x1="428" y1="106" x2="554" y2="267" stroke="#B5A160" stroke-width="4" stroke-linecap="round" marker-end="url(#ab)"/>
+  <path d="M350,74 Q255,109 339,185" fill="none" stroke="#B5A160" stroke-width="4" stroke-linecap="round" marker-end="url(#ab)"/>
+
+  <circle cx="400" cy="70" r="36" fill="#3A3A3C" stroke="#8E8E93" stroke-width="3"/>
+  <circle cx="400" cy="90" r="6" fill="#8E8E93"/>
+  <g fill="none" stroke-width="6" stroke-dasharray="12 8" opacity="0.85">
+    <g transform="translate(372,184) scale(0.5)"><use href="#sole" stroke="#C8102E"/></g>
+    <g transform="translate(458,254) rotate(45) scale(0.5)"><use href="#sole" transform="scale(-1,1)" stroke="#6B7F92"/></g>
+  </g>
+  <g transform="translate(372,482) scale(0.5)"><use href="#sole" fill="#C8102E" stroke="#F2B8C0" stroke-width="4"/></g>
+  <g transform="translate(458,552) rotate(45) scale(0.5)">
+    <use href="#sole" transform="scale(-1,1)" fill="#6B7F92" stroke="#C9D3DC" stroke-width="4"/>
+    <g clip-path="url(#heel)"><use href="#sole" transform="scale(-1,1)" fill="#2B333B" opacity="0.75"/></g>
+  </g>
+  <line x1="292" y1="492" x2="292" y2="174" stroke="#E8E4DC" stroke-width="5" stroke-linecap="round" marker-end="url(#aw)"/>
+  <line x1="242" y1="174" x2="242" y2="492" stroke="#E8E4DC" stroke-width="5" stroke-linecap="round" stroke-dasharray="14 9" marker-end="url(#aw)"/>
+  <g font-family="-apple-system, Helvetica, Arial, sans-serif" font-size="24" font-weight="700" text-anchor="middle">
+    <circle cx="292" cy="333" r="19" fill="#1A1A1A" stroke="#E8E4DC" stroke-width="3"/>
+    <text x="292" y="341" fill="#E8E4DC">1</text>
+    <circle cx="242" cy="333" r="19" fill="#1A1A1A" stroke="#E8E4DC" stroke-width="3"/>
+    <text x="242" y="341" fill="#E8E4DC">2</text>
+  </g>
+</svg>

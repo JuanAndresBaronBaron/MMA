@@ -1,0 +1,68 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600">
+  <defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M40 0H0V40" fill="none" stroke="#FFFFFF" stroke-opacity="0.05" stroke-width="1"/>
+    </pattern>
+    <path id="sole" d="M6,-84 C26,-84 37,-66 35,-42 C33,-20 22,-4 20,14 C18,32 26,50 24,66 C22,82 10,88 0,88 C-14,88 -25,80 -25,64 C-25,46 -29,22 -33,0 C-37,-24 -37,-50 -31,-64 C-25,-78 -10,-84 6,-84 Z"/>
+    <marker id="aho" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#8FA35A"/></marker>
+    <marker id="ahg" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#8E8E93"/></marker>
+    <marker id="ahw" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" fill="#6E6E73"/></marker>
+    <clipPath id="heel"><rect x="-40" y="46" width="80" height="50"/></clipPath>
+  </defs>
+  <rect x="0" y="0" width="800" height="600" rx="28" fill="#1A1A1A"/>
+  <rect x="0" y="0" width="800" height="600" rx="28" fill="url(#grid)"/>
+
+  <!-- ring: canvas, ropes, corner posts -->
+  <rect x="150" y="40" width="500" height="520" rx="6" fill="#232325"/>
+  <rect x="150" y="40" width="500" height="520" rx="6" fill="none" stroke="#B08D57" stroke-width="4" opacity="0.9"/>
+  <rect x="160" y="50" width="480" height="500" rx="4" fill="none" stroke="#B08D57" stroke-width="2" opacity="0.45"/>
+  <g fill="#6B7F92" stroke="#C9D3DC" stroke-width="2">
+    <rect x="138" y="28" width="24" height="24" rx="5"/><rect x="638" y="28" width="24" height="24" rx="5" fill="#C8102E" stroke="#F2B8C0"/>
+    <rect x="138" y="548" width="24" height="24" rx="5"/><rect x="638" y="548" width="24" height="24" rx="5"/>
+  </g>
+  <!-- corner trap zone -->
+  <path d="M640,50 L640,210 Q520,190 480,50 Z" fill="#C8102E" opacity="0.10"/>
+
+  <!-- B: start (faded), escape along the ropes, end (solid, cornered) -->
+  <g transform="translate(290.0,104.0)" fill="none" stroke="#8E8E93" stroke-width="3" stroke-dasharray="7 6" opacity="0.7">
+    <circle r="30"/><circle r="8" fill="#8E8E93" stroke="none"/></g>
+  <line x1="330" y1="104" x2="544" y2="104" stroke="#8E8E93" stroke-width="5" stroke-dasharray="3 11" stroke-linecap="round" marker-end="url(#ahg)"/>
+  <g transform="translate(588.0,104.0)">
+    <circle r="30" fill="#3A3A3C" stroke="#8E8E93" stroke-width="2"/>
+    <circle r="17" fill="none" stroke="#8E8E93" stroke-width="3"/>
+    <circle r="6" fill="#8E8E93"/></g>
+  <!-- B's attempted exit down the side rope, stopped -->
+  <line x1="592" y1="144" x2="592" y2="216" stroke="#8E8E93" stroke-width="4" stroke-dasharray="3 10" stroke-linecap="round" opacity="0.7"/>
+  <g stroke="#E35A6E" stroke-width="6" stroke-linecap="round"><line x1="578" y1="226" x2="606" y2="254"/><line x1="606" y1="226" x2="578" y2="254"/></g>
+
+  <!-- WRONG: chasing straight after B (crossed out) -->
+  <g opacity="0.85">
+    <path d="M309.8,274.2 C289.8,186.2 300,160 440,158" fill="none" stroke="#6E6E73" stroke-width="6" stroke-linecap="round" marker-end="url(#ahw)"/>
+    <g stroke="#E35A6E" stroke-width="7" stroke-linecap="round" transform="translate(297.8,208.2)">
+      <line x1="-20" y1="-20" x2="20" y2="20"/><line x1="20" y1="-20" x2="-20" y2="20"/>
+    </g>
+  </g>
+
+  <!-- START: A faded outlines in the middle of the ring -->
+  <g fill="none" stroke-width="4.5" stroke-dasharray="10 8" opacity="0.75">
+    <use href="#sole" transform="translate(319.8,336.2) rotate(-11.2) scale(0.55)" stroke="#E35A6E"/>
+    <use href="#sole" transform="translate(420.2,423.8) rotate(11.8) scale(0.55) scale(-1,1)" stroke="#9FB0C0"/>
+  </g>
+
+  <!-- CORRECT: two short diagonal steps cutting off the escape (1 lead foot, 2 rear foot) -->
+  <g font-family="-apple-system, Helvetica, Arial, sans-serif" font-size="20" font-weight="700" text-anchor="middle"><line x1="364.2" y1="298.9" x2="432.7" y2="241.4" stroke="#8FA35A" stroke-width="6" stroke-linecap="round" marker-end="url(#aho)"/><circle cx="415.2" cy="290.0" r="16" fill="#8FA35A"/><text x="415.2" y="297.0" fill="#1A1A1A">1</text><line x1="456.0" y1="453.2" x2="503.2" y2="377.6" stroke="#8FA35A" stroke-width="6" stroke-linecap="round" marker-end="url(#aho)"/><circle cx="501.7" cy="429.1" r="16" fill="#8FA35A"/><text x="501.7" y="436.1" fill="#1A1A1A">2</text></g>
+
+  <!-- END: A solid, square to the corner -->
+  <g transform="translate(475.8,334.5) rotate(62.6) scale(0.55)">
+    <use href="#sole" transform="scale(-1,1)" fill="#6B7F92" stroke="#C9D3DC" stroke-width="3"/>
+    <g clip-path="url(#heel)"><use href="#sole" transform="scale(-1,1)" fill="#2B333B" opacity="0.75"/></g>
+    <g stroke="#C9D3DC" stroke-width="3.5" stroke-linecap="round" opacity="0.9">
+      <line x1="-14" y1="58" x2="14" y2="58"/><line x1="-16" y1="68" x2="16" y2="68"/><line x1="-12" y1="78" x2="12" y2="78"/>
+    </g></g>
+  <g transform="translate(480.2,201.5) rotate(39.6) scale(0.55)"><use href="#sole" fill="#C8102E" stroke="#F2B8C0" stroke-width="3"/></g>
+
+  <!-- jab markers where A stops B's exit -->
+  <line x1="500.2" y1="161.5" x2="564" y2="128" stroke="#C8102E" stroke-width="3" stroke-dasharray="2 7" stroke-linecap="round"/>
+  <polygon points="579.0,130.0 571.4,132.2 575.2,139.2 568.2,135.4 566.0,143.0 563.8,135.4 556.8,139.2 560.6,132.2 553.0,130.0 560.6,127.8 556.8,120.8 563.8,124.6 566.0,117.0 568.2,124.6 575.2,120.8 571.4,127.8" fill="#C8102E" stroke="#F2B8C0" stroke-width="1.5"/>
+  <polygon points="603.0,240.0 596.6,241.9 599.8,247.8 593.9,244.6 592.0,251.0 590.1,244.6 584.2,247.8 587.4,241.9 581.0,240.0 587.4,238.1 584.2,232.2 590.1,235.4 592.0,229.0 593.9,235.4 599.8,232.2 596.6,238.1" fill="#C8102E" stroke="#F2B8C0" stroke-width="1.5"/>
+</svg>

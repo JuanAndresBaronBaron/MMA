@@ -8,6 +8,7 @@ import {esc, today, fmtDate, addDays, h, norm, parseISO} from "../util.js";
 import {t, tn, lang} from "../i18n.js";
 import {rol, perfil} from "../roles.js";
 import {listenBtn, bind} from "../voz.js";
+import {imgsFor} from "../entreno/boxeo-img.js";
 
 const PLAT = {youtube: ["YouTube", "#ff0033"], tiktok: ["TikTok", "#25f4ee"], udemy: ["Udemy", "#a435f0"], instagram: ["Instagram", "#e1306c"], articulo: [t("Artículo"), "#d4a73c"], web: ["Web", "#8a8a8a"]};
 const st = {dia: today(), hoy: today(), filtro: "todas", gq: "", ga: "", cr: {}};
@@ -603,6 +604,32 @@ function vistaArte(el, id){
     ]}; });
 }
 
+/* ---------- imágenes de técnica (solo boxeo): tira 4:3 con pie; con 2 o más cuadros se desliza y marca el paso ---------- */
+function media(id, modId, kind, j){
+  const xs = id === "boxeo" ? imgsFor(modId, kind, j) : [];
+  if(!xs.length) return "";
+  const n = xs.length;
+  return `<div class="bx-media ${n > 1 ? "multi" : ""}" data-bx="${kind}:${j}"><div class="bx-track">${xs.map((x, i) => `<figure class="bx-f">
+    <button type="button" class="bx-open" data-bx-open="${i}" aria-label="${esc(t("Ampliar imagen"))}: ${esc(x.cap)}"><img src="${esc(x.src)}" alt="${esc(x.cap)}" width="800" height="600" loading="lazy" decoding="async">${n > 1 ? `<span class="bx-step" aria-hidden="true">${i + 1}/${n}</span>` : ""}</button>
+    <figcaption>${esc(x.cap)}</figcaption></figure>`).join("")}</div></div>`;
+}
+/* visor a pantalla completa: deslizar o flechas entre cuadros, Esc cierra (modal compartido de ui.js) */
+function visor(xs, start = 0){
+  const n = xs.length;
+  const m = modal({title: xs[start].cap, foot: false, cls: "bx-lb", body: `<div class="bx-lb-track">${xs.map((x, i) => `<figure class="bx-lb-f" aria-label="${esc(t("Imagen {n} de {m}", {n: i + 1, m: n}))}"><img src="${esc(x.src)}" alt="${esc(x.cap)}" decoding="async"></figure>`).join("")}</div>
+    ${n > 1 ? `<div class="bx-lb-nav"><button type="button" class="icon-btn" data-lb="-1" aria-label="${t("Anterior")}">${icon("back")}</button><span class="bx-lb-n" aria-live="polite"></span><button type="button" class="icon-btn" data-lb="1" aria-label="${t("Siguiente")}">${icon("chevron")}</button></div>` : ""}`});
+  const tr = m.body.querySelector(".bx-lb-track"), h2 = m.el.querySelector(".modal-h h2"), nn = m.body.querySelector(".bx-lb-n");
+  let cur = start;
+  const pinta = () => { h2.textContent = xs[cur].cap; if(nn) nn.textContent = `${cur + 1}/${n}`;
+    m.body.querySelectorAll("[data-lb]").forEach(b => { b.disabled = cur + +b.dataset.lb < 0 || cur + +b.dataset.lb >= n; }); };
+  const ir = (i, smooth = true) => { cur = Math.max(0, Math.min(n - 1, i)); tr.scrollTo({left: cur * tr.clientWidth, behavior: smooth ? "smooth" : "auto"}); pinta(); };
+  requestAnimationFrame(() => ir(start, false));
+  tr.addEventListener("scroll", () => { const i = Math.round(tr.scrollLeft / Math.max(1, tr.clientWidth)); if(i !== cur){ cur = i; pinta(); } }, {passive: true});
+  m.body.addEventListener("click", e => { const b = e.target.closest("[data-lb]"); if(b){ haptic("selection"); ir(cur + +b.dataset.lb); } });
+  m.el.addEventListener("keydown", e => { if(e.key === "ArrowRight"){ e.preventDefault(); ir(cur + 1); } else if(e.key === "ArrowLeft"){ e.preventDefault(); ir(cur - 1); } });
+  pinta();
+}
+
 /* ---------- un módulo ---------- */
 function vistaModulo(el, id, modId, titulo = () => {}){
   const a = E.arte(id), d = E.cargado(id), m = d.modulos.find(x => x.id === modId);
@@ -626,14 +653,14 @@ function vistaModulo(el, id, modId, titulo = () => {}){
 
   <div class="en-sec-row"><h3 class="en-sec" id="en-s-conceptos">${t("Conceptos")}</h3>${listenBtn("mod:c", t("Conceptos"), {text: false})}</div>
   <div class="card flush en-concepts">${m.conceptos.map((c, j) => `<details class="en-c" ${j === 0 ? "open" : ""}><summary><span class="en-ci" style="${artVars(a)}">${j + 1}</span><b>${esc(c.titulo)}</b>${icon("chevron", "chev-i")}</summary>
-    <div class="en-cb"><p>${esc(c.explicacion)}</p><div class="en-cols">
+    <div class="en-cb">${media(id, m.id, "conceptos", j)}<p>${esc(c.explicacion)}</p><div class="en-cols">
       ${(c.puntos || c.puntos_clave)?.length ? `<div class="ok"><h4>${icon("check", "inline")} ${t("Claves")}</h4><ul>${(c.puntos || c.puntos_clave).map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}
       ${(c.errores || c.errores_comunes)?.length ? `<div class="bad"><h4>${icon("x", "inline")} ${t("Errores comunes")}</h4><ul>${(c.errores || c.errores_comunes).map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}</div></div></details>`).join("")}</div>
 
   <div class="en-sec-row"><h3 class="en-sec" id="en-s-drills">${t("Drills")}</h3>${listenBtn("mod:d", t("Drills"), {text: false})}</div>
   <div class="en-drills">${m.drills.map((x, j) => { const k = E.kDrill(id, m.id, j); return `<div class="en-drill ${E.hecho(k) ? "done" : ""}">
     <div class="en-dh">${chk(k)}<b>${esc(x.nombre)}</b><span class="lvl ${x.nivel}">${nivelT(x.nivel)}</span></div>
-    <p>${esc(x.como)}</p><div class="en-dm"><span class="en-dose">${icon("clock", "inline")} ${esc(x.dosis)}</span>${x.solo ? `<span class="muted small">${t("Se puede solo")}</span>` : `<span class="muted small">${t("Con compañero")}</span>`}</div></div>`; }).join("")}</div>
+    <p>${esc(x.como)}</p>${media(id, m.id, "drills", j)}<div class="en-dm"><span class="en-dose">${icon("clock", "inline")} ${esc(x.dosis)}</span>${x.solo ? `<span class="muted small">${t("Se puede solo")}</span>` : `<span class="muted small">${t("Con compañero")}</span>`}</div></div>`; }).join("")}</div>
 
   ${m.recursos.length ? `<h3 class="en-sec" id="en-s-videos">${t("Videos y cursos")} <span class="count-b">${m.recursos.length}</span></h3>
   ${plats.length > 2 ? `<div class="en-filter chip-row">${plats.map(k => `<button class="chip-btn ${st.filtro === k ? "on" : ""}" data-f="${k}" aria-pressed="${st.filtro === k}">${k === "todas" ? t("Todas") : PLAT[k][0]}</button>`).join("")}</div>` : ""}
@@ -667,6 +694,8 @@ function vistaModulo(el, id, modId, titulo = () => {}){
   });
   el.querySelector(".en-anchors")?.style.setProperty("--top", topH() + "px");
   el.onclick = e => {
+    const bx = e.target.closest("[data-bx-open]");
+    if(bx){ const [kind, j] = bx.closest("[data-bx]").dataset.bx.split(":"); haptic("light"); visor(imgsFor(m.id, kind, +j), +bx.dataset.bxOpen); return; }
     const f = e.target.closest("[data-f]"); if(f){ haptic("selection"); st.filtro = f.dataset.f; vistaModulo(el, id, modId, titulo); return; }
     if(e.target.closest("[data-mas]")){ st.mas = st.mas === m.id ? null : m.id; cl.classList.toggle("open", st.mas === m.id); mas.textContent = st.mas === m.id ? t("Leer menos") : t("Leer más"); return; }
     const g = e.target.closest("[data-go]"), sec = g && el.querySelector("#en-s-" + g.dataset.go);
