@@ -52,4 +52,6 @@ export default {
   "Barajar de nuevo": "Shuffle again",
   "Aún no tienes favoritas": "No favorites yet",
   "Desliza una tarjeta a la derecha o toca ♥ para guardarla aquí.": "Swipe a card right or tap ♥ to save it here.",
+  /* lectura en voz alta */
+  "Frase actual": "Current quote",
 };

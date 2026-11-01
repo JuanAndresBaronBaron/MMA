@@ -240,3 +240,11 @@
   .fr-stamp{transform:none!important}
   .fr-stamp.up{transform:translateX(-50%)!important}
 }
+
+/* ---------- lectura en voz alta (js/voz.js) ---------- */
+.fr-sec-r{display:flex;align-items:center;gap:10px;flex:none;align-self:center}
+.fr-day.voz-on,.fr-card.voz-on{outline-color:rgba(255,255,255,.9)!important;outline-offset:-3px}
+/* favorita que suena: va sobre la superficie blanca de la lista, así que el anillo es rojo y por dentro (la lista recorta) */
+.fr-fav.voz-on{outline-offset:-3px;border-radius:12px;background:var(--fill-4)}
+.icon-btn[data-voz].on{background:var(--accent);color:#fff}
+.fr-pill[data-voz].on .ic{fill:none;stroke:#C8102E}

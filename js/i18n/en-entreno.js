@@ -277,4 +277,6 @@ export default {
   "Por mejorar": "To improve",
   "con {p}": "with {p}",
   "Anterior": "Previous", "Cómo avanzar": "How to progress",
+  /* lectura en voz alta */
+  "Términos de la lista": "Terms in the list",
 };

@@ -8,6 +8,7 @@ import {loadDemo, removeDemo, hasDemo} from "../demo.js";
 import {GOOGLE_CLIENT_ID} from "../config.js";
 import {installState, promptInstall, iosStepsHTML} from "../install.js";
 import {t, tn, lang, locale, setLang, LANGS} from "../i18n.js";
+import * as V from "../voz.js";
 
 /* globo (idioma); no está en el set de iconos compartido */
 const GLOBE = `<svg class="ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3c2.5 2.7 3.8 5.7 3.8 9s-1.3 6.3-3.8 9c-2.5-2.7-3.8-5.7-3.8-9S9.5 5.7 12 3z"/></svg>`;
@@ -50,6 +51,23 @@ export function render(el, params, ctx){
     </section>
     <p class="section-footer">${st.msg ? `<span class="err-t">${esc(st.msg)}</span><br>` : ""}${prof ? t("Para conectar Google, el dueño debe salir del modo profesor con su PIN.") : t("Conecta Google para tener copia en tu Drive y usar la app en varios dispositivos.")}</p>`;
 
+  /* lectura en voz alta (voz.js): velocidad, voz del idioma de la app y prueba */
+  const vozSec = V.soportado() ? `
+    <h3 class="section-header">${t("Lectura en voz alta")}</h3>
+    <section class="grouped aj-grp aj-voz">
+      <div class="row-inset aj-ctl">${ic("zap", "burnt")}<span class="aj-l">${t("Velocidad")}</span>
+        <div class="seg small" role="radiogroup" aria-label="${t("Velocidad de lectura")}">${V.RATES.map(r => `<label><input type="radio" name="vozrate" value="${r}" ${V.rate() === r ? "checked" : ""}><span>${V.rateTxt(r)}</span></label>`).join("")}</div></div>
+      ${V.idiomasLectura().map(L => {
+        /* en inglés también se elige y se prueba la voz en español, que lee los caminos, el glosario y las frases sin traducir */
+        const dos = V.idiomasLectura().length > 1;
+        const lv = !dos ? t("Voz") : L === "en" ? t("Voz en inglés") : t("Voz en español");
+        const lp = !dos ? t("Probar voz") : L === "en" ? t("Probar voz en inglés") : t("Probar voz en español");
+        return `<label class="row-inset aj-ctl">${ic("speaker", "crimson")}<span class="aj-l">${lv}</span><select class="aj-voz-sel" data-voz-sel="${L}" aria-label="${dos ? lv : t("Voz para leer en voz alta")}"><option value="">${t("Automática")}</option></select></label>
+      <button type="button" class="row-inset aj-act" data-voz-probar="${L}">${ic("check", "olive")}<span class="aj-l">${lp}</span><span class="row-val aj-voz-n" data-voz-name="${L}"></span></button>`; }).join("")}
+    </section>
+    <p class="section-footer" data-voz-foot>${t("Usa las voces de este aparato, sin cuentas ni costo. Toca Escuchar en Entrenamiento o en Frases para oír el texto. El contenido de los caminos se lee con voz en español.")}</p>`
+  : `<h3 class="section-header">${t("Lectura en voz alta")}</h3><p class="section-footer">${t("Este navegador no puede leer en voz alta.")}</p>`;
+
   const prefs = `
     <h3 class="section-header">${t("Preferencias")}</h3>
     <section class="grouped aj-grp">
@@ -57,6 +75,7 @@ export function render(el, params, ctx){
         <div class="seg small" role="radiogroup" aria-label="${t("Idioma / Language")}">${LANGS.map(([k, l]) => `<label><input type="radio" name="lang" value="${k}" data-lang ${lang() === k ? "checked" : ""}><span>${esc(l)}</span></label>`).join("")}</div></div>
       <div class="aj-theme" role="radiogroup" aria-label="${t("Tema")}">${themeOpt("system", t("Sistema"))}${themeOpt("light", t("Claro"))}${themeOpt("dark", t("Oscuro"))}</div>
     </section>
+    ${vozSec}
     ${est || prof ? "" : `<h3 class="section-header">${t("Datos de ejemplo")}</h3>
     <section class="grouped aj-grp">
       ${hasDemo() ? `<button type="button" class="row-inset aj-act aj-red" data-undemo>${ic("trash", "graphite")}<span class="aj-l">${t("Quitar datos de ejemplo")}</span></button>`
@@ -176,6 +195,31 @@ export function render(el, params, ctx){
   /* la fila de restaurar es un label: Enter o espacio abren el selector de archivo */
   const rest = el.querySelector("label.aj-act");
   if(rest) rest.onkeydown = e => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); rest.querySelector("input").click(); } };
+  /* voces: llegan tarde en algunos navegadores; la lista y el nombre se llenan cuando estén */
+  const vozSels = [...el.querySelectorAll("[data-voz-sel]")];
+  const pintarVoz = () => {
+    const faltan = [];
+    for(const sel of vozSels){
+      if(!sel.isConnected) continue;
+      const L = sel.dataset.vozSel, vs = V.voces(L), cur = V.vozPara(L), elegida = S.pref("vozUri:" + L, "");
+      sel.innerHTML = `<option value="">${esc(t("Automática"))}</option>` + vs.map(v => `<option value="${esc(v.voiceURI)}" ${v.voiceURI === elegida ? "selected" : ""}>${esc(v.name)}</option>`).join("");
+      sel.disabled = !vs.length;
+      const n = el.querySelector(`[data-voz-name="${L}"]`); if(n) n.textContent = cur ? cur.name : "";
+      if(!vs.length) faltan.push(L);
+    }
+    const f = el.querySelector("[data-voz-foot]");
+    if(f && faltan.length && f.dataset.sin !== faltan.join()){
+      f.querySelector(".err-t")?.nextElementSibling?.remove(); f.querySelector(".err-t")?.remove();
+      f.dataset.sin = faltan.join();
+      f.insertAdjacentHTML("afterbegin", `<span class="err-t">${faltan.map(L => esc(L === "en" ? t("Este aparato no tiene una voz en inglés para leer en voz alta.") : t("Este aparato no tiene una voz en español para leer en voz alta."))).join(" ")}</span><br>`);
+    }
+  };
+  if(vozSels.length){
+    V.whenVoices().then(pintarVoz);
+    for(const sel of vozSels) sel.onchange = () => { V.setVoz(sel.dataset.vozSel, sel.value); haptic("selection"); pintarVoz(); };
+    el.querySelectorAll("[name=vozrate]").forEach(r => r.onchange = () => { if(r.checked){ haptic("selection"); V.setRate(+r.value); } });
+    el.querySelectorAll("[data-voz-probar]").forEach(b => b.onclick = () => { V.probar(b.dataset.vozProbar); pintarVoz(); });
+  }
   el.querySelectorAll("[data-lang]").forEach(r => r.onchange = () => { if(r.checked && r.value !== lang()) setLang(r.value); });
   const imp = el.querySelector("[data-import]");
   if(imp) imp.onchange = async () => {

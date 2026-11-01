@@ -86,4 +86,14 @@ export default {
   "Para conectar Google, el dueño debe salir del modo profesor con su PIN.": "To connect Google, the owner must leave instructor mode with their PIN.",
   "La copia incluye tu progreso y también la academia oculta (alumnos, pagos, grados y asistencias).": "The backup includes your progress and also the hidden academy (students, payments, grades and attendance).",
   "Para borrar los datos de este aparato, vuelve primero a tu academia: así ves todo lo que se borraría.": "To erase the data on this device, first go back to your academy, so you can see everything that would be erased.",
+  /* lectura en voz alta */
+  "Velocidad": "Speed",
+  "Velocidad de lectura": "Reading speed",
+  "Voz": "Voice",
+  "Voz para leer en voz alta": "Voice for reading aloud",
+  "Voz en inglés": "English voice",
+  "Voz en español": "Spanish voice",
+  "Probar voz en inglés": "Test English voice",
+  "Probar voz en español": "Test Spanish voice",
+  "Usa las voces de este aparato, sin cuentas ni costo. Toca Escuchar en Entrenamiento o en Frases para oír el texto. El contenido de los caminos se lee con voz en español.": "Uses this device's own voices, with no account and no cost. Tap Listen in Training or Quotes to hear the text. Learning path content is read with a Spanish voice.",
 };

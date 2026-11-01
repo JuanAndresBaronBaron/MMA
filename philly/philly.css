@@ -179,3 +179,12 @@ li{margin:.25em 0}
   .drills,.res-grid{grid-template-columns:1fr}
   .blk{flex-direction:column;gap:4px}
 }
+
+/* lectura en voz alta (../js/voz.js, ../css/voz.css): dorado en vez del rojo de la app */
+:root{--vz-acc:var(--gold);--vz-acc-fg:#1a1405;--vz-acc-t:var(--gold2);--vz-fg:var(--text);--vz-muted:var(--muted);--vz-fill:rgba(255,255,255,.08);--vz-fill-2:rgba(255,255,255,.14);
+  --vz-glass:rgba(22,22,24,.9);--vz-shadow:0 0 0 1px var(--line2),0 14px 40px rgba(0,0,0,.6)}
+.ph-voz{margin-top:10px;align-self:flex-start;font-family:var(--font)}
+.sec + .ph-voz{margin:-6px 0 14px}
+.voz-btn.ph-voz{text-transform:none;letter-spacing:0}
+.voz-on{border-radius:12px}
+.mod-h.voz-on{border-radius:14px}

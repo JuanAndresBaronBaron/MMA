@@ -195,6 +195,13 @@ The user wants "colores de hombre, rudos, fuertes": a masculine, rugged palette 
   - It only does something on touch devices with `navigator.vibrate`, after the user has interacted, and it never throws.
   - Shared code already calls it for tab changes, segmented changes, switches, sheet dismiss and toasts. Call it yourself only for meaningful custom actions, such as marking attendance with `"selection"`. Do not call it on scroll or hover.
 
+## 5b. Read aloud (`js/voz.js`, `css/voz.css`)
+
+- Uses the browser's own voices (Web Speech API), no external service. It picks the best voice for the language (es-CO/MX/US/419, then es-ES; en-US, then en-GB; natural, enhanced, Google, Microsoft Online and Siri voices first). Speed and voice live in Ajustes › Lectura en voz alta.
+- `listenBtn(id, label, {text, cls, base})` renders the round "Escuchar" button (`.voz-btn`, `.solo` for icon only, `.light` on dark gradients, `.hide-s-txt` for icon only on phones). `bind(root, (id, btn) => ({title, blocks}))` tells it what to read; each block is `{el, text | parts: [{text, lang}], lang}` and its element gets `.voz-on` while it plays.
+- Content of the learning paths is Spanish, so it is read with `lang: "es"` even when the app is in English; app strings use `lang()`.
+- The glass mini player floats above the tab bar on phones and bottom-right on desktop. Reading stops on route change and page hide. Without speech support or a voice for the app language, `html.voz-no` hides every `[data-voz]` button.
+
 ## 6. Do and don't
 
 **Do**

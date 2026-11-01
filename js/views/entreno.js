@@ -7,6 +7,7 @@ import {icon, toast, modal, confirmDlg, haptic} from "../ui.js";
 import {esc, today, fmtDate, addDays, h, norm, parseISO} from "../util.js";
 import {t, tn, lang} from "../i18n.js";
 import {rol, perfil} from "../roles.js";
+import {listenBtn, bind} from "../voz.js";
 
 const PLAT = {youtube: ["YouTube", "#ff0033"], tiktok: ["TikTok", "#25f4ee"], udemy: ["Udemy", "#a435f0"], instagram: ["Instagram", "#e1306c"], articulo: [t("Artículo"), "#d4a73c"], web: ["Web", "#8a8a8a"]};
 const st = {dia: today(), hoy: today(), filtro: "todas", gq: "", ga: "", cr: {}};
@@ -62,6 +63,13 @@ export const ring = (p, s = 52, color = "var(--accent)", txt = p + "%") => { con
   return `<svg class="en-ring" width="${s}" height="${s}" viewBox="0 0 ${s} ${s}" style="--rw:${w}px" role="img" aria-label="${esc(txt === p + "%" ? p + "%" : txt)}"><circle cx="${s / 2}" cy="${s / 2}" r="${r}" class="bg"/><circle cx="${s / 2}" cy="${s / 2}" r="${r}" class="fg ${p ? "" : "zero"}" style="stroke:${color}" stroke-dasharray="${c}" stroke-dashoffset="${c * (1 - p / 100)}"/><text x="50%" y="50%" dy=".35em" text-anchor="middle" style="font-size:${Math.max(10, Math.round(s / 4.6))}px">${esc(txt)}</text></svg>`; };
 export const chk = (k, label = "", cls = "", off = false) => `<label class="en-chk ${cls}"><input type="checkbox" data-k="${esc(k)}" ${E.hecho(k) ? "checked" : ""} ${off ? "disabled" : ""}><span class="box" aria-hidden="true"></span>${label}</label>`;
 const nivelT = n => t((E.NIVELES.find(x => x[0] === n) || [, n])[1]);
+/* lectura en voz alta (voz.js): el contenido de los caminos está en español, también con la app en inglés,
+   así que se lee con voz en español; los textos de la app (calentamiento, cierre) van en el idioma elegido */
+const ES = "es";
+const punto = s => { s = String(s ?? "").trim(); return !s ? "" : /[.!?…:;]["”’)]*$/.test(s) ? s : s + "."; };
+const listaVoz = (tit, xs) => (xs?.length ? `${tit}: ${xs.map(punto).join(" ")}` : "");
+const unir = (...xs) => xs.filter(Boolean).join(" ");
+const vozK = (root, sel, pre) => root.querySelectorAll(sel).forEach((x, i) => { x.dataset.vozK = pre + i; });
 export const esNota = () => lang() === "en" ? `<p class="muted small en-note">${icon("info", "inline")} ${t("El contenido de los caminos está en español.")}</p>` : "";
 
 /* ---------- inicio de Entrenamiento ---------- */
@@ -140,7 +148,7 @@ function vistaHub(el, r){
         <span class="en-dots">${s ? icon("check") : a.map(x => `<i style="background:${tono(x)}"></i>`).join("")}</span></button>`; }).join("")}</div>
   </section>
 
-  <div class="en-h"><h2>${st.dia === hoy ? t("Sesión de hoy") : t("Sesión del {fecha}", {fecha: fmtDate(st.dia)})}</h2><div class="en-h-act"><button class="btn small tinted" data-crono aria-label="${t("Temporizador")}">${icon("clock")}<span class="hide-s"> ${t("Temporizador")}</span></button></div></div>
+  <div class="en-h"><h2>${st.dia === hoy ? t("Sesión de hoy") : t("Sesión del {fecha}", {fecha: fmtDate(st.dia)})}</h2><div class="en-h-act">${bloques ? listenBtn("hoy", st.dia === hoy ? t("Sesión de hoy") : t("Sesión del {fecha}", {fecha: fmtDate(st.dia)}), {cls: "hide-s-txt"}) : ""}<button class="btn small tinted" data-crono aria-label="${t("Temporizador")}">${icon("clock")}<span class="hide-s"> ${t("Temporizador")}</span></button></div></div>
   <section class="card en-today">
     ${cab ? `<div class="en-today-m"><span class="tnum">${tn(cab.min, "1 min", "{n} min")}</span>${(cab.artes || []).filter(E.arte).map(a => `<span class="en-tag" style="--c:${tono(a)}">${esc(t(E.arte(a).corto))}</span>`).join("")}${modo === "curso" ? `<span class="muted small en-today-n tnum">${t("{a} de {b} bloques hechos", {a: nh, b: nb})}</span>` : ""}</div>` : ""}
     ${main && modo === "hecha" ? resumen(main) : ""}
@@ -175,6 +183,11 @@ function vistaHub(el, r){
   <section class="card flush"><div class="list">${hs.slice(0, 8).map(s => `<button class="li en-hist" data-dia="${s.fecha}"><span class="li-ic ${s.plan ? "ok" : ""}">${icon(s.plan ? "check" : "fist")}</span><div class="li-main"><b>${fmtDate(s.fecha, true)}</b>${meta(s, true)}</div></button>`).join("")}</div></section>` : ""}`;
 
   tdsCard(el.querySelector("[data-tds]"), r);
+  /* «Escuchar» la sesión: cada bloque en orden (los de la tarea opcional al final) */
+  vozK(el, ".en-today .en-b", "b");
+  bind(el, id => id !== "hoy" || !bloques ? null : {title: st.dia === hoy ? t("Sesión de hoy") : t("Sesión del {fecha}", {fecha: fmtDate(st.dia)}),
+    blocks: [...princ, ...tareas].map((b, j) => ({el: el.querySelectorAll(".en-today .en-b")[j], lang: ["drill", "video", "tarea"].includes(b.tipo) ? ES : lang(),
+      text: unir(b.min && b.tipo !== "video" && b.tipo !== "tarea" ? `${b.min} min.` : "", punto(b.tipo === "drill" || b.tipo === "video" || b.tipo === "tarea" ? b.t : t(b.t)), b.dosis ? punto(b.dosis) : "", descB(b))}))});
   import("../entreno/logros.js").then(m => m.revisar?.()).catch(() => {});
 
   /* busca la sesión guardada del día o la congela a partir de la vista previa (solo hoy) */
@@ -248,7 +261,7 @@ function tdsCard(box, r){
     if(!x || !E.arte(x.arte)) return;
     const a = E.arte(x.arte), m = E.cargado(x.arte)?.modulos.find(y => y.id === x.mod), k = tdsKey(x);
     const fija = ac?.tds?.semana === M.isoWeek(new Date()) && ac.tds.id === x.id;
-    box.innerHTML = `<div class="en-h"><h2>${t("Técnica de la semana")}</h2><div class="en-h-act">${fija ? `<span class="pill info">${t("Fijada por la academia")}</span>` : ""}${ac ? `<button class="btn-link" data-tds-pin>${t("Cambiar")}</button>` : ""}</div></div>
+    box.innerHTML = `<div class="en-h"><h2>${t("Técnica de la semana")}</h2><div class="en-h-act">${fija ? `<span class="pill info">${t("Fijada por la academia")}</span>` : ""}${listenBtn("tds", t("Técnica de la semana"), {cls: "hide-s-txt"})}${ac ? `<button class="btn-link" data-tds-pin>${t("Cambiar")}</button>` : ""}</div></div>
       <section class="card en-tds" style="${artVars(a)}">
       <div class="en-tds-b"><div class="en-bt"><span class="en-tag" style="--c:${tono(a)}">${esc(t(a.corto))}</span>${m ? `<a class="muted small en-1l" href="#/entreno/${a.id}/${m.id}">${esc(m.titulo)}</a>` : ""}</div>
         <h4>${esc(x.foco)}</h4>
@@ -257,6 +270,9 @@ function tdsCard(box, r){
         ${x.pregunta ? `<p class="muted small"><b>${t("Pregunta para pensar")}:</b> ${esc(x.pregunta)}</p>` : ""}
         ${k && E.itemDe(k) ? chk(k, t("La practiqué")) : ""}</div></section>`;
     const pin = box.querySelector("[data-tds-pin]"); if(pin) pin.onclick = () => pinTds(M, x);
+    box.querySelector(".en-tds").dataset.vozK = "tds";
+    bind(box, () => ({title: x.foco, blocks: [{el: box.querySelector(".en-tds"), lang: ES,
+      text: unir("Técnica de la semana:", punto(x.foco), listaVoz("Claves", x.claves), x.reto ? `Reto: ${punto(x.reto)}` : "", x.pregunta ? `Pregunta para pensar: ${punto(x.pregunta)}` : "")}]}));
     box.onchange = e => { const kk = e.target.dataset.k; if(kk){ e.stopPropagation(); haptic(e.target.checked ? "light" : "selection"); E.marcar(kk, e.target.checked); } };
   }).catch(() => {});
 }
@@ -292,16 +308,18 @@ function rutinaIcs(){
   };
 }
 
+/* texto de un bloque de la sesión (también para leerlo en voz alta) */
+const descB = b => b.tipo === "calor" ? (b.artes || []).map(x => t(E.arte(x)?.calor || "")).join(" ")
+  : b.tipo === "cierre" ? t("Estiramientos suaves, respiración y anota en una línea qué mejoraste hoy.")
+  : b.tipo === "libre" ? t("Repite el drill que más te costó hoy o haz rounds de sombra aplicando {tema}.", {tema: (b.modT || "").toLowerCase()})
+  : b.d || "";
 function bloque(b, modo, hechos){
   const a = b.arte && E.arte(b.arte);
   const tag = a ? `<span class="en-tag" style="--c:${tono(a)}">${esc(t(a.corto))}</span>` : "";
   const off = modo === "futuro" || modo === "hecha";
   if(b.tipo === "video" || b.tipo === "tarea") return `<li class="en-b ${b.tipo}"><span class="en-bmin">${icon(b.tipo === "video" ? "star" : "edit")}</span><div><div class="en-bt">${tag}<span class="muted small">${b.tipo === "video" ? t("Video del día") : t("Opcional")}</span></div>
     ${b.url ? `<a href="${esc(b.url)}" target="_blank" rel="noopener"><b>${esc(b.t)}</b></a>` : `<b>${esc(b.t)}</b>`}${b.dosis ? ` <span class="en-dose">${esc(b.dosis)}</span>` : ""}<p>${esc(b.d || "")}</p>${chk(b.k, b.tipo === "video" ? t("Visto") : t("Hecho"), "", modo === "futuro")}</div></li>`;
-  const d = b.tipo === "calor" ? (b.artes || []).map(x => t(E.arte(x)?.calor || "")).join(" ")
-    : b.tipo === "cierre" ? t("Estiramientos suaves, respiración y anota en una línea qué mejoraste hoy.")
-    : b.tipo === "libre" ? t("Repite el drill que más te costó hoy o haz rounds de sombra aplicando {tema}.", {tema: (b.modT || "").toLowerCase()})
-    : b.d || "";
+  const d = descB(b);
   const on = hechos.has(b.b), rd = b.dosis && !off && E.rondas(b.dosis);
   return `<li class="en-b ${b.tipo} ${on ? "hecho" : ""}"><label class="en-bchk"><input type="checkbox" data-b="${esc(b.b)}" aria-label="${t("Hecho")}" ${on ? "checked" : ""} ${off ? "disabled" : ""}><span class="box"></span></label><span class="en-bmin tnum">${b.min}<small>min</small></span><div>
     <div class="en-bt">${tag}${b.modT && b.tipo === "drill" ? `<a class="muted small" href="#/entreno/${b.arte}/${b.mod}">${esc(b.modT)}</a>` : ""}${b.repaso ? `<span class="pill info">${t("Repaso")}</span>` : ""}</div>
@@ -466,7 +484,7 @@ function glosario(el, G){
   const nom = x => (en && x.en) || x.t;
   el.innerHTML = `${volver()}
   <div class="en-glo-top">
-    <label class="en-search">${icon("search")}<input id="glq" type="search" value="${esc(st.gq)}" placeholder="${esc(t("Buscar un término"))}" aria-label="${esc(t("Buscar un término"))}" autocomplete="off"></label>
+    <div class="en-glo-s"><label class="en-search">${icon("search")}<input id="glq" type="search" value="${esc(st.gq)}" placeholder="${esc(t("Buscar un término"))}" aria-label="${esc(t("Buscar un término"))}" autocomplete="off"></label>${listenBtn("glo:all", t("Términos de la lista"), {cls: "hide-s-txt"})}</div>
     <div class="chip-row en-glo-a"><button class="chip-btn ${!st.ga ? "on" : ""}" data-ga="" aria-pressed="${!st.ga}">${t("Todas")}</button>${artes.map(a => `<button class="chip-btn ${st.ga === a.id ? "on" : ""}" data-ga="${a.id}" aria-pressed="${st.ga === a.id}" style="--c:${tono(a)}">${esc(t(a.corto))}</button>`).join("")}</div>
     <nav class="en-az" aria-label="${esc(t("Índice alfabético"))}"></nav>
   </div>
@@ -481,12 +499,23 @@ function glosario(el, G){
     const ls = [...new Set(xs.map(letra))];
     az.innerHTML = ls.map(l => `<a href="#" data-az="${l}">${l}</a>`).join("");
     lista.innerHTML = xs.length ? ls.map(l => `<h4 class="en-glo-h" id="glo-${l}">${l}</h4>${xs.filter(x => letra(x) === l).map(x => { const a = E.arte(x.arte);
-      return `<article class="en-term"><div class="en-term-h"><b>${esc(nom(x))}</b>${en && x.en && x.en !== x.t ? `<span class="muted small">${esc(x.t)}</span>` : !en && x.en && norm(x.en) !== norm(x.t) ? `<span class="muted small">${esc(x.en)}</span>` : ""}${x.orig ? `<span class="muted small">· ${esc(x.orig)}</span>` : ""}
+      return `<article class="en-term" data-gid="${esc(x.id)}" data-voz-k="g:${esc(x.id)}">${listenBtn("glo:" + x.id, nom(x), {text: false, cls: "en-term-voz"})}<div class="en-term-h"><b>${esc(nom(x))}</b>${en && x.en && x.en !== x.t ? `<span class="muted small">${esc(x.t)}</span>` : !en && x.en && norm(x.en) !== norm(x.t) ? `<span class="muted small">${esc(x.en)}</span>` : ""}${x.orig ? `<span class="muted small">· ${esc(x.orig)}</span>` : ""}
         ${a ? `<span class="en-tag" style="--c:${tono(a)}">${esc(t(a.corto))}</span>` : ""}</div><p>${esc(x.d)}</p>
         ${x.mod && a ? `<a class="en-term-go" href="#/entreno/${x.arte}/${esc(x.mod)}">${t("Ver en el camino")} →</a>` : ""}</article>`; }).join("")}`).join("")
       : `<div class="empty-st info"><span class="empty-ic">${icon("search")}</span><h3>${t("Sin resultados")}</h3><p>${t("Prueba con otra palabra o quita el filtro de arte.")}</p></div>`;
   };
   pintar();
+  /* «Escuchar»: un término o toda la lista filtrada. En inglés, el nombre en inglés y luego el término y su definición en español */
+  const byGid = new Map(G.map(x => [x.id, x]));
+  const blkGlo = art => { const x = byGid.get(art.dataset.gid); if(!x) return null;
+    const es = {text: unir(punto(x.t), x.d), lang: ES};
+    return {el: art, parts: en && x.en && norm(x.en) !== norm(x.t) ? [{text: punto(x.en), lang: "en"}, es] : [es]}; };
+  bind(el, id => {
+    const arts = [...lista.querySelectorAll(".en-term")];
+    if(id === "glo:all") return {title: t("Glosario"), blocks: arts.map(blkGlo).filter(Boolean)};
+    const art = arts.find(x => "glo:" + x.dataset.gid === id), x = art && byGid.get(art.dataset.gid);
+    return x ? {title: nom(x), blocks: [blkGlo(art)]} : null;
+  });
   el.querySelector("#glq").oninput = e => { st.gq = e.target.value; pintar(); };
   el.onclick = e => {
     const g = e.target.closest("[data-ga]"); if(g){ haptic("selection"); st.ga = g.dataset.ga; for(const b of el.querySelectorAll("[data-ga]")){ b.classList.toggle("on", b === g); b.setAttribute("aria-pressed", b === g); } pintar(); return; }
@@ -547,7 +576,7 @@ function vistaArte(el, id){
   ${esNota()}
   <section class="en-hero" style="${artVars(a)}">
     <div><span class="en-eye">${t("Camino de aprendizaje")}</span><h2>${esc(d.intro.titulo || a.nombre)}</h2><p>${esc(d.intro.sub || "")}</p>
-      <a class="en-go" href="#/entreno/${id}/${act.id}">${p ? t("Continuar módulo {n}", {n: act.n}) : t("Empezar")}</a></div>
+      <div class="en-hero-act"><a class="en-go" href="#/entreno/${id}/${act.id}">${p ? t("Continuar módulo {n}", {n: act.n}) : t("Empezar")}</a>${listenBtn("arte", d.intro.titulo || t(a.nombre), {cls: "light"})}</div></div>
     ${ring(p, 92, "#fff")}
   </section>
   ${matriz(id, d, act)}
@@ -563,6 +592,15 @@ function vistaArte(el, id){
     <div class="en-phases">${d.plan.map((f, j) => `<div class="en-ph" style="${artVars(a)}"><span class="en-ph-n" aria-hidden="true">${j + 1}</span><span class="en-eye">${esc(f.semanas)}</span><b>${esc(f.fase)}</b><p class="muted small">${esc(f.foco)}</p><ul>${f.puntos.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>`).join("")}</div>` : ""}
   ${d.semana.length ? `<div class="en-h"><h2>${t("Clase tipo")}</h2></div><div class="card flush"><div class="list en-clase">${d.semana.map(b => `<div class="li"><span class="en-bmin wide tnum">${esc(b.min)}</span><div class="li-main"><b>${esc(b.t)}</b><span class="muted small en-wrap">${esc(b.d)}</span></div></div>`).join("")}</div></div>` : ""}`;
   el.onclick = null; el.onchange = null;
+  /* «Escuchar» el camino: presentación, cómo avanzar, plan sugerido y clase tipo */
+  vozK(el, ".en-hero", "intro"); vozK(el, ".en-rules > div", "r"); vozK(el, ".en-ph", "p"); vozK(el, ".en-clase .li", "s");
+  bind(el, () => { const qa = s => [...el.querySelectorAll(s)], rs = qa(".en-rules > div"), ps = qa(".en-ph"), ss = qa(".en-clase .li");
+    return {title: d.intro.titulo || t(a.nombre), blocks: [
+      {el: el.querySelector(".en-hero"), lang: ES, text: unir(punto(d.intro.titulo || a.nombre), d.intro.sub)},
+      ...(d.intro.reglas || []).map((x, j) => ({el: rs[j], lang: ES, text: unir(j === 0 ? "Cómo avanzar." : "", punto(x.t), x.d)})),
+      ...d.plan.map((f, j) => ({el: ps[j], lang: ES, text: unir(j === 0 ? "Plan sugerido." : "", punto(f.fase), punto(f.semanas), punto(f.foco), f.puntos.map(punto).join(" "))})),
+      ...d.semana.map((b, j) => ({el: ss[j], lang: ES, text: unir(j === 0 ? "Clase tipo." : "", punto(b.min), punto(b.t), b.d)})),
+    ]}; });
 }
 
 /* ---------- un módulo ---------- */
@@ -579,19 +617,20 @@ function vistaModulo(el, id, modId, titulo = () => {}){
   ${volver(`#/entreno/${id}`, t(a.nombre))}
   ${esNota()}
   <section class="en-hero sm" style="${artVars(a)}">
-    <div><span class="en-eye">${esc(t(a.corto))} · <span class="lvl ${m.nivel}">${nivelT(m.nivel)}</span></span><h2>${esc(m.titulo)}</h2><p class="en-clamp ${st.mas === m.id ? "open" : ""}">${esc(m.resumen || m.sub || "")}</p><button class="btn-link en-more" data-mas hidden>${st.mas === m.id ? t("Leer menos") : t("Leer más")}</button></div>
+    <div><span class="en-eye">${esc(t(a.corto))} · <span class="lvl ${m.nivel}">${nivelT(m.nivel)}</span></span><h2>${esc(m.titulo)}</h2><p class="en-clamp ${st.mas === m.id ? "open" : ""}">${esc(m.resumen || m.sub || "")}</p><button class="btn-link en-more" data-mas hidden>${st.mas === m.id ? t("Leer menos") : t("Leer más")}</button>
+      <div class="en-hero-act">${listenBtn("mod", m.titulo, {cls: "light"})}</div></div>
     <span data-ring>${ring(E.pctMod(id, m), 80, "#fff")}</span>
   </section>
   <nav class="en-anchors" aria-label="${t("Secciones")}">${[["conceptos", "Conceptos", m.conceptos.length], ["drills", "Drills", m.drills.length], ["videos", "Videos", m.recursos.length], ["hitos", "Hitos", m.hitos.length]]
     .filter(x => x[2]).map(([k, l, n]) => `<button data-go="${k}">${t(l)} <i>${n}</i></button>`).join("")}</nav>
 
-  <h3 class="en-sec" id="en-s-conceptos">${t("Conceptos")}</h3>
+  <div class="en-sec-row"><h3 class="en-sec" id="en-s-conceptos">${t("Conceptos")}</h3>${listenBtn("mod:c", t("Conceptos"), {text: false})}</div>
   <div class="card flush en-concepts">${m.conceptos.map((c, j) => `<details class="en-c" ${j === 0 ? "open" : ""}><summary><span class="en-ci" style="${artVars(a)}">${j + 1}</span><b>${esc(c.titulo)}</b>${icon("chevron", "chev-i")}</summary>
     <div class="en-cb"><p>${esc(c.explicacion)}</p><div class="en-cols">
       ${(c.puntos || c.puntos_clave)?.length ? `<div class="ok"><h4>${icon("check", "inline")} ${t("Claves")}</h4><ul>${(c.puntos || c.puntos_clave).map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}
       ${(c.errores || c.errores_comunes)?.length ? `<div class="bad"><h4>${icon("x", "inline")} ${t("Errores comunes")}</h4><ul>${(c.errores || c.errores_comunes).map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}</div></div></details>`).join("")}</div>
 
-  <h3 class="en-sec" id="en-s-drills">${t("Drills")}</h3>
+  <div class="en-sec-row"><h3 class="en-sec" id="en-s-drills">${t("Drills")}</h3>${listenBtn("mod:d", t("Drills"), {text: false})}</div>
   <div class="en-drills">${m.drills.map((x, j) => { const k = E.kDrill(id, m.id, j); return `<div class="en-drill ${E.hecho(k) ? "done" : ""}">
     <div class="en-dh">${chk(k)}<b>${esc(x.nombre)}</b><span class="lvl ${x.nivel}">${nivelT(x.nivel)}</span></div>
     <p>${esc(x.como)}</p><div class="en-dm"><span class="en-dose">${icon("clock", "inline")} ${esc(x.dosis)}</span>${x.solo ? `<span class="muted small">${t("Se puede solo")}</span>` : `<span class="muted small">${t("Con compañero")}</span>`}</div></div>`; }).join("")}</div>
@@ -605,7 +644,7 @@ function vistaModulo(el, id, modId, titulo = () => {}){
       <span class="muted small">${esc(r.autor || "")}${r.idioma ? ` · ${r.idioma === "es" ? t("Español") : t("Inglés")}` : ""} · ${nivelT(r.nivel)}${r.pago ? ` <span class="pill pronto">${t("De pago")}</span>` : ""}</span>
       <p>${esc(r.por_que || "")}</p>${chk(k, t("Visto"))}</div></article>`; }).join("")}</div>` : ""}
 
-  ${m.hitos.length ? `<h3 class="en-sec" id="en-s-hitos">${t("Lo domino cuando…")}</h3><div class="card flush en-hitos">${m.hitos.map((x, j) => chk(E.kHito(id, m.id, j), `<span>${esc(x)}</span>`, "row")).join("")}</div>` : ""}
+  ${m.hitos.length ? `<div class="en-sec-row"><h3 class="en-sec" id="en-s-hitos">${t("Lo domino cuando…")}</h3>${listenBtn("mod:h", t("Lo domino cuando…"), {text: false})}</div><div class="card flush en-hitos">${m.hitos.map((x, j) => chk(E.kHito(id, m.id, j), `<span>${esc(x)}</span>`, "row")).join("")}</div>` : ""}
 
   <div class="en-pager">${prev ? `<a class="en-pg prev press" href="#/entreno/${id}/${prev.id}"><span class="en-pg-l">${icon("back")} ${t("Anterior")}</span><b>${esc(prev.titulo)}</b></a>` : "<span></span>"}${next ? `<a class="en-pg next press" href="#/entreno/${id}/${next.id}" style="${artVars(a)}"><span class="en-pg-l">${t("Siguiente")} ${icon("chevron")}</span><b>${esc(next.titulo)}</b></a>` : ""}</div>`;
 
@@ -613,6 +652,19 @@ function vistaModulo(el, id, modId, titulo = () => {}){
   const cl = el.querySelector(".en-clamp"), mas = el.querySelector("[data-mas]");
   if(cl && mas) requestAnimationFrame(() => { if(cl.classList.contains("open") || cl.scrollHeight > cl.clientHeight + 2) mas.hidden = false; });
   const topH = () => document.querySelector(".top")?.offsetHeight || 0;
+  /* «Escuchar» el módulo entero (presentación, conceptos, drills e hitos) o una sola sección */
+  vozK(el, ".en-hero", "intro"); vozK(el, ".en-c", "c"); vozK(el, ".en-drill", "d"); vozK(el, ".en-hitos > .en-chk", "h");
+  bind(el, id => {
+    const qa = s => [...el.querySelectorAll(s)], cs = qa(".en-c"), ds = qa(".en-drill"), hs = qa(".en-hitos > .en-chk");
+    const sec = {
+      intro: [{el: el.querySelector(".en-hero"), lang: ES, text: unir(`Módulo ${m.n}:`, punto(m.titulo), m.resumen || m.sub)}],
+      c: m.conceptos.map((c, j) => ({el: cs[j], lang: ES, text: unir(punto(c.titulo), c.explicacion, listaVoz("Claves", c.puntos || c.puntos_clave), listaVoz("Errores comunes", c.errores || c.errores_comunes))})),
+      d: m.drills.map((x, j) => ({el: ds[j], lang: ES, text: unir(`Drill ${j + 1}:`, punto(x.nombre), punto(x.como), x.dosis ? `Dosis: ${punto(x.dosis)}` : "", x.solo ? "Se puede hacer solo." : "Con compañero.")})),
+      h: m.hitos.map((x, j) => ({el: hs[j], lang: ES, text: unir(j === 0 ? "Lo domino cuando:" : "", punto(x))})),
+    };
+    const k = id.split(":")[1], nm = {c: t("Conceptos"), d: t("Drills"), h: t("Lo domino cuando…")};
+    return k ? {title: `${m.titulo} · ${nm[k]}`, blocks: sec[k]} : {title: m.titulo, blocks: [...sec.intro, ...sec.c, ...sec.d, ...sec.h]};
+  });
   el.querySelector(".en-anchors")?.style.setProperty("--top", topH() + "px");
   el.onclick = e => {
     const f = e.target.closest("[data-f]"); if(f){ haptic("selection"); st.filtro = f.dataset.f; vistaModulo(el, id, modId, titulo); return; }

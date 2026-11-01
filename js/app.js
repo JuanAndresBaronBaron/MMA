@@ -7,6 +7,9 @@ import {t, tn, lang, setLang, LANGS} from "./i18n.js";
 import {applyTheme, watchSystemTheme, logo, gIcon, createAcademy, setRenderer} from "./shell.js";
 import {estadoPago, estadoEf} from "./cobros.js";
 import * as R from "./roles.js";
+import * as V from "./voz.js";
+/* lectura en voz alta: textos, preferencias, háptica y avisos de la app */
+V.configure({t, lang, pref: S.pref, setPref: S.setPref, haptic, toast});
 /* las vistas importan esto de shell.js; se reexporta por compatibilidad */
 export {toggleTheme, gIcon, logo, createAcademy} from "./shell.js";
 

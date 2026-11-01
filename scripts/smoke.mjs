@@ -295,6 +295,29 @@ async function estudiante(browser, {w, scheme, lang}){
     const h = await p.evaluate(() => location.hash);
     if(h !== "#/entreno") fails.push({ruta: here, tipo: "rol", msg: `debía llevar a #/entreno y quedó en ${h}`});
   }
+  /* lectura en voz alta (js/voz.js): los botones «Escuchar» salen (o se esconden si no hay voz) y tocarlos no rompe
+     nada aunque Chromium sin pantalla no tenga voces: suena o avisa */
+  here = "estudiante: voz";
+  try{
+    await p.evaluate(() => { location.hash = "#/entreno/bjj"; });
+    await p.waitForSelector("#main .en-hero", {timeout: 10000}); await sleep(300);
+    const v = await p.evaluate(async () => {
+      const V = await import("./js/voz.js");
+      const vis = el => !!el && el.getClientRects().length > 0;
+      const bs = [...document.querySelectorAll("#main [data-voz]")];
+      return {sop: V.soportado(), n: bs.length, vis: bs.filter(vis).length, no: document.documentElement.classList.contains("voz-no"),
+        trozos: V.trocear(V.limpiar("Frase de prueba con 3 min y https://x.co. ".repeat(40))).every(x => x.length <= 200)};
+    });
+    if(v.sop && !v.n) fails.push({ruta: here, tipo: "voz", msg: "el módulo no tiene botones Escuchar"});
+    if(v.no && v.vis) fails.push({ruta: here, tipo: "voz", msg: "sin voz, los botones Escuchar siguen a la vista"});
+    if(!v.trozos) fails.push({ruta: here, tipo: "voz", msg: "trocear() dejó un trozo de más de 200 caracteres"});
+    if(v.vis){
+      await p.click("#main .en-hero [data-voz]"); await sleep(700);
+      const r = await p.evaluate(async () => { const V = await import("./js/voz.js"); const e = V.estado(); const pl = !!document.querySelector(".voz-player:not([hidden])"), av = !!document.querySelector("#toasts .toast"); V.stop(); return {on: e.on, pl, av}; });
+      if(!r.on && !r.pl && !r.av) fails.push({ruta: here, tipo: "voz", msg: "tocar Escuchar no leyó ni avisó"});
+    }
+    await ov();
+  }catch(e){ fails.push({ruta: here, tipo: "voz", msg: e.message.slice(0, 200)}); }
   if(w < 900){ here = "estudiante: más"; await p.click("#moreBtn"); await sleep(400); await ov(); await p.keyboard.press("Escape"); await sleep(300); }
   here = "estudiante: buscador";
   await p.evaluate(async () => { const m = await import("./js/palette.js"); m.openPalette("pag"); });

@@ -7,6 +7,7 @@ import {esc} from "../util.js";
 import {t, lang} from "../i18n.js";
 import {nombreAcademia} from "../roles.js";
 import {FRASES, CATEGORIAS} from "../frases/data.js";
+import {listenBtn, bind, estado as vozEstado, stop as vozStop} from "../voz.js";
 
 /* ---------- categorías ---------- */
 const CAT = {
@@ -28,6 +29,9 @@ const txt = q => (en() && q.en ? q.en : q.texto);
 const aut = q => (en() && q.autorEn ? q.autorEn : q.autor);
 const quien = q => (en() && q.quienEn ? q.quienEn : q.quien);
 const catOf = q => CAT[q.categoria] || CAT.disciplina;
+/* lectura en voz alta: la frase y luego «de» / «by» y el autor, con la voz del idioma en que se muestra */
+const vozQ = (q, el) => { const L = en() && q.en ? "en" : "es", f = txt(q).trim();
+  return {el, lang: L, text: `${/[.!?…]["”’]?$/.test(f) ? f : f + "."} ${L === "en" ? "By" : "De"} ${aut(q)}.`}; };
 const byId = new Map(FRASES.map(q => [q.id, q]));
 
 /* ---------- azar con semilla (mismo orden en todos los aparatos) ---------- */
@@ -246,12 +250,13 @@ export function render(el){
         <button type="button" class="fr-pill ${isFav(dq.id) ? "on" : ""}" data-dayfav aria-pressed="${isFav(dq.id)}">${icon("heart")}<span>${isFav(dq.id) ? t("Guardada") : t("Guardar")}</span></button>
         <button type="button" class="fr-pill" data-dayshare>${icon("share")}<span>${t("Compartir")}</span></button>
         <button type="button" class="fr-pill" data-dayimg>${icon("download")}<span>${t("Imagen")}</span></button>
+        ${listenBtn("fr:day", t("Frase del día"), {base: "fr-pill"})}
       </div>
     </section>
 
     <div class="fr-grid">
       <section class="fr-deck-wrap" aria-labelledby="frDeckH">
-        <div class="fr-sec-h"><h2 id="frDeckH">${t("Frases de guerreros")}</h2><span class="muted small" id="frCount"></span></div>
+        <div class="fr-sec-h"><h2 id="frDeckH">${t("Frases de guerreros")}</h2><div class="fr-sec-r"><span class="muted small" id="frCount"></span>${listenBtn("fr:card", t("Frase actual"), {cls: "hide-s-txt"})}</div></div>
         <div class="fr-chips" role="radiogroup" aria-label="${t("Categoría")}">
           <label class="fr-chip"><input type="radio" name="frcat" value="" ${!st.cat ? "checked" : ""}><span>${t("Todas")} <i>${FRASES.length}</i></span></label>
           ${CATEGORIAS.filter(c => counts[c]).map(c => `<label class="fr-chip" style="--fr-c:${CAT[c].g[1]}"><input type="radio" name="frcat" value="${c}" ${st.cat === c ? "checked" : ""}><span>${icon(CAT[c].ic)}${esc(t(CAT[c].n))} <i>${counts[c]}</i></span></label>`).join("")}
@@ -291,6 +296,7 @@ export function render(el){
         <span class="fr-fav-ic" aria-hidden="true">${icon(catOf(q).ic)}</span>
         <div class="fr-fav-main"><p>“${esc(txt(q))}”</p><span>${esc(aut(q))}</span></div>
         <div class="fr-fav-act">
+          ${listenBtn("fr:fav:" + q.id, aut(q), {text: false, base: "icon-btn"})}
           <button type="button" class="icon-btn" data-fshare="${q.id}" aria-label="${t("Compartir")}" title="${t("Compartir")}">${icon("share")}</button>
           <button type="button" class="icon-btn" data-fdel="${q.id}" aria-label="${t("Quitar de favoritas")}" title="${t("Quitar de favoritas")}">${icon("trash")}</button>
         </div>
@@ -325,6 +331,7 @@ export function render(el){
     if(!a || a === document.body || !el.contains(a) || a.disabled) deckEl.focus({preventScroll: true});
   };
   const commit = (id, dir) => {
+    if(vozEstado().id === "fr:card") vozStop();   // la tarjeta que sonaba se fue
     st.hist.push({i: st.i, id, dir, fav: dir === "right" && !isFav(id)});
     st.i++;
     markSeen(id);
@@ -541,6 +548,13 @@ export function render(el){
     else if(e.key === "Backspace" || e.key === "z"){ e.preventDefault(); undo(); }
   };
   document.addEventListener("keydown", onKey);
+
+  bind(el, id => {
+    if(id === "fr:day") return {title: t("Frase del día"), blocks: [vozQ(dq, el.querySelector(".fr-day"))]};
+    if(id === "fr:card"){ const c = top(), q = c && byId.get(c.dataset.id); return q ? {title: aut(q), blocks: [vozQ(q, c)]} : null; }
+    const q = id.startsWith("fr:fav:") && byId.get(id.slice(7));
+    return q ? {title: aut(q), blocks: [vozQ(q, el.querySelector(`[data-voz="${id}"]`)?.closest(".fr-fav"))]} : null;
+  });
 
   const refresh = () => { if(alive){ paintFavs(); syncDayFav(); if(!st.busy) paintDeck(); } };
   st.view = {undo, refresh};

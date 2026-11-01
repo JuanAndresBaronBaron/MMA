@@ -317,3 +317,12 @@
 .dif-fin{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;padding:20px 0}
 .dif-fin > .ic{width:48px;height:48px;color:var(--ok)}
 .dif-foot .btn:disabled{opacity:.45;cursor:not-allowed}
+/* Ajustes · lectura en voz alta */
+.aj-voz .aj-voz-sel{appearance:none;-webkit-appearance:none;flex:0 1 auto;width:auto;min-width:0;max-width:min(62%,280px);margin-left:auto;padding:6px 20px 6px 4px;border:0;border-radius:8px;outline:none;
+  background:transparent url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='14' viewBox='0 0 10 14' fill='none' stroke='%238e8e93' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m2 5 3-3 3 3M2 9l3 3 3-3'/%3E%3C/svg%3E") no-repeat right 4px center;
+  color:var(--muted);font-size:var(--fs-body);text-align:right;text-overflow:ellipsis;white-space:nowrap;overflow:hidden;cursor:pointer}
+.aj-voz .aj-voz-sel:disabled{background-image:none;padding-right:4px;cursor:default}
+.aj-voz .aj-voz-sel option{background:var(--bg-elevated);color:var(--text)}
+.aj-voz .aj-voz-sel:focus-visible{outline:3px solid color-mix(in srgb,var(--focus) 70%,transparent);outline-offset:2px}
+.aj-voz [data-voz-probar] .aj-l{flex:none}
+.aj-voz .aj-voz-n{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}

@@ -1,0 +1,101 @@
+/* Lectura en voz alta (js/voz.js): botón «Escuchar», resaltado del bloque que suena y reproductor flotante.
+   Usa los tokens de la app con valores de respaldo, así sirve también en philly/ (que pone los suyos en --vz-*). */
+:root{
+  --vz-fg:var(--label,var(--text,#F2F2F0));
+  --vz-muted:var(--muted,#A1A19C);
+  --vz-acc:var(--accent,#C41E30);          /* relleno con texto blanco encima */
+  --vz-acc-fg:#fff;
+  --vz-acc-t:var(--accent2,#FF4B57);       /* texto e iconos rojos */
+  --vz-fill:var(--fill-3,rgba(118,118,128,.24));
+  --vz-fill-2:var(--fill-2,rgba(118,118,128,.32));
+  --vz-glass:var(--material-thick,rgba(24,24,24,.92));
+  --vz-shadow:var(--shadow-float,0 0 0 .5px rgba(255,255,255,.1),0 12px 40px rgba(0,0,0,.65));
+  --vz-spring:var(--spring-bouncy,cubic-bezier(.3,1.5,.45,1));
+  --vz-ease:var(--ease-out-ios,cubic-bezier(.32,.72,0,1));
+}
+html.voz-no [data-voz],html.voz-no .voz-only{display:none!important}
+
+/* ---------- botón ---------- */
+.voz-btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 13px 0 10px;border:0;border-radius:999px;flex:none;
+  background:var(--vz-fill);color:var(--vz-acc-t);font:600 14px/1 var(--font,inherit);letter-spacing:-.01em;cursor:pointer;white-space:nowrap;
+  transition:background var(--dur-fast,.2s),color var(--dur-fast,.2s),transform var(--dur-spring,.55s) var(--spring,cubic-bezier(.25,1.1,.4,1));-webkit-tap-highlight-color:transparent}
+.voz-btn .ic{width:18px;height:18px;flex:none}
+.voz-btn.solo{width:32px;padding:0}
+.voz-btn:hover{background:var(--vz-fill-2)}
+.voz-btn:active{transform:scale(.92);transition-duration:var(--dur-press,.14s)}
+.voz-btn.on{background:var(--vz-acc);color:var(--vz-acc-fg)}
+.voz-btn[data-voz-st=pause] .ic{opacity:.9}
+[data-voz][data-voz-st=play] .ic{animation:vz-pulse 1.6s var(--vz-ease) infinite}
+@keyframes vz-pulse{50%{transform:scale(.86)}}
+/* sobre degradados oscuros (tarjetas de frases, héroes) */
+.voz-btn.light{background:rgba(255,255,255,.16);color:#fff;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px)}
+.voz-btn.light:hover{background:rgba(255,255,255,.24)}
+.voz-btn.light.on{background:#fff;color:#1A1A1A}
+@media (pointer:coarse){
+  .voz-btn{height:36px;font-size:15px}
+  .voz-btn.solo{width:36px}
+  .voz-btn.solo::after{content:"";position:absolute;inset:-4px}
+  .voz-btn.solo{position:relative}
+}
+
+/* ---------- bloque que suena ---------- */
+/* el anillo va por fuera del bloque, así no pisa números ni textos pegados al borde, y sigue la esquina redonda.
+   :where() deja el radio en 0 de especificidad: las tarjetas conservan el suyo y los bloques sin radio toman 12px.
+   Las tarjetas a sangre (héroes, frases) lo llevan por dentro con su propio outline-offset. */
+.voz-on{outline:2.5px solid var(--vz-acc-t)!important;outline-offset:4px;scroll-margin:96px 0 120px;transition:outline-color var(--dur-fast,.2s)}
+:where(.voz-on){border-radius:12px}
+
+/* ---------- reproductor ---------- */
+.voz-player{position:fixed;z-index:60;right:24px;bottom:24px;width:min(400px,calc(100vw - 48px));display:flex;align-items:center;gap:10px;padding:8px 8px 8px 8px;
+  border-radius:999px;background:var(--vz-glass);-webkit-backdrop-filter:var(--blur-thick,saturate(190%) blur(30px));backdrop-filter:var(--blur-thick,saturate(190%) blur(30px));
+  box-shadow:var(--vz-shadow);color:var(--vz-fg);font-family:var(--font,inherit);
+  opacity:0;transform:translateY(calc(100% + 32px)) scale(.92);transform-origin:50% 100%;
+  transition:transform var(--dur-spring,.55s) var(--vz-spring),opacity var(--dur-fast,.2s) var(--vz-ease)}
+.voz-player.in{opacity:1;transform:none}
+.voz-player[hidden]{display:none}
+.voz-player button{border:0;background:none;color:inherit;font:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent;flex:none;
+  transition:transform var(--dur-spring,.55s) var(--spring,cubic-bezier(.25,1.1,.4,1)),background var(--dur-fast,.2s),opacity var(--dur-fast,.2s)}
+.voz-player button:active{transform:scale(.88);transition-duration:var(--dur-press,.14s)}
+.voz-player button:disabled{opacity:.35;cursor:default}
+.voz-player button:disabled:active{transform:none}
+.vz-main{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;background:var(--vz-acc)!important;color:var(--vz-acc-fg)!important}
+.vz-main .ic{width:22px;height:22px}
+.vz-info{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.vz-t{font-size:14px;font-weight:600;letter-spacing:-.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;line-height:1.25}
+.vz-s{font-size:12px;color:var(--vz-muted);font-variant-numeric:tabular-nums;line-height:1.2}
+.vz-bar{display:block;height:3px;border-radius:2px;background:var(--vz-fill);overflow:hidden;margin-top:3px}
+.vz-bar > i{display:block;height:100%;background:var(--vz-acc-t);transform-origin:0 50%;transform:scaleX(0);transition:transform var(--dur-base,.35s) var(--vz-ease)}
+.vz-ctl{display:flex;align-items:center;gap:2px;flex:none}
+.vz-ic{width:36px;height:36px;border-radius:50%;display:grid;place-items:center}
+.vz-ic:hover:not(:disabled),.vz-rate:hover{background:var(--vz-fill)}
+.vz-ic .ic{width:20px;height:20px}
+.vz-rate{min-width:46px;height:30px;padding:0 8px;border-radius:999px;background:var(--vz-fill)!important;font-size:13px!important;font-weight:700!important;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.voz-player.paused .vz-bar > i{opacity:.55}
+
+/* celular: encima de la barra de pestañas */
+@media (max-width:760px){
+  .voz-player{left:10px;right:10px;width:auto;bottom:calc(12px + env(safe-area-inset-bottom));gap:8px;padding:6px}
+  .app ~ .voz-player{bottom:calc(var(--bottom-h,49px) + env(safe-area-inset-bottom) + 10px)}
+  .vz-main{width:46px;height:46px}
+  .vz-ic{width:40px;height:40px}
+  .vz-ctl{gap:0}
+  body.voz-open main{padding-bottom:calc(var(--bottom-h,49px) + 112px + env(safe-area-inset-bottom))}
+  .voz-btn:not(.solo).hide-s-txt{width:36px;padding:0}
+  .voz-btn:not(.solo).hide-s-txt span{display:none}
+}
+@media (max-width:360px){ .vz-ic[data-vz=prev]{display:none} }
+@media (min-width:761px){ body.voz-open main{padding-bottom:112px} }
+body.voz-open .fab{transform:translateY(-70px)}
+
+/* aviso propio (sin toast de la app) */
+.voz-aviso{position:fixed;left:50%;bottom:24px;z-index:70;max-width:calc(100vw - 32px);padding:12px 18px;border-radius:999px;background:var(--vz-glass);color:var(--vz-fg);
+  -webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);box-shadow:var(--vz-shadow);font:600 14px/1.3 var(--font,inherit);
+  transform:translate(-50%,140%);opacity:0;transition:transform var(--dur-spring,.55s) var(--vz-spring),opacity .2s;pointer-events:none}
+.voz-aviso.in{transform:translate(-50%,0);opacity:1}
+
+@media (prefers-reduced-motion:reduce){
+  .voz-player,.voz-aviso,.vz-bar > i,.voz-btn{transition:opacity .15s!important}
+  .voz-player{transform:none}
+  [data-voz][data-voz-st=play] .ic{animation:none}
+}
+@media print{ .voz-btn,.voz-player{display:none!important} }

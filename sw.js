@@ -1,13 +1,13 @@
 /* Funciona sin internet: la app se guarda en caché. Primero la red (siempre la última versión) y, sin conexión, la
    caché. Los datos del usuario no pasan por aquí (están en localStorage/IndexedDB y en su Google Drive).
    Al cambiar archivos, subir VERSION. */
-const VERSION = 10;
+const VERSION = 12;
 const CACHE = "mma-v" + VERSION;
 const SHELL = ["./", "index.html", "privacy.html", "inscripcion.html", "ficha.html", "manifest.webmanifest", "icons/icon.svg", "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png", "icons/icon-192-maskable.png", "icons/icon-512-maskable.png", "icons/sc-alumno.png", "icons/sc-lista.png", "icons/sc-horario.png",
   "css/app.css", "css/entreno.css", "css/dash.css", "css/tracking.css", "css/students.css",
-  "css/clases.css", "css/leads.css", "css/recibo.css", "css/reportes.css", "css/grados.css", "css/certificado.css", "css/ficha.css", "css/inscripcion.css", "css/frases.css",
+  "css/clases.css", "css/leads.css", "css/recibo.css", "css/reportes.css", "css/grados.css", "css/certificado.css", "css/ficha.css", "css/inscripcion.css", "css/frases.css", "css/voz.css",
   "js/app.js", "js/shell.js", "js/roles.js", "js/cobros.js", "js/util.js", "js/catalog.js", "js/store.js", "js/sync.js", "js/config.js", "js/ui.js", "js/forms.js", "js/demo.js",
-  "js/palette.js", "js/install.js", "js/clases.js", "js/qr.js", "js/retencion.js", "js/difusion.js", "js/evaluacion.js", "js/ficha-link.js", "js/ics.js",
+  "js/palette.js", "js/install.js", "js/clases.js", "js/qr.js", "js/retencion.js", "js/difusion.js", "js/evaluacion.js", "js/ficha-link.js", "js/ics.js", "js/voz.js",
   "js/pages/ficha.js", "js/pages/inscripcion.js",
   "js/views/dashboard.js", "js/views/alumnos.js", "js/views/alumno.js", "js/views/pagos.js", "js/views/grados.js", "js/views/ranking.js",
   "js/views/asistencia.js", "js/views/tienda.js", "js/views/academia.js", "js/views/ajustes.js", "js/views/entreno.js",

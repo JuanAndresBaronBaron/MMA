@@ -66,6 +66,8 @@ const P = {
   keyboard: '<rect x="2.5" y="6" width="19" height="12" rx="2"/><path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M7 14h10"/>',
   wifiOff: '<path d="m3 3 18 18M8.5 16.5a5 5 0 0 1 7 0M5 12.5a10 10 0 0 1 4.5-2.4M19 12.5a10 10 0 0 0-2.3-1.6M2 8.8A15 15 0 0 1 6.6 6M22 8.8A15 15 0 0 0 11 5M12 20h.01"/>',
   lock: '<rect x="5" y="11" width="14" height="10" rx="2.5"/><path d="M8.5 11V7.5a3.5 3.5 0 0 1 7 0V11"/>',
+  speaker: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M15.5 9a4 4 0 0 1 0 6M18.5 6.5a7.5 7.5 0 0 1 0 11"/>',
+  pause: '<path d="M8 5.5v13M16 5.5v13"/>',
   fist: '<path d="M7 11V7.5a1.5 1.5 0 0 1 3 0V11M10 10V6.5a1.5 1.5 0 0 1 3 0V10M13 10V7a1.5 1.5 0 0 1 3 0v3.5M16 10a1.5 1.5 0 0 1 3 0v3.5c0 4-2.5 7.5-6.5 7.5H11a5 5 0 0 1-5-5v-2.5A1.5 1.5 0 0 1 7.5 11H10a2 2 0 0 1 0 4H8.5"/>',
 };
 export const icon = (n, cls = "") => `<svg class="ic ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n] || P.info}</svg>`;

@@ -1,6 +1,14 @@
 /* Camino Philly Shell — sección privada (no enlazada desde la app).
    El código solo protege la vista: el contenido es estático y público en el repositorio. */
 import {INTRO, MODULOS, PLAN, SEMANA, PLATAFORMAS} from "./data.js";
+import {listenBtn, bind, configure} from "../js/voz.js";
+
+/* lectura en voz alta con la voz del navegador (js/voz.js), siempre en español. Los enlaces del índice cambian
+   el hash: aquí eso no corta la lectura */
+configure({lang: () => "es", stopOnHash: false});
+const punto = s => { s = String(s ?? "").trim(); return !s ? "" : /[.!?…:;]["”’)]*$/.test(s) ? s : s + "."; };
+const unir = (...xs) => xs.filter(Boolean).join(" ");
+const lista = (tit, xs) => (xs?.length ? `${tit}: ${xs.map(punto).join(" ")}` : "");
 
 const HASH = "909061ef7a1149e83d9a0e1bfbec6844bebb87ad2314ff22d19a187b7522ec93";
 const KEY_OK = "philly:ok", KEY_P = "philly:progreso", KEY_F = "philly:filtro";
@@ -54,7 +62,7 @@ function modulo(m){
   return `<section class="mod" id="m-${m.id}">
     <header class="mod-h">
       <div class="mod-n">${String(m.n).padStart(2, "0")}</div>
-      <div class="mod-tt"><span class="eyebrow">${esc(m.fase)}</span><h2>${esc(m.titulo)}</h2><p>${esc(m.sub)}</p></div>
+      <div class="mod-tt"><span class="eyebrow">${esc(m.fase)}</span><h2>${esc(m.titulo)}</h2><p>${esc(m.sub)}</p>${listenBtn("m:" + m.id, m.titulo, {cls: "ph-voz"})}</div>
       <div class="mod-p" data-ring="${m.id}">${ring(p)}</div>
     </header>
     <p class="lead">${esc(m.resumen)}</p>
@@ -102,13 +110,13 @@ function render(){
   <nav class="toc" id="toc"><div class="toc-in">${MODULOS.map(m => `<a href="#m-${m.id}" data-id="${m.id}"><i>${m.n}</i>${esc(m.corto)}</a>`).join("")}<a href="#plan" data-id="plan"><i>★</i>Plan</a></div></nav>
   <main class="wrap">
     <section class="intro card">
-      <h3 class="sec">Cómo usar este camino</h3>
+      <h3 class="sec">Cómo usar este camino</h3>${listenBtn("intro", "Cómo usar este camino", {cls: "ph-voz"})}
       <div class="intro-grid">${INTRO.reglas.map(x => `<div class="rule"><b>${esc(x.t)}</b><p>${esc(x.d)}</p></div>`).join("")}</div>
       <div class="filter"><span>Mostrar recursos de:</span>${plats.map(k => `<button class="fchip ${filtro === k ? "on" : ""}" data-f="${k}">${k === "todas" ? "Todas" : PLATAFORMAS[k].icon + " " + PLATAFORMAS[k].nombre}</button>`).join("")}</div>
     </section>
     ${MODULOS.map(modulo).join("")}
     <section class="mod" id="plan">
-      <header class="mod-h"><div class="mod-n">★</div><div class="mod-tt"><span class="eyebrow">Programa</span><h2>Plan de 16 semanas</h2><p>Cómo encadenar los módulos en el gimnasio.</p></div></header>
+      <header class="mod-h"><div class="mod-n">★</div><div class="mod-tt"><span class="eyebrow">Programa</span><h2>Plan de 16 semanas</h2><p>Cómo encadenar los módulos en el gimnasio.</p>${listenBtn("plan", "Plan de 16 semanas", {cls: "ph-voz"})}</div></header>
       <div class="phases">${PLAN.map(f => `<div class="phase"><span class="ph-w">${esc(f.semanas)}</span><h3>${esc(f.fase)}</h3><p>${esc(f.foco)}</p><ul>${f.puntos.map(x => `<li>${esc(x)}</li>`).join("")}</ul></div>`).join("")}</div>
       <h3 class="sec">Sesión tipo (60–75 min)</h3>
       <div class="session">${SEMANA.map(s => `<div class="blk"><span class="blk-t">${esc(s.min)}</span><div><b>${esc(s.t)}</b><p>${esc(s.d)}</p></div></div>`).join("")}</div>
@@ -116,7 +124,39 @@ function render(){
     <footer class="foot"><p>Tu progreso se guarda en este navegador.</p><button class="btn ghost" data-reset>Reiniciar progreso</button> <button class="btn ghost" data-lock>Cerrar sesión</button></footer>
   </main>`;
   spy();
+  marcarVoz();
 }
+
+/* ---------- lectura en voz alta ---------- */
+function marcarVoz(){
+  const k = (sel, pre, root = app) => root.querySelectorAll(sel).forEach((x, i) => { x.dataset.vozK = pre + i; });
+  for(const m of MODULOS){
+    const s = app.querySelector("#m-" + CSS.escape(m.id)); if(!s) continue;
+    s.querySelector(".mod-h").dataset.vozK = m.id + ":h";
+    const ld = s.querySelector(".lead"); if(ld) ld.dataset.vozK = m.id + ":l";
+    k(".concept", m.id + ":c", s); k(".drill", m.id + ":d", s); k(".hitos .chk", m.id + ":i", s);
+  }
+  k(".intro .rule", "r"); k("#plan .phase", "p"); k("#plan .blk", "s");
+}
+bind(document.getElementById("app"), id => {
+  const qa = (s, r = app) => [...r.querySelectorAll(s)];
+  if(id === "intro") return {title: "Cómo usar este camino", blocks: [
+    {el: app.querySelector(".hero"), text: unir(punto(INTRO.titulo), INTRO.sub)},
+    ...INTRO.reglas.map((x, i) => ({el: qa(".intro .rule")[i], text: unir(punto(x.t), x.d)}))]};
+  if(id === "plan") return {title: "Plan de 16 semanas", blocks: [
+    ...PLAN.map((f, i) => ({el: qa("#plan .phase")[i], text: unir(punto(f.fase), punto(f.semanas), punto(f.foco), f.puntos.map(punto).join(" "))})),
+    ...SEMANA.map((b, i) => ({el: qa("#plan .blk")[i], text: unir(i === 0 ? "Sesión tipo." : "", punto(b.min), punto(b.t), b.d)}))]};
+  const m = MODULOS.find(x => "m:" + x.id === id), s = m && app.querySelector("#m-" + CSS.escape(m.id));
+  if(!s) return null;
+  const cs = qa(".concept", s), ds = qa(".drill", s), hs = qa(".hitos .chk", s);
+  return {title: m.titulo, blocks: [
+    {el: s.querySelector(".mod-h"), text: unir(`Módulo ${m.n}:`, punto(m.titulo), punto(m.sub))},
+    {el: s.querySelector(".lead"), text: m.resumen},
+    ...m.conceptos.map((c, i) => ({el: cs[i], text: unir(punto(c.titulo), c.explicacion, lista("Claves", c.puntos), lista("Errores comunes", c.errores))})),
+    ...m.drills.map((d, i) => ({el: ds[i], text: unir(`Drill ${i + 1}:`, punto(d.nombre), punto(d.como), d.dosis ? `Dosis: ${punto(d.dosis)}` : "")})),
+    ...m.hitos.map((x, i) => ({el: hs[i], text: unir(i === 0 ? "Lo domino cuando:" : "", punto(x))})),
+  ]};
+});
 
 /* ---------- eventos ---------- */
 document.addEventListener("change", e => {
