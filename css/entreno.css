@@ -59,12 +59,13 @@
 .en-h-sm{margin-top:24px}
 
 /* anillo de actividad */
-.en-ring{flex:none;transform:rotate(-90deg);overflow:visible}
+/* el arco gira con el atributo transform del círculo: girar el svg y contragirar el texto descuadra el número en Safari */
+.en-ring{flex:none;overflow:visible}
 .en-ring circle{fill:none;stroke-width:var(--rw,5px)}
 .en-ring .bg{stroke:var(--fill-3)}
 .en-ring .fg{stroke-linecap:round;transition:stroke-dashoffset var(--dur-slow) var(--ease-out-ios)}
 .en-ring .fg.zero{opacity:0}
-.en-ring text{transform:rotate(90deg);transform-origin:center;fill:var(--text);font-family:var(--font-display);font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
+.en-ring text{fill:var(--text);font-family:var(--font-display);font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
 
 /* nivel y etiquetas */
 .lvl{display:inline-flex;align-items:center;font-size:12px;line-height:16px;font-weight:600;padding:2px 8px;border-radius:999px;background:var(--fill-3);white-space:nowrap;letter-spacing:0;vertical-align:1px}
